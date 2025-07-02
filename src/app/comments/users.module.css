@@ -1,0 +1,406 @@
+.main {
+  display: flex;
+  height: 100vh;
+  overflow: hidden; /* Ngăn main cuộn, chỉ content cuộn */
+}
+
+.aside {
+  width: 300px;
+  background-color: white;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Luôn cao 100vh */
+  position: sticky; /* Giữ cố định khi cuộn */
+  top: 0;
+  flex-shrink: 0; /* Không co lại khi content cuộn */
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  background-color: #ff0a0a;
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 20px;
+  font-weight: bolder;
+  margin: 0 auto; /* căn giữa ngang */
+  margin-bottom: 20px;
+  width: fit-content; /* hoặc set width cụ thể nếu cần */
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.menuList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Thêm dòng này để tạo khoảng cách giữa các mục */
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #444; /* Đổi màu chữ thành đỏ */
+  text-decoration: none;
+  transition: background 0.2s ease;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.menuItem:hover {
+  background-color: #fff1f1; /* Hover nền nhẹ của đỏ */
+}
+
+.activeItem .menuItem {
+  background-color: #fff1f1;
+  color: #ff0a0a;
+  font-weight: 700;
+  /* Hiệu ứng bóng đổ đen nhạt */
+  box-shadow:
+    0 4px 18px 0 rgba(30, 30, 30, 0.13),
+    0 2px 8px 0 rgba(30, 30, 30, 0.09);
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.activeItem .icon {
+  width: 20px;
+  height: 20px;
+  color: #ff0a0a !important;
+  background-color: #fff1f1;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
+.title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.content {
+  flex: 1;
+  padding: 20px 30px;
+  background-color: white;
+  height: 100vh;
+  overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
+}
+
+/* topbar */
+.topbar {
+  height: 45px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
+}
+
+.searchWrapper {
+  display: flex;
+  align-items: center;
+  border-radius: 10px;
+  padding: 8px 15px;
+  width: 320px;
+}
+
+.searchIcon {
+  width: 18px;
+  margin-right: 8px;
+  color: #A1A1AA;
+}
+
+.searchInput {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #444;
+  flex: 1;
+}
+.searchInput::placeholder {
+  color: #A1A1AA; 
+  opacity: 1;     
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  position: relative;
+}
+
+.icon {
+  color: #444;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.notification {
+  position: relative;
+}
+
+.dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background-color: red;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.avatarWrapper {
+  position: relative;
+  width: 32px;
+  height: 32px;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.onlineDot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: #22c55e;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+/* cac chuc nang */
+.searchProduct {
+  margin: 20px 0px 0px 0px;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px 8px 0 0;
+}
+
+.searchAddBar {
+  display: flex;
+  justify-content: space-between;
+
+  gap: 12px;
+}
+.searchAddBar .searchInput {
+  max-width: 200px;
+  padding: 8px 14px;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 5px;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.searchAddBar .searchInput:focus {
+  border-color: #d90429;
+}
+.searchAddBar .select {
+  color: #333;
+  width: 200px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  font-size: 16px;
+}
+.usertList {
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 0 0 8px 8px;
+}
+
+.userListTitle {
+  color: #444;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: left;
+  line-height: 1.2;
+  padding: 20px;
+}
+
+/* Tông màu chủ đạo cho bảng */
+.userTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 10px;
+}
+
+.userTable th,
+.userTable td {
+  padding: 12px;
+  max-width: 270px;
+}
+
+.userTable th {
+  font-size: 16px;
+  border-top: 1px solid #e4e4e7;
+  border-bottom: 1px solid #e4e4e7;
+  background-color: #fff;
+  color: #444;
+  text-align: center;
+  font-weight: 700;
+}
+
+.userTable td {
+  background: #fff;
+  color: #444;
+  border-bottom: 1px solid #e4e4e7;
+  text-align: center;
+}
+.userBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.userImage {
+  width: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.userDetails {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.userName {
+  font-weight: 700;
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 4px;
+}
+.userDesc {
+  font-size: 13px;
+  color: #666;
+  margin-top: 0;
+}
+
+.productBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.productImage {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f3f3f3;
+}
+
+.productName {
+  font-weight: 600;
+  font-size: 14px;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 120px;
+  display: inline-block;
+}
+
+.stars {
+  color: #ffc107;
+  font-size: 22px;
+  letter-spacing: 1px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+/* Style cho icon chức năng */
+.actionBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 8px;
+  color: #444;
+  font-size: 20px;
+  transition: color 0.2s;
+  padding: 4px;
+}
+
+.actionBtn:last-child {
+  margin-right: 0;
+}
+
+.actionBtn:hover {
+  color: #d90429;
+}
+.commentContent {
+  max-width: 220px;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  line-height: 1.5;
+}
+
+.seeMoreBtn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 13px;
+  margin-left: 6px;
+  padding: 0;
+  text-decoration: underline;
+}
+.statusApproved {
+  background: #28a745;
+  color: #fff;
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+  min-width: 100px;
+  text-align: center;
+}
+
+.statusPending {
+  background: #ffc107;
+  color: #fff;
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+  min-width: 100px;
+  text-align: center;
+}
