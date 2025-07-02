@@ -352,86 +352,86 @@ export default function Product() {
             </div>
           </div>
         )}
-<div className={styles.productList}>
-        <table className={styles.productTable}>
-          <thead>
-            <tr>
-              <th>Sản phẩm</th>
-              <th>Danh mục</th>
-              <th>Trạng thái</th>
-              <th>Giá</th>
-              <th>Số lượng</th>
-              <th>Tình trạng</th>
-              <th>Chức năng</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr key={product.id}>
-                <td className={styles.productInfo}>
-                  <img
-                    src={product.image}
-                    alt="Hình SP"
-                    className={styles.productImage}
-                  />
-                  <div className={styles.productDetails}>
-                    <div className={styles.productName}>{product.name}</div>
-                    <div className={styles.productDesc}>
-                      {expandedRows.includes(product.id) ? (
-                        <>
-                          {product.desc}
-                          <button
-                            className={styles.descBtn}
-                            onClick={() => handleToggleDesc(product.id)}
-                          >
-                            Thu gọn
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          {product.desc.length > 80
-                            ? product.desc.slice(0, 80) + "..."
-                            : product.desc}
-                          {product.desc.length > 80 && (
+        <div className={styles.productList}>
+          <table className={styles.productTable}>
+            <thead>
+              <tr>
+                <th>Sản phẩm</th>
+                <th>Danh mục</th>
+                <th>Trạng thái</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Tình trạng</th>
+                <th>Chức năng</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id}>
+                  <td className={styles.productInfo}>
+                    <img
+                      src={product.image}
+                      alt="Hình SP"
+                      className={styles.productImage}
+                    />
+                    <div className={styles.productDetails}>
+                      <div className={styles.productName}>{product.name}</div>
+                      <div className={styles.productDesc}>
+                        {expandedRows.includes(product.id) ? (
+                          <>
+                            {product.desc}
                             <button
                               className={styles.descBtn}
                               onClick={() => handleToggleDesc(product.id)}
                             >
-                              Xem thêm
+                              Thu gọn
                             </button>
-                          )}
-                        </>
-                      )}
+                          </>
+                        ) : (
+                          <>
+                            {product.desc.length > 80
+                              ? product.desc.slice(0, 80) + "..."
+                              : product.desc}
+                            {product.desc.length > 80 && (
+                              <button
+                                className={styles.descBtn}
+                                onClick={() => handleToggleDesc(product.id)}
+                              >
+                                Xem thêm
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td>{product.category}</td>
-                <td>
-                  <label className={styles.switch}>
-                    <input type="checkbox" checked={product.status} readOnly />
-                    <span className={styles.slider}></span>
-                  </label>
-                </td>
-                <td>{product.price.toLocaleString()} VND</td>
-                <td>{product.quantity}</td>
-                <td>
-                  <span className={product.available ? styles.statusAvailable : styles.statusOut}>
-                    {product.available ? "Còn hàng" : "Hết hàng"}
-                  </span>
-                </td>
-                <td>
-                  <button className={styles.actionBtn} title="Sửa">
-                    <Pencil size={20} />
-                  </button>
-                  <button className={styles.actionBtn} title="Xóa">
-                    <Trash2 size={20} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  </td>
+                  <td>{product.category}</td>
+                  <td>
+                    <label className={styles.switch}>
+                      <input type="checkbox" checked={product.status} readOnly />
+                      <span className={styles.slider}></span>
+                    </label>
+                  </td>
+                  <td>{product.price.toLocaleString()} VND</td>
+                  <td>{product.quantity}</td>
+                  <td>
+                    <span className={product.available ? styles.statusAvailable : styles.statusOut}>
+                      {product.available ? "Còn hàng" : "Hết hàng"}
+                    </span>
+                  </td>
+                  <td>
+                    <button className={styles.actionBtn} title="Sửa">
+                      <Pencil size={20} />
+                    </button>
+                    <button className={styles.actionBtn} title="Xóa">
+                      <Trash2 size={20} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </main>
   );

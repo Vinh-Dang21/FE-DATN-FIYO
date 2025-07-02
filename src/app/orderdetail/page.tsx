@@ -1,311 +1,409 @@
 "use client";
 import {
-  Users,
-  ShoppingCart,
-  GraduationCap,
-  MessageCircle,
-  Columns3,
-  LogOut,
-  Search,
-  Bell,
-  Eye,
-  Pencil,
-  Shirt,
-  Calendar,
-  Check,
-  CreditCard,
-  AlertCircle,
-  LayoutDashboard,
+    Users,
+    ShoppingCart,
+    GraduationCap,
+    MessageCircle,
+    Columns3,
+    LogOut,
+    Search,
+    Bell,
+    Eye,
+    Pencil,
+    Shirt,
+    Calendar,
+    Check,
+    CreditCard,
+    AlertCircle,
+    LayoutDashboard,
 } from "lucide-react";
-import styles from "./order.module.css";
-import { useEffect, useState } from "react";
-// Dữ liệu giả
-const orders = [
-  {
-    id: "#1010",
-    date: "10/06/2024",
-    name: "Nguyễn Thị Lan",
-    email: "lan.nguyen@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/10.jpg",
-    status: "Chờ xác nhận",
-    address: "25 Nguyễn Đình Chiểu, Quận 3, TP.HCM",
-  },
-  {
-    id: "#1009",
-    date: "09/06/2024",
-    name: "Phạm Văn Hùng",
-    email: "hung.pham@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/9.jpg",
-    status: "Chờ xác nhận",
-    address: "88 Lý Thường Kiệt, Quận 10, TP.HCM",
-  },
-  {
-    id: "#1008",
-    date: "08/06/2024",
-    name: "Lê Thị Hồng",
-    email: "hong.le@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/8.jpg",
-    status: "Đang giao",
-    address: "12 Nguyễn Văn Linh, Quận 7, TP.HCM",
-  },
-  {
-    id: "#1007",
-    date: "07/06/2024",
-    name: "Trần Quốc Dũng",
-    email: "dung.tran@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/7.jpg",
-    status: "Đang giao",
-    address: "88 Cách Mạng Tháng 8, Quận 10, TP.HCM",
-  },
-  {
-    id: "#1006",
-    date: "06/06/2024",
-    name: "Ngô Thị Hạnh",
-    email: "hanh.ngo@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/6.jpg",
+import styles from "./orderdetail.module.css";
+const orderDetailData = {
+    orderId: "#DH20250613",
+    orderDate: "13/06/2025",
     status: "Đã giao",
-    address: "22 Phan Đăng Lưu, Bình Thạnh, TP.HCM",
-  },
-  {
-    id: "#1005",
-    date: "05/06/2024",
-    name: "Võ Minh Tuấn",
-    email: "tuan.vo@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/5.jpg",
-    status: "Đã hủy",
-    address: "99 Trần Hưng Đạo, Quận 5, TP.HCM",
-  },
-  {
-    id: "#1004",
-    date: "04/06/2024",
-    name: "Phạm Thị Mai",
-    email: "mai.pham@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/4.jpg",
-    status: "Đã giao",
-    address: "210 Lê Lợi, Quận 3, TP.HCM",
-  },
-  {
-    id: "#1003",
-    date: "03/06/2024",
-    name: "Nguyễn Văn An",
-    email: "an.nguyen@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/3.jpg",
-    status: "Đã giao",
-    address: "15 Nguyễn Trãi, Quận 1, TP.HCM",
-  },
-  {
-    id: "#1002",
-    date: "02/06/2024",
-    name: "Lê Văn Cường",
-    email: "cuong.le@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/2.jpg",
-    status: "Đã giao",
-    address: "789 Cách Mạng Tháng 8, Quận 10, TP.HCM",
-  },
-  {
-    id: "#1001",
-    date: "01/06/2024",
-    name: "Trần Thị Bích",
-    email: "bich.tran@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/1.jpg",
-    status: "Đã hủy",
-    address: "45 Lê Lợi, Quận 3, TP.HCM",
-  },
+    customer: {
+        name: "Trần Minh Hòa",
+        id: "#C1024",
+        email: "minhhoa.tran@gmail.com",
+        phone: "0987654321",
+        avatar: "https://randomuser.me/api/portraits/men/32.jpg"
+    },
+    shipping: {
+        receiver: "Trần Minh Hòa",
+        address: "Số 12, Nguyễn Thái Học, Ba Đình, Hà Nội",
+        note: "Giao sau 17h, gọi trước khi đến"
+    },
+    payment: {
+        method: "Momo",
+        transactionId: "2506130000456789"
+    },
+    products: [
+        {
+            name: "Áo sơ mi nam trắng",
+            desc: "Chất liệu cotton thoáng mát, size M",
+            image: "https://1557691689.e.cdneverest.net/fast/180x0/filters:format(webp)/static.5sfashion.vn/storage/product/0wyTFhVjgZqOy8DDcmRYqbc4gmMzy4jW.webp",
+            price: 320000,
+            quantity: 2,
+            total: 640000
+        },
+        {
+            name: "Quần jeans xanh",
+            desc: "Slim fit, size 30",
+            image: "https://1557691689.e.cdneverest.net/fast/1325x0/filters:format(webp)/static.5sfashion.vn/storage/product_color/XjuznF9TOo2H6wf2rRPjuxSjRPhrQmjh.webp",
+            price: 450000,
+            quantity: 1,
+            total: 450000
+        },
+        {
+            name: "Áo thun basic",
+            desc: "Chất liệu co giãn, size L",
+            image: "https://1557691689.e.cdneverest.net/fast/1325x0/filters:format(webp)/static.5sfashion.vn/storage/product_color/8wo2oe2X0LomZg4RUd9KUUtXQUGlq3lV.jpg",
+            price: 210000,
+            quantity: 2,
+            total: 420000
+        }
+    ],
+    total: {
+        value: 1510000,
+        discount: 110000,
+        final: 1400000
+    }
+};
+const trackingData = [
+    {
+        time: "08:12 13/06",
+        status: "Đặt hàng",
+        description: "Khách hàng đã đặt đơn hàng thành công trên website.",
+        active: true,
+    },
+    {
+        time: "08:25 13/06",
+        status: "Xác nhận",
+        description: "Nhân viên đã xác nhận đơn hàng và chuẩn bị đóng gói.",
+        active: true,
+    },
+    {
+        time: "08:50 13/06",
+        status: "Đã bàn giao cho đơn vị vận chuyển",
+        description: (
+            <>
+                Đơn hàng đã được bàn giao cho <strong style={{color: "#22c55e"}}>Giao Hàng Nhanh</strong>.<br />
+                <span style={{ color: "#22c55e", fontWeight: 600 }}>Shipper: Nguyễn Văn B (SDT: 0901234567)</span>
+            </>
+        ),
+        active: true,
+    },
+    {
+        time: "09:30 13/06",
+        status: "Đang lấy hàng",
+        description: "Shipper đang đến kho để nhận hàng.",
+        active: true,
+    },
+    {
+        time: "10:10 13/06",
+        status: "Đang giao",
+        description: (
+            <>
+                Đơn hàng đang được vận chuyển đến địa chỉ nhận: <br />
+                <span style={{ color: "#0ea5e9", fontWeight: 600 }}>Số 12, Nguyễn Thái Học, Ba Đình, Hà Nội</span>
+            </>
+        ),
+        active: true,
+    },
+    {
+        time: "12:30 13/06",
+        status: "Đang giao",
+        description: "Shipper đang giao hàng, vui lòng giữ điện thoại để liên hệ nhận hàng.",
+        active: true,
+    },
+    {
+        time: "15:42 13/06",
+        status: "Đã giao",
+        description: "Shipper đã giao hàng cho khách tại địa chỉ nhận.",
+        active: true,
+    },
+    {
+        time: "15:45 13/06",
+        status: "Đã giao thành công",
+        description: "Khách hàng đã nhận hàng và thanh toán tiền mặt.",
+        active: true,
+    },
 ];
 
 export default function Order() {
-  return (
-    <main className={styles.main}>
-      <aside className={styles.aside}>
-        <div className={styles.logo}>F I Y O</div>
-        <ul className={styles.menuList}>
-          <li>
-            <a href="/" className={styles.menuItem}>
-              <LayoutDashboard className={styles.icon} />
-              <span className={styles.title}>Tổng quan</span>
-            </a>
-          </li>
-          <li className={styles.activeItem}>
-            <a href="/order" className={styles.menuItem}>
-              <ShoppingCart className={styles.icon} />
-              <span className={styles.title}>Đơn hàng</span>
-            </a>
-          </li>
-          <li>
-            <a href="/products" className={styles.menuItem}>
-              <Shirt className={styles.icon} />
-              <span className={styles.title}>Sản phẩm</span>
-            </a>
-          </li>
-          <li>
-            <a href="/categories" className={styles.menuItem}>
-              <Columns3 className={styles.icon} />
-              <span className={styles.title}>Danh mục</span>
-            </a>
-          </li>
-          <li>
-            <a href="/users" className={styles.menuItem}>
-              <Users className={styles.icon} />
-              <span className={styles.title}>Người dùng</span>
-            </a>
-          </li>
-          <li>
-            <a href="/voucher" className={styles.menuItem}>
-              <GraduationCap className={styles.icon} />
-              <span className={styles.title}>Khuyến mãi</span>
-            </a>
-          </li>
-          <li>
-            <a href="/comments" className={styles.menuItem}>
-              <MessageCircle className={styles.icon} />
-              <span className={styles.title}>Bình luận</span>
-            </a>
-          </li>
-          <li>
-            <a href="/logout" className={styles.menuItem}>
-              <LogOut className={styles.icon} />
-              <span className={styles.title}>Đăng xuất</span>
-            </a>
-          </li>
-        </ul>
-      </aside>
+    // Lấy dữ liệu đơn hàng từ orderDetailData
+    const {
+        orderId,
+        orderDate,
+        status,
+        customer,
+        shipping,
+        payment,
+        products,
+        total,
+    } = orderDetailData;
 
-      <section className={styles.content}>
-        <div className={styles.topbar}>
-          <div className={styles.searchWrapper}>
-            <Search className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm..."
-              className={styles.searchInput}
-            />
-          </div>
-          <div className={styles.actions}>
-            <div className={styles.notification}>
-              <Bell className={styles.icon} />
-              <span className={styles.dot}></span>
-            </div>
-            <div className={styles.avatarWrapper}>
-              <img
-                src="https://phunugioi.com/wp-content/uploads/2022/06/Hinh-cho-cute.jpg"
-                alt="Avatar"
-                className={styles.avatar}
-              />
-              <span className={styles.onlineDot}></span>
-            </div>
-          </div>
-        </div>
+    return (
+        <main className={styles.main}>
+            <aside className={styles.aside}>
+                <div className={styles.logo}>F I Y O</div>
+                <ul className={styles.menuList}>
+                    <li>
+                        <a href="/" className={styles.menuItem}>
+                            <LayoutDashboard className={styles.icon} />
+                            <span className={styles.title}>Tổng quan</span>
+                        </a>
+                    </li>
+                    <li className={styles.activeItem}>
+                        <a href="/order" className={styles.menuItem}>
+                            <ShoppingCart className={styles.icon} />
+                            <span className={styles.title}>Đơn hàng</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/products" className={styles.menuItem}>
+                            <Shirt className={styles.icon} />
+                            <span className={styles.title}>Sản phẩm</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/categories" className={styles.menuItem}>
+                            <Columns3 className={styles.icon} />
+                            <span className={styles.title}>Danh mục</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/users" className={styles.menuItem}>
+                            <Users className={styles.icon} />
+                            <span className={styles.title}>Người dùng</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/voucher" className={styles.menuItem}>
+                            <GraduationCap className={styles.icon} />
+                            <span className={styles.title}>Khuyến mãi</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/comments" className={styles.menuItem}>
+                            <MessageCircle className={styles.icon} />
+                            <span className={styles.title}>Bình luận</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/logout" className={styles.menuItem}>
+                            <LogOut className={styles.icon} />
+                            <span className={styles.title}>Đăng xuất</span>
+                        </a>
+                    </li>
+                </ul>
+            </aside>
 
-        <div className={styles.orderSummary}>
-          <div className={styles.orderItem}>
-            <div className={styles.orderInfo}>
-              <div className={styles.orderNumber}>56</div>
-              <div className={styles.orderLabel}>Chờ xác nhận</div>
-            </div>
-            <div className={styles.orderIcon}>
-              <Calendar />
-            </div>
-          </div>
-          <div className={styles.orderItem}>
-            <div className={styles.orderInfo}>
-              <div className={styles.orderNumber}>12,689</div>
-              <div className={styles.orderLabel}>Đã hoàn thành</div>
-            </div>
-            <div className={styles.orderIcon}>
-              <Check />
-            </div>
-          </div>
-          <div className={styles.orderItem}>
-            <div className={styles.orderInfo}>
-              <div className={styles.orderNumber}>124</div>
-              <div className={styles.orderLabel}>Đã hoàn tiền</div>
-            </div>
-            <div className={styles.orderIcon}>
-              <CreditCard />
-            </div>
-          </div>
-          <div className={styles.orderItem}>
-            <div className={styles.orderInfo}>
-              <div className={styles.orderNumber}>32</div>
-              <div className={styles.orderLabel}>Thất bại</div>
-            </div>
-            <div className={styles.orderIcon}>
-              <AlertCircle />
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.searchProduct}>
-          <div className={styles.searchAddBar}>
-            <input
-              type="text"
-              placeholder="Tìm kiếm ..."
-              className={styles.searchInput}
-            />
-          </div>
-        </div>
-        <div className={styles.usertList}>
-          <table className={styles.userTable}>
-            <thead>
-              <tr>
-                <th>Mã hóa đơn</th>
-                <th>Ngày đặt</th>
-                <th>Người đặt</th>
-                <th>Trạng thái</th>
-                <th>Địa chỉ</th>
-                <th>Chức năng</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td>
-                    <a href="#">{order.id}</a>
-                  </td>
-                  <td>{order.date}</td>
-                  <td className={styles.userInfo}>
-                    <img
-                      src={order.avatar}
-                      alt="Hình SP"
-                      className={styles.userImage}
-                    />
-                    <div className={styles.productDetails}>
-                      <div className={styles.userName}>{order.name}</div>
-                      <div className={styles.userDesc}>{order.email}</div>
+            <section className={styles.content}>
+                <div className={styles.topbar}>
+                    <div className={styles.searchWrapper}>
+                        <Search className={styles.searchIcon} />
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm..."
+                            className={styles.searchInput}
+                        />
                     </div>
-                  </td>
-                  <td>
-                    <span
-                      className={`${styles.methodDelivered} ${
-                        order.status === "Chờ xác nhận"
-                          ? styles["status-choxacnhan"]
-                          : order.status === "Đang giao"
-                          ? styles["status-danggiao"]
-                          : order.status === "Đã giao"
-                          ? styles["status-dagiao"]
-                          : order.status === "Đã hủy"
-                          ? styles["status-dahuy"]
-                          : ""
-                      }`}
-                    >
-                      {order.status}
-                    </span>
-                  </td>
-                  <td>{order.address}</td>
-                  <td>
-                    <button className={styles.actionBtn} title="Xem">
-                      <Eye size={23} />
-                    </button>
-                    <button className={styles.actionBtn} title="Sửa">
-                      <Pencil size={20} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </main>
-  );
+                    <div className={styles.actions}>
+                        <div className={styles.notification}>
+                            <Bell className={styles.icon} />
+                            <span className={styles.dot}></span>
+                        </div>
+                        <div className={styles.avatarWrapper}>
+                            <img
+                                src="https://phunugioi.com/wp-content/uploads/2022/06/Hinh-cho-cute.jpg"
+                                alt="Avatar"
+                                className={styles.avatar}
+                            />
+                            <span className={styles.onlineDot}></span>
+                        </div>
+                    </div>
+                </div>
+                <div className={styles.orderSummary}>
+                    <div className={styles.orderInfoLeft}>
+                        <h2 className={styles.orderTitle}>
+                            Mã hóa đơn: {orderId}
+                        </h2>
+                        <p className={styles.statusLine}>
+                            Trạng thái:
+                            <span className={styles.badge}>{status}</span>
+                        </p>
+                        <p className={styles.orderDate}>
+                            Ngày đặt: {orderDate}
+                        </p>
+                    </div>
+
+                    <div className={styles.orderDetailGrid}>
+                        <div className={styles.productSection}>
+                            <table className={styles.orderDetailTable}>
+                                <thead>
+                                    <tr>
+                                        <th>Sản phẩm</th>
+                                        <th>Giá</th>
+                                        <th>Số lượng</th>
+                                        <th>Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {products.map((product, i) => (
+                                        <tr key={i}>
+                                            <td className={styles.orderDetailInfo}>
+                                                <img
+                                                    src={product.image}
+                                                    alt={product.name}
+                                                    className={styles.userImage}
+                                                />
+                                                <div className={styles.productDetails}>
+                                                    <div className={styles.userName}>
+                                                        {product.name}
+                                                    </div>
+                                                    <div className={styles.userDesc}>
+                                                        {product.desc}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {product.price.toLocaleString("vi-VN", {
+                                                    style: "currency",
+                                                    currency: "VND",
+                                                })}
+                                            </td>
+                                            <td>{product.quantity}</td>
+                                            <td>
+                                                {product.total.toLocaleString("vi-VN", {
+                                                    style: "currency",
+                                                    currency: "VND",
+                                                })}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            <div className={styles.totalSection}>
+                                <p>
+                                    Giá trị đơn hàng:{" "}
+                                    <span className={styles.totalValue}>
+                                        {total.value.toLocaleString("vi-VN", {
+                                            style: "currency",
+                                            currency: "VND",
+                                        })}
+                                    </span>
+                                </p>
+                                <p>
+                                    Giảm:{" "}
+                                    <span className={styles.totalValue}>
+                                        {total.discount.toLocaleString("vi-VN", {
+                                            style: "currency",
+                                            currency: "VND",
+                                        })}
+                                    </span>
+                                </p>
+                                <p className={styles.totalFinal}>
+                                    Tổng tiền thanh toán:{" "}
+                                    <span className={styles.totalAmount}>
+                                        {total.final.toLocaleString("vi-VN", {
+                                            style: "currency",
+                                            currency: "VND",
+                                        })}
+                                    </span>
+                                </p>
+                            </div>
+                            <div className={styles.shipping}>
+                                <h3 className={styles.heading}>Theo dõi kiện hàng</h3>
+                                <div className={styles.timeline}>
+                                    {trackingData.map((item, index) => (
+                                        <div
+                                          key={index}
+                                          className={`${styles.step} ${item.status === "Đang giao" ? styles.stepActive : ""}`}
+                                        >
+                                          <div className={styles.left}>
+                                                <span className={styles.time}>{item.time}</span>
+                                                <span
+                                                    className={`${styles.circle} ${item.active ? styles.active : ""}`}
+                                                ></span>
+                                                {index !== trackingData.length - 1 && (
+                                                    <div className={styles.line}></div>
+                                                )}
+                                            </div>
+                                            <div className={styles.right}>
+                                                {item.status && (
+                                                  <p
+                                                    className={`${styles.status} ${item.status === "Đang giao" ? styles.statusDelivering : ""}`}
+                                                  >
+                                                    {item.status}
+                                                  </p>
+                                                )}
+                                                <p className={styles.description}>{item.description}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.gridSection}>
+                            <div className={styles.box}>
+                                <h3>Chi tiết khách hàng</h3>
+                                <div className={styles.userInfo}>
+                                    <img
+                                        src={customer.avatar}
+                                        alt="Hình SP"
+                                        className={styles.userImage}
+                                    />
+                                    <div className={styles.productDetails}>
+                                        <div className={styles.userName}>
+                                            {customer.name}
+                                        </div>
+                                        <div className={styles.userDesc}>
+                                            ID người dùng:{" "}
+                                            <strong>{customer.id}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className={styles.userMeta}>
+                                    <strong>Email</strong>: {customer.email}
+                                </p>
+                                <p className={styles.userMeta}>
+                                    <strong>SDT</strong>: {customer.phone}
+                                </p>
+                            </div>
+
+                            <div className={styles.box}>
+                                <h3>Địa chỉ giao hàng</h3>
+                                <p>
+                                    <strong>Tên người nhận</strong>:{" "}
+                                    {shipping.receiver}
+                                </p>
+                                <p>
+                                    <strong>Địa chỉ</strong>: {shipping.address}
+                                </p>
+                                <p>
+                                    <strong>Ghi chú</strong>: {shipping.note}
+                                </p>
+                            </div>
+
+                            <div className={styles.box}>
+                                <h3>Phương thức thanh toán</h3>
+                                <p>
+                                    <strong>Phương thức</strong>: {payment.method}
+                                </p>
+                                <p>
+                                    <strong>Mã giao dịch</strong>:{" "}
+                                    {payment.transactionId}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </section>
+        </main>
+    );
 }
