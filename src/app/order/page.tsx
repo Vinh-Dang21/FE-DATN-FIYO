@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import styles from "./order.module.css";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 // Dữ liệu giả
 const orders = [
   {
@@ -260,7 +261,9 @@ export default function Order() {
               {orders.map((order) => (
                 <tr key={order.id}>
                   <td>
-                    <a href="#">{order.id}</a>
+                    <Link href={`/orderdetail`}>
+                      {order.id}
+                    </Link>
                   </td>
                   <td>{order.date}</td>
                   <td className={styles.userInfo}>
@@ -293,9 +296,11 @@ export default function Order() {
                   </td>
                   <td>{order.address}</td>
                   <td>
-                    <button className={styles.actionBtn} title="Xem">
-                      <Eye size={23} />
-                    </button>
+                    <Link href={`/orderdetail`}>
+                      <button className={styles.actionBtn} title="Xem">
+                        <Eye size={23} />
+                      </button>
+                    </Link>
                     <button className={styles.actionBtn} title="Sửa">
                       <Pencil size={20} />
                     </button>
