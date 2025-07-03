@@ -14,6 +14,7 @@ import {
     Wallet2
 } from "lucide-react";
 import styles from "./userdetail.module.css";
+import { useState } from "react";
 // Dữ liệu user
 const userData = {
     id: "#US002",
@@ -51,6 +52,7 @@ const userData = {
 };
 
 export default function Order() {
+    const [showAdd, setShowAdd] = useState(false);
 
     return (
         <main className={styles.main}>
@@ -176,8 +178,39 @@ export default function Order() {
                     <div className={styles.rightPanel}>
                         <div className={styles.addressHeader}>
                             <h4>Địa chỉ giao hàng</h4>
-                            <button className={styles.addButton}>+ Thêm địa chỉ</button>
+                            <button className={styles.addButton} onClick={() => setShowAdd(true)}>+ Thêm địa chỉ</button>
                         </div>
+                        {showAdd && (
+                            <div className={styles.addAside}>
+                                <h2 className={styles.addAsideTitle}>Thêm địa chỉ nhận hàng</h2>
+                                <input
+                                    className={styles.input}
+                                    type="text"
+                                    placeholder="Tên người nhận"
+                                />
+                                <input
+                                    className={styles.input}
+                                    type="text"
+                                    placeholder="Số điện thoại"
+                                />
+                                <input
+                                    className={styles.input}
+                                    type="text"
+                                    placeholder="Địa chỉ chi tiết (ví dụ: 123/4 Nguyễn Văn Đậu, Phường 5, Bình Thạnh, TP HCM)"
+                                />
+                                <div className={styles.checkboxRow}>
+                                    <input type="checkbox" id="isDefault" />
+                                    <label htmlFor="isDefault">Đặt làm địa chỉ mặc định</label>
+                                </div>
+                                <button className={styles.addButton}>Thêm địa chỉ</button>
+                                <button
+                                    className={styles.closeBtn}
+                                    onClick={() => setShowAdd(false)}
+                                    style={{ marginTop: 10 }}>
+                                    Đóng
+                                </button>
+                            </div>
+                        )}
 
                         <div className={styles.addressList}>
                             <div className={styles.addressTitle}>Địa chỉ</div>
@@ -211,7 +244,7 @@ export default function Order() {
                                                 </button>
                                             </div>
                                         </div>
-                                        
+
                                     </div>
                                 </div>
                             ))}

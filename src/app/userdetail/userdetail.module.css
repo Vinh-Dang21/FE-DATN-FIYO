@@ -505,3 +505,88 @@
     gap: 18px;
     width: 100%;
 }
+.addAside {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 340px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -2px 0 16px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  animation: slideInRight 0.2s;
+}
+@keyframes slideInRight {
+  from {
+    right: -400px;
+    opacity: 0;
+  }
+  to {
+    right: 0;
+    opacity: 1;
+  }
+}
+.addAsideTitle {
+  text-align: center;
+  font-size: 22px; /* 1.4rem ≈ 22px */
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #444;
+}
+.addAside .input {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  font-size: 16px; /* 1rem = 16px */
+  color: #444;
+}
+
+.addAside .addButton {
+  background: #ff0a0a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 0;
+  font-size: 16px; /* 1rem = 16px */
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.addAside .closeBtn {
+  background: #eee;
+  color: #444;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 0;
+  font-size: 16px; /* 1rem = 16px */
+  cursor: pointer;
+}
+
+.checkboxRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 18px 0;
+    font-size: 14px;
+    color: #444;
+}
+
+.checkboxRow input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #ff0a0a; /* màu đỏ chủ đạo */
+    cursor: pointer;
+}
+
+.checkboxRow label {
+    cursor: pointer;
+    font-weight: 500;
+    user-select: none;
+}
