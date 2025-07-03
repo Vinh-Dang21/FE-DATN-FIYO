@@ -1,0 +1,577 @@
+.main {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    /* Ngăn main cuộn, chỉ content cuộn */
+}
+
+.aside {
+    width: 300px;
+    background-color: white;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    /* Luôn cao 100vh */
+    position: sticky;
+    /* Giữ cố định khi cuộn */
+    top: 0;
+    flex-shrink: 0;
+    /* Không co lại khi content cuộn */
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    background-color: #ff0a0a;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 20px;
+    font-weight: bolder;
+    margin: 0 auto;
+    /* căn giữa ngang */
+    margin-bottom: 20px;
+    width: fit-content;
+    /* hoặc set width cụ thể nếu cần */
+}
+
+.sectionTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.menuList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Thêm dòng này để tạo khoảng cách giữa các mục */
+}
+
+.menuItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    color: #444;
+    /* Đổi màu chữ thành đỏ */
+    text-decoration: none;
+    transition: background 0.2s ease;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.menuItem:hover {
+    background-color: #fff1f1;
+    /* Hover nền nhẹ của đỏ */
+}
+
+.activeItem .menuItem {
+    background-color: #fff1f1;
+    color: #ff0a0a;
+    font-weight: 700;
+    /* Hiệu ứng bóng đổ đen nhạt */
+    box-shadow:
+        0 4px 18px 0 rgba(30, 30, 30, 0.13),
+        0 2px 8px 0 rgba(30, 30, 30, 0.09);
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.activeItem .icon {
+    width: 20px;
+    height: 20px;
+    color: #ff0a0a !important;
+    background-color: #fff1f1;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+}
+
+.title {
+    flex: 1;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.content {
+    flex: 1;
+    padding: 20px 30px;
+    background-color: white;
+    height: 100vh;
+    overflow-y: auto;
+    /* Cho phép cuộn khi nội dung dài */
+}
+
+/* topbar */
+.topbar {
+    height: 45px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    background-color: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+}
+
+.searchWrapper {
+    display: flex;
+    align-items: center;
+    border-radius: 10px;
+    padding: 8px 15px;
+    width: 320px;
+}
+
+.searchIcon {
+    width: 18px;
+    margin-right: 8px;
+    color: #A1A1AA;
+}
+
+.searchInput {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    color: #444;
+    flex: 1;
+}
+
+.searchInput::placeholder {
+    color: #A1A1AA;
+    opacity: 1;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    position: relative;
+}
+
+.icon {
+    color: #444;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.notification {
+    position: relative;
+}
+
+.dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    background-color: red;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.avatarWrapper {
+    position: relative;
+    width: 32px;
+    height: 32px;
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.onlineDot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 8px;
+    height: 8px;
+    background-color: #22c55e;
+    border: 2px solid #fff;
+    border-radius: 50%;
+}
+
+.orderSummary {
+    display: flex;
+    gap: 24px;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+
+.orderInfoLeft {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    /* Thêm dòng này để tạo khoảng cách giữa các mục */
+}
+
+.orderTitle {
+    font-weight: bold;
+    font-size: 20px;
+
+    color: #444;
+}
+
+.statusLine {
+    font-size: 16px;
+    font-weight: 600;
+    color: #444;
+}
+
+.badge {
+    margin-left: 6px;
+    font-weight: 600;
+    color: #fff;
+    background: #28A745;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+
+.orderDate {
+    font-size: 16px;
+    font-weight: 500;
+    color: #444;
+    margin-top: 2px;
+}
+
+.productSection {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 24px;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
+.orderDetailTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+    background: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.orderDetailTable th,
+.orderDetailTable td {
+    padding: 12px;
+}
+
+.orderDetailTable th {
+    font-size: 16px;
+    border-bottom: 1px solid #e4e4e7;
+    background-color: #fff;
+    color: #444;
+    text-align: center;
+    font-weight: 700;
+}
+
+.orderDetailTable td {
+    background: #fff;
+    color: #444;
+    border-bottom: 1px solid #e4e4e7;
+    text-align: center;
+}
+
+
+.orderDetailTable td:first-child {
+    text-align: left;
+}
+
+.orderDetailTable tr:last-child td {
+    border-bottom: none;
+}
+
+.orderDetailInfo {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.userImage {
+    width: 40px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.productDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.userName {
+    font-weight: 600;
+    font-size: 15px;
+    color: #222;
+}
+
+.userDesc {
+    font-size: 13px;
+    color: #888;
+}
+
+.totalSection {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Các item căn trái */
+    align-self: flex-end;
+    /* Box này nằm bên phải */
+    gap: 4px;
+    padding: 15px;
+}
+
+.totalSection p {
+    font-size: 14px;
+    font-weight: 600;
+    color: #444;
+    margin: 0;
+}
+
+.totalValue {
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
+}
+
+.totalFinal {
+    font-size: 16px;
+    font-weight: 700;
+    color: #444;
+}
+
+.totalAmount {
+    font-size: 16px;
+    font-weight: 700;
+    color: #444;
+}
+
+.orderDetailGrid {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+}
+
+.gridSection {
+    width: 380px;
+    flex-shrink: 0;
+    align-self: flex-start;
+    background: #fff;
+}
+
+.box {
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    background: #fff;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+}
+
+.box h3 {
+    font-size: 16px;
+    font-weight: 600;
+    /* semi bold */
+    margin-bottom: 10px;
+    margin-top: 0;
+    color: #444;
+}
+
+.box p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    margin: 4px 0 0 0;
+    letter-spacing: 0.1px;
+}
+
+.box p strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: #444;
+}
+
+.userInfo {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.userImage {
+    width: 40px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.userDetails {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.userName {
+    font-weight: 700;
+    font-size: 14px;
+    color: #444;
+    margin-bottom: 4px;
+}
+
+.userDesc {
+    font-size: 13px;
+    color: #666;
+    margin-top: 0;
+}
+.userDesc  strong{
+    font-weight: 600;
+    color: #444;
+}
+
+.userMeta {
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
+    margin: 4px 0 0 0;
+    letter-spacing: 0.1px;
+}
+
+.userMeta strong {
+    font-weight: 600;
+    color: #444;
+}
+
+.shipping {
+    width: 350px;
+    max-width: 100%;
+    background: #fff;
+    padding: 18px 16px;
+    margin-top: 18px;
+}
+
+.heading {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    color: #444;
+    letter-spacing: 0.5px;
+}
+
+.timeline {
+    position: relative;
+}
+
+.step {
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+    margin-bottom: 18px;
+    min-height: 38px;
+}
+
+.left {
+    width: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.time {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 2px;
+    white-space: pre-wrap;
+    text-align: center;
+}
+
+.circle {
+    width: 12px;
+    height: 12px;
+    background-color: #d1d5db;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    z-index: 1;
+    margin-bottom: 2px;
+    box-shadow: 0 0 0 2px #e4e4e7;
+    transition: background 0.2s;
+}
+
+.circle.active {
+    background-color: #22c55e;
+    box-shadow: 0 0 0 2px #22c55e33;
+}
+
+.line {
+    width: 2px;
+    flex: 1;
+    background-color: #e4e4e7;
+    margin: 0;
+    border-radius: 1px;
+}
+
+.right {
+    flex: 1;
+    padding-left: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.status {
+    font-weight: 600;
+    color: #28a745;
+    margin-bottom: 2px;
+    font-size: 13px;
+}
+
+/* Nếu muốn làm nổi bật step đang giao */
+.step .status {
+    transition: color 0.2s;
+}
+
+/* Nếu muốn border trái cho step đang giao */
+.stepActive {
+    background: #f0f9ff;
+    border-left: 4px solid #0ea5e9;
+    border-radius: 6px;
+    padding-left: 8px;
+}
+
+.description {
+    font-size: 13px;
+    color: #444;
+    margin: 0;
+}
+
+.statusDelivering {
+    color: #0ea5e9;
+    font-size: 14px;
+    font-weight: 700;
+}
