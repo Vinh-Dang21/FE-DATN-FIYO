@@ -16,6 +16,7 @@ import {
   Shirt,
 } from "lucide-react";
 import styles from "./users.module.css";
+import Link from "next/link";
 
 const users = [
   {
@@ -219,7 +220,10 @@ export default function User() {
             <tbody>
               {users.map((user) => (
                 <tr key={user.id}>
-                  <td>{user.id}</td>
+                  <td>
+                    <Link href={`/userdetail`}>
+                      {user.id}
+                    </Link></td>
                   <td>
                     <img
                       src={user.avatar}
@@ -243,9 +247,12 @@ export default function User() {
                     </select>
                   </td>
                   <td>
-                    <button className={styles.actionBtn} title="Xem">
-                      <Eye size={20} />
-                    </button>
+                    <Link href={`/userdetail`}>
+                      <button className={styles.actionBtn} title="Xem">
+                        <Eye size={20} />
+                      </button>
+                    </Link>
+
                     <button className={styles.actionBtn} title="Sửa">
                       <Pencil size={20} />
                     </button>

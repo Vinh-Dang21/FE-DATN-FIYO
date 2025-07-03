@@ -152,10 +152,22 @@
 }
 
 .actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  position: relative;
+}
+
+.actionTop {
     display: flex;
+    gap: 10px;
     align-items: center;
-    gap: 18px;
-    position: relative;
+    justify-content: flex-end; /* căn phải */
+    width: 100%;
+}
+
+.actionBottom {
+    margin-top: 4px;
 }
 
 .icon {
@@ -226,352 +238,270 @@
     /* Thêm dòng này để tạo khoảng cách giữa các mục */
 }
 
-.orderTitle {
+.usertitle {
     font-weight: bold;
     font-size: 20px;
-
     color: #444;
 }
 
-.statusLine {
-    font-size: 16px;
-    font-weight: 600;
-    color: #444;
-}
-
-.badge {
-    margin-left: 6px;
-    font-weight: 600;
-    color: #fff;
-    background: #28A745;
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: 13px;
-}
-
-.orderDate {
+.createdAt {
     font-size: 16px;
     font-weight: 500;
     color: #444;
     margin-top: 2px;
 }
 
-.productSection {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 24px;
-    border: 1px solid #e4e4e7;
-    border-radius: 10px;
-    flex: 1 1 0%;
-    min-width: 0;
+.leftPanel {
+  width: 380px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
 }
 
-.orderDetailTable {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 14px;
-    background: #fff;
-    border: 1px solid #e4e4e7;
-    border-radius: 10px;
-    overflow: hidden;
+.userAvatar {
+  width: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 20px;
 }
 
-.orderDetailTable th,
-.orderDetailTable td {
-    padding: 12px;
-}
-
-.orderDetailTable th {
-    font-size: 16px;
-    border-bottom: 1px solid #e4e4e7;
-    background-color: #fff;
-    color: #444;
-    text-align: center;
+.name {
+    font-size: 18px;
     font-weight: 700;
-}
-
-.orderDetailTable td {
-    background: #fff;
     color: #444;
-    border-bottom: 1px solid #e4e4e7;
-    text-align: center;
+    margin: 0px 0 6px 0;
 }
 
-
-.orderDetailTable td:first-child {
-    text-align: left;
+.userId {
+    font-size: 14px;
+    font-weight: 500; /* medium */
+    color: #666;
+    margin: 0 0 10px 0;
+    letter-spacing: 0.2px;
 }
 
-.orderDetailTable tr:last-child td {
-    border-bottom: none;
+.stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 10px;
 }
 
-.orderDetailInfo {
+.statItem {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
+    /* Xóa border và background */
+    border: none;
+    background: none;
+    padding: 10px 0;
+    min-width: 120px;
     gap: 12px;
 }
 
-.userImage {
-    width: 40px;
-    object-fit: cover;
-    border-radius: 8px;
-    flex-shrink: 0;
-}
-
-.productDetails {
+.statContent {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-}
-
-.userName {
-    font-weight: 600;
-    font-size: 15px;
-    color: #222;
-}
-
-.userDesc {
-    font-size: 13px;
-    color: #888;
-}
-
-.totalSection {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    /* Các item căn trái */
-    align-self: flex-end;
-    /* Box này nằm bên phải */
-    gap: 4px;
-    padding: 15px;
-}
-
-.totalSection p {
-    font-size: 14px;
-    font-weight: 600;
-    color: #444;
-    margin: 0;
-}
-
-.totalValue {
-    font-size: 14px;
-    font-weight: 500;
-    color: #444;
-}
-
-.totalFinal {
-    font-size: 16px;
-    font-weight: 700;
-    color: #444;
-}
-
-.totalAmount {
-    font-size: 16px;
-    font-weight: 700;
-    color: #444;
-}
-
-.orderDetailGrid {
-    display: flex;
-    gap: 20px;
-    width: 100%;
-}
-
-.gridSection {
-    width: 380px;
-    flex-shrink: 0;
-    align-self: flex-start;
-    background: #fff;
-}
-
-.box {
-    border: 1px solid #e4e4e7;
-    border-radius: 10px;
-    background: #fff;
-    padding: 16px 18px;
-    margin-bottom: 16px;
-}
-
-.box h3 {
-    font-size: 16px;
-    font-weight: 600;
-    /* semi bold */
-    margin-bottom: 10px;
-    margin-top: 0;
-    color: #444;
-}
-
-.box p {
-    font-size: 14px;
-    font-weight: 500;
-    color: #666;
-    margin: 4px 0 0 0;
-    letter-spacing: 0.1px;
-}
-
-.box p strong {
-    font-size: 14px;
-    font-weight: 600;
-    color: #444;
-}
-
-.userInfo {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 8px;
-}
-
-.userImage {
-    width: 40px;
-    object-fit: cover;
-    border-radius: 8px;
-    flex-shrink: 0;
-}
-
-.userDetails {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-}
-
-.userName {
-    font-weight: 700;
-    font-size: 14px;
-    color: #444;
-    margin-bottom: 4px;
-}
-
-.userDesc {
-    font-size: 13px;
-    color: #666;
-    margin-top: 0;
-}
-.userDesc  strong{
-    font-weight: 600;
-    color: #444;
-}
-
-.userMeta {
-    font-size: 14px;
-    font-weight: 500;
-    color: #444;
-    margin: 4px 0 0 0;
-    letter-spacing: 0.1px;
-}
-
-.userMeta strong {
-    font-weight: 600;
-    color: #444;
-}
-
-.shipping {
-    width: 350px;
-    max-width: 100%;
-    background: #fff;
-    padding: 18px 16px;
-    margin-top: 18px;
-}
-
-.heading {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 14px;
-    color: #444;
-    letter-spacing: 0.5px;
-}
-
-.timeline {
-    position: relative;
-}
-
-.step {
-    display: flex;
-    align-items: flex-start;
-    position: relative;
-    margin-bottom: 18px;
-    min-height: 38px;
-}
-
-.left {
-    width: 48px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-}
-
-.time {
-    font-size: 12px;
-    color: #888;
-    margin-bottom: 2px;
-    white-space: pre-wrap;
-    text-align: center;
-}
-
-.circle {
-    width: 12px;
-    height: 12px;
-    background-color: #d1d5db;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    z-index: 1;
-    margin-bottom: 2px;
-    box-shadow: 0 0 0 2px #e4e4e7;
-    transition: background 0.2s;
-}
-
-.circle.active {
-    background-color: #22c55e;
-    box-shadow: 0 0 0 2px #22c55e33;
-}
-
-.line {
-    width: 2px;
-    flex: 1;
-    background-color: #e4e4e7;
-    margin: 0;
-    border-radius: 1px;
-}
-
-.right {
-    flex: 1;
-    padding-left: 10px;
-    display: flex;
-    flex-direction: column;
+    align-items: center; /* căn giữa ngang */
     justify-content: center;
 }
 
-.status {
-    font-weight: 600;
-    color: #28a745;
+.statValue {
+    font-size: 14px;
+    font-weight: 500;   /* medium cho số */
+    color: #444;
     margin-bottom: 2px;
-    font-size: 13px;
 }
 
-/* Nếu muốn làm nổi bật step đang giao */
-.step .status {
-    transition: color 0.2s;
+.statLabel {
+    font-size: 14px;
+    font-weight: 600;   /* semi bold cho chữ */
+    color: #444;
 }
 
-/* Nếu muốn border trái cho step đang giao */
-.stepActive {
-    background: #f0f9ff;
-    border-left: 4px solid #0ea5e9;
-    border-radius: 6px;
-    padding-left: 8px;
+.statIcon {
+    color: #444;
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
 }
 
-.description {
-    font-size: 13px;
+.customerInfo {
+  text-align: left;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.customerInfo p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
+    margin: 6px 0;   /* tăng khoảng cách giữa các dòng */
+}
+
+.customerInfo p strong {
+    font-weight: 600;   /* bold cho strong */
+    color: #222;
+}
+
+.editButton {
+  background: #ff0a0a;
+  color: white;
+  border: none;
+  padding: 10px;
+  width: 100%;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.customerInfoTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+    text-align: left;
+}
+
+.customerInfoDivider {
+    border: none;
+    border-top: 1px solid #e4e4e7;
+    margin: 0 0 15px 0;
+}
+
+.rightPanel {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 0px;
+}
+
+.addressHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding:20px;
+    border-bottom: 1px solid #e4e4e7;
+    
+}
+
+.addressHeader h4 {
+    font-size: 16px;
+    font-weight: 600;
     color: #444;
     margin: 0;
 }
 
-.statusDelivering {
-    color: #0ea5e9;
+.addButton {
+    background: #ff0a0a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 28px;
     font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.addButton:hover {
+    background: #d90404;
+}
+
+
+.addressItem {
+  border-bottom: 1px solid #e4e4e7;
+  padding: 20px ;
+}
+
+.addressInfo {
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+  margin: 0 0 10px 0;
+  line-height: 1.7;
+}
+
+.addressName {
     font-weight: 700;
+    color: #444;
+}
+
+.addressPhone {
+    color: #666;
+    font-weight: 500;
+    margin-left: 4px;
+}
+
+.addressText {
+    color: #444;
+    font-weight: 500;
+    display: inline-block;
+    margin-top: 2px;
+}
+
+.addressActions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.update,
+.delete {
+  color: #007bff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.defaultBtn {
+    border: 1px solid #444;
+    color: #444;
+    background: #fff;
+    border-radius: 4px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border 0.2s, color 0.2s, background 0.2s;
+}
+
+.defaultBtnDisabled {
+    border: 1px solid #888;
+    color: #888;
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: not-allowed;
+}
+
+.addressTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #444;
+    padding: 20px 20px 0px 20px;
+    text-align: left;
+    letter-spacing: 0.5px;
+}
+
+.defaultBadge {
+    display: inline-block;
+    margin: 2px 0 8px 0;
+    padding: 2px 10px;
+    background: transparent;         /* Không có nền */
+    color: #ff0a0a;                  /* Chữ đỏ */
+    font-size: 12px;
+    font-weight: 600;
+    border-radius:  2px;
+    border: 1px solid #ff0a0a;     /* Viền đỏ */
+}
+
+.addressItemRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    width: 100%;
 }
