@@ -69,26 +69,29 @@
 }
 
 .menuItem:hover {
-  background-color: #fff1f1;
-  /* Hover nền nhẹ của đỏ */
+  background-color: #fff; 
+  box-shadow:
+    0 4px 18px 0 rgba(30, 30, 30, 0.13),
+    0 2px 8px 0 rgba(30, 30, 30, 0.09);
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);/* Hover nền nhẹ của đỏ */
 }
-
 .activeItem .menuItem {
-  background-color: #fff1f1;
+  border: #fda2a2 1px solid;
+  background-color: #fff;
   color: #ff0a0a;
+  margin-left: 15px;
   font-weight: 700;
   /* Hiệu ứng bóng đổ đen nhạt */
   box-shadow:
     0 4px 18px 0 rgba(30, 30, 30, 0.13),
     0 2px 8px 0 rgba(30, 30, 30, 0.09);
-  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
 }
-
 .activeItem .icon {
   width: 20px;
   height: 20px;
   color: #ff0a0a !important;
-  background-color: #fff1f1;
+  background-color: #fff;
 }
 
 .icon {

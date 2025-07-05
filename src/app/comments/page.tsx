@@ -29,6 +29,7 @@ const comments = [
     },
     stars: 5,
     content: "Áo mặc rất mát, chất vải mềm, mặc đi làm hay đi chơi đều đẹp. Sẽ ủng hộ shop lần sau.",
+    image: "https://link-to-uploaded-image.jpg",
     date: "12/06/2025",
     status: "Đang chờ",
   },
@@ -45,6 +46,7 @@ const comments = [
     },
     stars: 4,
     content: "Áo đẹp, vải dày dặn, giao hàng nhanh. Tuy nhiên form hơi nhỏ, nên chọn size lớn hơn.",
+    image: "https://link-to-uploaded-image.jpg",
     date: "10/06/2025",
     status: "Đã duyệt",
   },
@@ -62,6 +64,7 @@ const comments = [
     },
     stars: 3,
     content: "Áo khoác ổn, chất vải tốt nhưng giao hàng hơi chậm. Màu sắc giống hình.",
+    image: "https://link-to-uploaded-image.jpg",
     date: "09/06/2025",
     status: "Đang chờ",
   },
@@ -78,6 +81,7 @@ const comments = [
     },
     stars: 5,
     content: "Tất đi rất êm chân, không bị bí, chất vải co giãn tốt. Đóng gói cẩn thận.",
+    image: "https://link-to-uploaded-image.jpg",
     date: "08/06/2025",
     status: "Đã duyệt",
   },
@@ -94,6 +98,7 @@ const comments = [
     },
     stars: 4,
     content: "Áo thun mặc thoải mái, thấm hút mồ hôi tốt, giá hợp lý. Sẽ mua thêm màu khác.",
+    image: "https://link-to-uploaded-image.jpg",
     date: "07/06/2025",
     status: "Đang chờ",
   },
@@ -110,6 +115,7 @@ const comments = [
     },
     stars: 5,
     content: "Quần short mặc rất mát, màu sắc trẻ trung, giao hàng nhanh. Rất hài lòng.",
+    image: "https://link-to-uploaded-image.jpg",
     date: "06/06/2025",
     status: "Đã duyệt",
   },
@@ -126,6 +132,7 @@ const comments = [
     },
     stars: 4,
     content: "Áo hoodie dày dặn, giữ ấm tốt, mặc mùa đông rất thích. Đường may chắc chắn.",
+    image: "https://link-to-uploaded-image.jpg",
     date: "05/06/2025",
     status: "Đang chờ",
   },
@@ -142,6 +149,7 @@ const comments = [
     },
     stars: 5,
     content: "Giày đẹp, đi êm chân, giao hàng nhanh. Đúng mẫu, đúng size.",
+    image: "https://link-to-uploaded-image.jpg",
     date: "04/06/2025",
     status: "Đã duyệt",
   },
@@ -158,6 +166,7 @@ const comments = [
     },
     stars: 3,
     content: "Áo thun mặc ổn, chất vải mềm, giá hợp lý. Đóng gói chắc chắn.",
+    image: "https://link-to-uploaded-image.jpg",
     date: "03/06/2025",
     status: "Đang chờ",
   },
@@ -174,10 +183,15 @@ const comments = [
     },
     stars: 4,
     content: "Áo sát nách mặc tập gym rất thoải mái, thấm hút mồ hôi tốt. Đã mua lần 2.",
+    image: "https://link-to-uploaded-image.jpg",
     date: "02/06/2025",
     status: "Đã duyệt",
   },
 ];
+
+comments.forEach(c => {
+  c.image = c.product.image;
+});
 
 export default function User() {
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
@@ -297,9 +311,8 @@ export default function User() {
                 <th>Sản phẩm</th>
                 <th>Số sao</th>
                 <th>Nội dung</th>
+                <th>Hình ảnh</th>
                 <th>Thời gian</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
               </tr>
             </thead>
             <tbody>
@@ -363,23 +376,14 @@ export default function User() {
                       </>
                     )}
                   </td>
+                  <td>
+                    <img
+                      src={c.image}
+                      className={styles.productImage}
+                      style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 8 }}
+                    />
+                  </td>
                   <td>{c.date}</td>
-                  <td>
-                    <span
-                      className={
-                        c.status === "Đã duyệt"
-                          ? styles.statusApproved
-                          : styles.statusPending
-                      }
-                    >
-                      {c.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button className={styles.actionBtn} title="Duyệt">
-                      <CheckCircle2 size={22} />
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>

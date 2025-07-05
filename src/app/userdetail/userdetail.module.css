@@ -69,26 +69,29 @@
 }
 
 .menuItem:hover {
-    background-color: #fff1f1;
-    /* Hover nền nhẹ của đỏ */
+  background-color: #fff; 
+  box-shadow:
+    0 4px 18px 0 rgba(30, 30, 30, 0.13),
+    0 2px 8px 0 rgba(30, 30, 30, 0.09);
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);/* Hover nền nhẹ của đỏ */
 }
-
 .activeItem .menuItem {
-    background-color: #fff1f1;
-    color: #ff0a0a;
-    font-weight: 700;
-    /* Hiệu ứng bóng đổ đen nhạt */
-    box-shadow:
-        0 4px 18px 0 rgba(30, 30, 30, 0.13),
-        0 2px 8px 0 rgba(30, 30, 30, 0.09);
-    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: #fda2a2 1px solid;
+  background-color: #fff;
+  color: #ff0a0a;
+  margin-left: 15px;
+  font-weight: 700;
+  /* Hiệu ứng bóng đổ đen nhạt */
+  box-shadow:
+    0 4px 18px 0 rgba(30, 30, 30, 0.13),
+    0 2px 8px 0 rgba(30, 30, 30, 0.09);
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
 }
-
 .activeItem .icon {
-    width: 20px;
-    height: 20px;
-    color: #ff0a0a !important;
-    background-color: #fff1f1;
+  width: 20px;
+  height: 20px;
+  color: #ff0a0a !important;
+  background-color: #fff;
 }
 
 .icon {
@@ -289,8 +292,7 @@
 
 .statItem {
     display: flex;
-    align-items: center;
-    /* Xóa border và background */
+    justify-content: space-around;
     border: none;
     background: none;
     padding: 10px 0;
@@ -306,8 +308,8 @@
 }
 
 .statValue {
-    font-size: 14px;
-    font-weight: 500;   /* medium cho số */
+    font-size: 16px;
+    font-weight: 700;   /* medium cho số */
     color: #444;
     margin-bottom: 2px;
 }
@@ -343,16 +345,6 @@
     color: #222;
 }
 
-.editButton {
-  background: #ff0a0a;
-  color: white;
-  border: none;
-  padding: 10px;
-  width: 100%;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
 .customerInfoTitle {
     font-size: 16px;
     font-weight: 600;
@@ -373,41 +365,6 @@
   border-radius: 10px;
   padding: 0px;
 }
-
-.addressHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding:20px;
-    border-bottom: 1px solid #e4e4e7;
-    
-}
-
-.addressHeader h4 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #444;
-    margin: 0;
-}
-
-.addButton {
-    background: #ff0a0a;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 28px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.addButton:hover {
-    background: #d90404;
-}
-
 
 .addressItem {
   border-bottom: 1px solid #e4e4e7;

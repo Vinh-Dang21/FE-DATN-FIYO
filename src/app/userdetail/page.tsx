@@ -148,14 +148,12 @@ export default function Order() {
 
                         <div className={styles.stats}>
                             <div className={styles.statItem}>
-                                <ClipboardList className={styles.statIcon} />
                                 <div className={styles.statContent}>
                                     <span className={styles.statValue}>{userData.orders}</span>
                                     <span className={styles.statLabel}>Đơn hàng</span>
                                 </div>
                             </div>
                             <div className={styles.statItem}>
-                                <Wallet2 className={styles.statIcon} />
                                 <div className={styles.statContent}>
                                     <span className={styles.statValue}>{userData.totalSpent.toLocaleString()}</span>
                                     <span className={styles.statLabel}>Đã chi</span>
@@ -171,47 +169,9 @@ export default function Order() {
                             <p><strong>Số điện thoại:</strong> {userData.phone}</p>
                             <p><strong>Giới tính:</strong> {userData.gender}</p>
                         </div>
-
-                        <button className={styles.editButton}>Chỉnh sửa thông tin</button>
                     </div>
                     {/* Địa chỉ giao hàng */}
                     <div className={styles.rightPanel}>
-                        <div className={styles.addressHeader}>
-                            <h4>Địa chỉ giao hàng</h4>
-                            <button className={styles.addButton} onClick={() => setShowAdd(true)}>+ Thêm địa chỉ</button>
-                        </div>
-                        {showAdd && (
-                            <div className={styles.addAside}>
-                                <h2 className={styles.addAsideTitle}>Thêm địa chỉ nhận hàng</h2>
-                                <input
-                                    className={styles.input}
-                                    type="text"
-                                    placeholder="Tên người nhận"
-                                />
-                                <input
-                                    className={styles.input}
-                                    type="text"
-                                    placeholder="Số điện thoại"
-                                />
-                                <input
-                                    className={styles.input}
-                                    type="text"
-                                    placeholder="Địa chỉ chi tiết (ví dụ: 123/4 Nguyễn Văn Đậu, Phường 5, Bình Thạnh, TP HCM)"
-                                />
-                                <div className={styles.checkboxRow}>
-                                    <input type="checkbox" id="isDefault" />
-                                    <label htmlFor="isDefault">Đặt làm địa chỉ mặc định</label>
-                                </div>
-                                <button className={styles.addButton}>Thêm địa chỉ</button>
-                                <button
-                                    className={styles.closeBtn}
-                                    onClick={() => setShowAdd(false)}
-                                    style={{ marginTop: 10 }}>
-                                    Đóng
-                                </button>
-                            </div>
-                        )}
-
                         <div className={styles.addressList}>
                             <div className={styles.addressTitle}>Địa chỉ</div>
                             {userData.addresses.map((item) => (
@@ -230,21 +190,6 @@ export default function Order() {
                                                 <div className={styles.defaultBadge}>Mặc định</div>
                                             )}
                                         </div>
-                                        <div className={styles.addressActions}>
-                                            <div className={styles.actionTop}>
-                                                <span className={styles.update}>Cập nhật</span>
-                                                {!item.isDefault && <span className={styles.delete}>Xóa</span>}
-                                            </div>
-                                            <div className={styles.actionBottom}>
-                                                <button
-                                                    className={item.isDefault ? styles.defaultBtnDisabled : styles.defaultBtn}
-                                                    disabled={item.isDefault}
-                                                >
-                                                    {item.isDefault ? "Thiết lập mặc định" : "Thiết lập mặc định"}
-                                                </button>
-                                            </div>
-                                        </div>
-
                                     </div>
                                 </div>
                             ))}

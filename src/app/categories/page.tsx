@@ -94,7 +94,7 @@ export default function Categories() {
   return (
     <main className={styles.main}>
       <aside className={styles.aside}>
-        <div className={styles.logo}>F I Y O</div>
+        <div className={styles.logo}>FIYO</div>
 
         <ul className={styles.menuList}>
           <li>

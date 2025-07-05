@@ -145,7 +145,7 @@ export default function User() {
             </a>
           </li>
           <li>
-            <a href="/admin/comments" className={styles.menuItem}>
+            <a href="/comments" className={styles.menuItem}>
               <MessageCircle className={styles.icon} />
               <span className={styles.title}>Bình luận</span>
             </a>
