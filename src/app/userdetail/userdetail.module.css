@@ -1,0 +1,592 @@
+.main {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    /* Ngăn main cuộn, chỉ content cuộn */
+}
+
+.aside {
+    width: 300px;
+    background-color: white;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    /* Luôn cao 100vh */
+    position: sticky;
+    /* Giữ cố định khi cuộn */
+    top: 0;
+    flex-shrink: 0;
+    /* Không co lại khi content cuộn */
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    background-color: #ff0a0a;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 20px;
+    font-weight: bolder;
+    margin: 0 auto;
+    /* căn giữa ngang */
+    margin-bottom: 20px;
+    width: fit-content;
+    /* hoặc set width cụ thể nếu cần */
+}
+
+.sectionTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.menuList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Thêm dòng này để tạo khoảng cách giữa các mục */
+}
+
+.menuItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    color: #444;
+    /* Đổi màu chữ thành đỏ */
+    text-decoration: none;
+    transition: background 0.2s ease;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.menuItem:hover {
+    background-color: #fff1f1;
+    /* Hover nền nhẹ của đỏ */
+}
+
+.activeItem .menuItem {
+    background-color: #fff1f1;
+    color: #ff0a0a;
+    font-weight: 700;
+    /* Hiệu ứng bóng đổ đen nhạt */
+    box-shadow:
+        0 4px 18px 0 rgba(30, 30, 30, 0.13),
+        0 2px 8px 0 rgba(30, 30, 30, 0.09);
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.activeItem .icon {
+    width: 20px;
+    height: 20px;
+    color: #ff0a0a !important;
+    background-color: #fff1f1;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+}
+
+.title {
+    flex: 1;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.content {
+    flex: 1;
+    padding: 20px 30px;
+    background-color: white;
+    height: 100vh;
+    overflow-y: auto;
+    /* Cho phép cuộn khi nội dung dài */
+}
+
+/* topbar */
+.topbar {
+    height: 45px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    background-color: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+}
+
+.searchWrapper {
+    display: flex;
+    align-items: center;
+    border-radius: 10px;
+    padding: 8px 15px;
+    width: 320px;
+}
+
+.searchIcon {
+    width: 18px;
+    margin-right: 8px;
+    color: #A1A1AA;
+}
+
+.searchInput {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    color: #444;
+    flex: 1;
+}
+
+.searchInput::placeholder {
+    color: #A1A1AA;
+    opacity: 1;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  position: relative;
+}
+
+.actionTop {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end; /* căn phải */
+    width: 100%;
+}
+
+.actionBottom {
+    margin-top: 4px;
+}
+
+.icon {
+    color: #444;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.notification {
+    position: relative;
+}
+
+.dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    background-color: red;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.avatarWrapper {
+    position: relative;
+    width: 32px;
+    height: 32px;
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.onlineDot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 8px;
+    height: 8px;
+    background-color: #22c55e;
+    border: 2px solid #fff;
+    border-radius: 50%;
+}
+
+.orderSummary {
+    display: flex;
+    gap: 24px;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+
+.orderInfoLeft {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    /* Thêm dòng này để tạo khoảng cách giữa các mục */
+}
+
+.usertitle {
+    font-weight: bold;
+    font-size: 20px;
+    color: #444;
+}
+
+.createdAt {
+    font-size: 16px;
+    font-weight: 500;
+    color: #444;
+    margin-top: 2px;
+}
+
+.leftPanel {
+  width: 380px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+.userAvatar {
+  width: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 20px;
+}
+
+.name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #444;
+    margin: 0px 0 6px 0;
+}
+
+.userId {
+    font-size: 14px;
+    font-weight: 500; /* medium */
+    color: #666;
+    margin: 0 0 10px 0;
+    letter-spacing: 0.2px;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 10px;
+}
+
+.statItem {
+    display: flex;
+    align-items: center;
+    /* Xóa border và background */
+    border: none;
+    background: none;
+    padding: 10px 0;
+    min-width: 120px;
+    gap: 12px;
+}
+
+.statContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* căn giữa ngang */
+    justify-content: center;
+}
+
+.statValue {
+    font-size: 14px;
+    font-weight: 500;   /* medium cho số */
+    color: #444;
+    margin-bottom: 2px;
+}
+
+.statLabel {
+    font-size: 14px;
+    font-weight: 600;   /* semi bold cho chữ */
+    color: #444;
+}
+
+.statIcon {
+    color: #444;
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
+}
+
+.customerInfo {
+  text-align: left;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.customerInfo p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
+    margin: 6px 0;   /* tăng khoảng cách giữa các dòng */
+}
+
+.customerInfo p strong {
+    font-weight: 600;   /* bold cho strong */
+    color: #222;
+}
+
+.editButton {
+  background: #ff0a0a;
+  color: white;
+  border: none;
+  padding: 10px;
+  width: 100%;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.customerInfoTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+    text-align: left;
+}
+
+.customerInfoDivider {
+    border: none;
+    border-top: 1px solid #e4e4e7;
+    margin: 0 0 15px 0;
+}
+
+.rightPanel {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 0px;
+}
+
+.addressHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding:20px;
+    border-bottom: 1px solid #e4e4e7;
+    
+}
+
+.addressHeader h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #444;
+    margin: 0;
+}
+
+.addButton {
+    background: #ff0a0a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.addButton:hover {
+    background: #d90404;
+}
+
+
+.addressItem {
+  border-bottom: 1px solid #e4e4e7;
+  padding: 20px ;
+}
+
+.addressInfo {
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+  margin: 0 0 10px 0;
+  line-height: 1.7;
+}
+
+.addressName {
+    font-weight: 700;
+    color: #444;
+}
+
+.addressPhone {
+    color: #666;
+    font-weight: 500;
+    margin-left: 4px;
+}
+
+.addressText {
+    color: #444;
+    font-weight: 500;
+    display: inline-block;
+    margin-top: 2px;
+}
+
+.addressActions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.update,
+.delete {
+  color: #007bff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.defaultBtn {
+    border: 1px solid #444;
+    color: #444;
+    background: #fff;
+    border-radius: 4px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border 0.2s, color 0.2s, background 0.2s;
+}
+
+.defaultBtnDisabled {
+    border: 1px solid #888;
+    color: #888;
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: not-allowed;
+}
+
+.addressTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #444;
+    padding: 20px 20px 0px 20px;
+    text-align: left;
+    letter-spacing: 0.5px;
+}
+
+.defaultBadge {
+    display: inline-block;
+    margin: 2px 0 8px 0;
+    padding: 2px 10px;
+    background: transparent;         /* Không có nền */
+    color: #ff0a0a;                  /* Chữ đỏ */
+    font-size: 12px;
+    font-weight: 600;
+    border-radius:  2px;
+    border: 1px solid #ff0a0a;     /* Viền đỏ */
+}
+
+.addressItemRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    width: 100%;
+}
+.addAside {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 340px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -2px 0 16px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  animation: slideInRight 0.2s;
+}
+@keyframes slideInRight {
+  from {
+    right: -400px;
+    opacity: 0;
+  }
+  to {
+    right: 0;
+    opacity: 1;
+  }
+}
+.addAsideTitle {
+  text-align: center;
+  font-size: 22px; /* 1.4rem ≈ 22px */
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #444;
+}
+.addAside .input {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  font-size: 16px; /* 1rem = 16px */
+  color: #444;
+}
+
+.addAside .addButton {
+  background: #ff0a0a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 0;
+  font-size: 16px; /* 1rem = 16px */
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.addAside .closeBtn {
+  background: #eee;
+  color: #444;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 0;
+  font-size: 16px; /* 1rem = 16px */
+  cursor: pointer;
+}
+
+.checkboxRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 18px 0;
+    font-size: 14px;
+    color: #444;
+}
+
+.checkboxRow input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #ff0a0a; /* màu đỏ chủ đạo */
+    cursor: pointer;
+}
+
+.checkboxRow label {
+    cursor: pointer;
+    font-weight: 500;
+    user-select: none;
+}
