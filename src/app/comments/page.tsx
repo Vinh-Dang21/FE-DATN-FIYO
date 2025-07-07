@@ -1,20 +1,13 @@
 "use client";
 import {
-  LayoutDashboard,
   BarChart as BarChartIcon, // Đổi tên để tránh trùng
-  Users,
-  ShoppingCart,
-  GraduationCap,
-  MessageCircle,
-  Columns3,
-  LogOut,
   Search,
   Bell,
-  Shirt,
-  CheckCircle2,
 } from "lucide-react";
 import React, { useState } from "react";
 import styles from "./users.module.css";
+import Sidebar from "../component/Sidebar";
+import Topbar from "../component/Topbar";
 const comments = [
   {
     id: 1,
@@ -204,87 +197,10 @@ export default function User() {
 
   return (
     <main className={styles.main}>
-      <aside className={styles.aside}>
-        <div className={styles.logo}>F I Y O</div>
-
-        <ul className={styles.menuList}>
-          <li>
-            <a href="/" className={styles.menuItem}>
-              <LayoutDashboard className={styles.icon} />
-              <span className={styles.title}>Tổng quan</span>
-            </a>
-          </li>
-          <li>
-            <a href="/order" className={styles.menuItem}>
-              <ShoppingCart className={styles.icon} />
-              <span className={styles.title}>Đơn hàng</span>
-            </a>
-          </li>
-          <li>
-            <a href="/products" className={styles.menuItem}>
-              <Shirt className={styles.icon} />
-              <span className={styles.title}>Sản phẩm</span>
-            </a>
-          </li>
-          <li>
-            <a href="/categories" className={styles.menuItem}>
-              <Columns3 className={styles.icon} />
-              <span className={styles.title}>Danh mục</span>
-            </a>
-          </li>
-          <li>
-            <a href="/users" className={styles.menuItem}>
-              <Users className={styles.icon} />
-              <span className={styles.title}>Người dùng</span>
-            </a>
-          </li>
-          <li>
-            <a href="/voucher" className={styles.menuItem}>
-              <GraduationCap className={styles.icon} />
-              <span className={styles.title}>Khuyến mãi</span>
-            </a>
-          </li>
-          <li className={styles.activeItem}>
-            <a href="/comments" className={styles.menuItem}>
-              <MessageCircle className={styles.icon} />
-              <span className={styles.title}>Bình luận</span>
-            </a>
-          </li>
-          <li>
-            <a href="/logout" className={styles.menuItem}>
-              <LogOut className={styles.icon} />
-              <span className={styles.title}>Đăng xuất</span>
-            </a>
-          </li>
-        </ul>
-      </aside>
+      <Sidebar />
 
       <section className={styles.content}>
-        <div className={styles.topbar}>
-          <div className={styles.searchWrapper}>
-            <Search className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm..."
-              className={styles.searchInput}
-            />
-          </div>
-
-          <div className={styles.actions}>
-            <div className={styles.notification}>
-              <Bell className={styles.icon} />
-              <span className={styles.dot}></span>
-            </div>
-            <div className={styles.avatarWrapper}>
-              <img
-                src="https://phunugioi.com/wp-content/uploads/2022/06/Hinh-cho-cute.jpg"
-                alt="Avatar"
-                className={styles.avatar}
-              />
-              <span className={styles.onlineDot}></span>
-            </div>
-          </div>
-        </div>
+        <Topbar />
 
         {/* Thanh tìm kiếm + Thêm sản phẩm */}
         <div className={styles.searchProduct}>
