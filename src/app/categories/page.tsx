@@ -12,7 +12,7 @@ export default function Categories() {
   const [categories, setCategories] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [parentCategories, setParentCategories] = useState([]);
-  const [newCate, setNewCate] = useState({ name: "", desc: "", parentId: "" });
+  const [newCate, setNewCate] = useState({ name: "", slug: "", parentId: "" });
   const [editCate, setEditCate] = useState(null);
 
   // Lấy danh mục từ API
@@ -37,7 +37,7 @@ export default function Categories() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: newCate.name,
-        desc: newCate.desc,
+        slug: newCate.slug,
         parentId: newCate.parentId || null,
       }),
     })
@@ -45,7 +45,7 @@ export default function Categories() {
       .then(() => {
         fetchCategories();
         setShowAdd(false);
-        setNewCate({ name: "", desc: "", parentId: "" });
+        setNewCate({ name: "", slug: "", parentId: "" });
       });
   };
 
@@ -64,7 +64,7 @@ export default function Categories() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: editCate.name,
-        desc: editCate.desc,
+        slug: editCate.slug,
         parentId: editCate.parentId || null,
       }),
     })
@@ -111,10 +111,10 @@ export default function Categories() {
             />
             <textarea
               className={styles.input}
-              placeholder="Mô tả danh mục"
+              placeholder="Slug danh mục"
               rows={3}
-              value={newCate.desc}
-              onChange={(e) => setNewCate({ ...newCate, desc: e.target.value })}
+              value={newCate.slug}
+              onChange={(e) => setNewCate({ ...newCate, slug: e.target.value })}
             />
             <button className={styles.addButton} onClick={handleAddCategory}>
               Lưu danh mục
@@ -134,7 +134,7 @@ export default function Categories() {
             <tr>
               <th>ID</th>
               <th>Tên danh mục</th>
-              <th>Mô tả</th>
+              <th>Slug</th>
               <th>Danh mục cha</th>
               <th>Chức năng</th>
             </tr>
@@ -144,7 +144,7 @@ export default function Categories() {
               <tr key={cate._id}>
                 <td>{cate._id}</td>
                 <td>{cate.name}</td>
-                <td>{cate.desc || ""}</td>
+                <td>{cate.slug || ""}</td>
                 <td>
                   {cate.parentId
                     ? categories.find((c) => c._id === cate.parentId)?.name || "Không rõ"
@@ -193,10 +193,10 @@ export default function Categories() {
             />
             <textarea
               className={styles.input}
-              placeholder="Mô tả danh mục"
+              placeholder="Slug danh mục"
               rows={3}
-              value={editCate.desc || ""}
-              onChange={(e) => setEditCate({ ...editCate, desc: e.target.value })}
+              value={editCate.slug || ""}
+              onChange={(e) => setEditCate({ ...editCate, slug: e.target.value })}
             />
             <button className={styles.addButton} onClick={handleUpdateCategory}>
               Cập nhật
