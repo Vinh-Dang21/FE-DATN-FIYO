@@ -1,17 +1,4 @@
 "use client";
-import {
-  LayoutDashboard,
-  BarChart as BarChartIcon, // Đổi tên để tránh trùng
-  Users,
-  ShoppingCart,
-  GraduationCap,
-  MessageCircle,
-  Layers,
-  LogOut,
-  Search,
-  Bell,
-  Shirt,
-} from "lucide-react";
 import styles from "./dashboard.module.css";
 import {
   BarChart,
@@ -25,6 +12,8 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import Sidebar from "./component/Sidebar";
+import Topbar from "./component/Topbar";
 
 // ...existing imports...
 const orders = [
@@ -129,8 +118,8 @@ const data = [
 export default function Dashboard() {
   return (
     <main className={styles.main}>
-      <aside className={styles.aside}>
-        <div className={styles.logo}>F I Y O</div>
+      {/* <aside className={styles.aside}>
+        <div className={styles.logo}>FIYO</div>
 
         <ul className={styles.menuList}>
           <li className={styles.activeItem}>
@@ -182,10 +171,11 @@ export default function Dashboard() {
             </a>
           </li>
         </ul>
-      </aside>
+      </aside> */}
+      <Sidebar />
 
       <section className={styles.content}>
-        <div className={styles.topbar}>
+        {/* <div className={styles.topbar}>
           <div className={styles.searchWrapper}>
             <Search className={styles.searchIcon} />
             <input
@@ -209,7 +199,8 @@ export default function Dashboard() {
               <span className={styles.onlineDot}></span>
             </div>
           </div>
-        </div>
+        </div> */}
+        <Topbar />
         <div className={styles.greetingBox}>
           Xin chào Admin -{" "}
           <span style={{ fontWeight: 400, fontSize: 16 }}>

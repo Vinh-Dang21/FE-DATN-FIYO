@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import styles from "./products.module.css";
 import { useState } from "react";
+import Sidebar from "../component/Sidebar";
+import Topbar from "../component/Topbar";
 
 const products = [
   {
@@ -25,7 +27,7 @@ const products = [
     desc: "Áo sơ mi trắng cổ điển, chất liệu cotton cao cấp, thấm hút mồ hôi tốt, phù hợp đi làm, đi học hoặc dự tiệc. Thiết kế form slimfit trẻ trung, dễ phối đồ với nhiều loại quần.",
     category: "Áo",
     status: true,
-    price: 100000,
+    price: 900000,
     quantity: 1234,
     available: true,
     image:
@@ -155,87 +157,10 @@ export default function Product() {
   };
   return (
     <main className={styles.main}>
-      <aside className={styles.aside}>
-        <div className={styles.logo}>F I Y O</div>
-
-        <ul className={styles.menuList}>
-          <li>
-            <a href="/" className={styles.menuItem}>
-              <LayoutDashboard className={styles.icon} />
-              <span className={styles.title}>Tổng quan</span>
-            </a>
-          </li>
-          <li>
-            <a href="/order" className={styles.menuItem}>
-              <ShoppingCart className={styles.icon} />
-              <span className={styles.title}>Đơn hàng</span>
-            </a>
-          </li>
-          <li className={styles.activeItem}>
-            <a href="/products" className={styles.menuItem}>
-              <Shirt className={styles.icon} />
-              <span className={styles.title}>Sản phẩm</span>
-            </a>
-          </li>
-          <li>
-            <a href="/categories" className={styles.menuItem}>
-              <Columns3 className={styles.icon} />
-              <span className={styles.title}>Danh mục</span>
-            </a>
-          </li>
-          <li>
-            <a href="/users" className={styles.menuItem}>
-              <Users className={styles.icon} />
-              <span className={styles.title}>Người dùng</span>
-            </a>
-          </li>
-          <li>
-            <a href="/voucher" className={styles.menuItem}>
-              <GraduationCap className={styles.icon} />
-              <span className={styles.title}>Khuyến mãi</span>
-            </a>
-          </li>
-          <li>
-            <a href="/comments" className={styles.menuItem}>
-              <MessageCircle className={styles.icon} />
-              <span className={styles.title}>Bình luận</span>
-            </a>
-          </li>
-          <li>
-            <a href="/logout" className={styles.menuItem}>
-              <LogOut className={styles.icon} />
-              <span className={styles.title}>Đăng xuất</span>
-            </a>
-          </li>
-        </ul>
-      </aside>
+      <Sidebar />
 
       <section className={styles.content}>
-        <div className={styles.topbar}>
-          <div className={styles.searchWrapper}>
-            <Search className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm..."
-              className={styles.searchInput}
-            />
-          </div>
-
-          <div className={styles.actions}>
-            <div className={styles.notification}>
-              <Bell className={styles.icon} />
-              <span className={styles.dot}></span>
-            </div>
-            <div className={styles.avatarWrapper}>
-              <img
-                src="https://phunugioi.com/wp-content/uploads/2022/06/Hinh-cho-cute.jpg"
-                alt="Avatar"
-                className={styles.avatar}
-              />
-              <span className={styles.onlineDot}></span>
-            </div>
-          </div>
-        </div>
+        <Topbar />
 
         {/* Bộ lọc */}
         <div className={styles.filterProduct}>

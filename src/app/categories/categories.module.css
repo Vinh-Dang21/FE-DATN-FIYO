@@ -14,15 +14,17 @@
   position: sticky; /* Giữ cố định khi cuộn */
   top: 0;
   flex-shrink: 0; /* Không co lại khi content cuộn */
+  border-right: 1px solid #e4e4e7; /* Thêm đường viền bên phải */
 }
-
 .logo {
+  font-family: 'Bebas Neue', Arial, sans-serif;
+  letter-spacing: 8px;
   display: flex;
   align-items: center;
-  background-color: #ff0a0a;
-  color: #fff;
+  background-color: #fff;
+  color: #ff0a0a;
   padding: 10px 20px;
-  font-size: 20px;
+  font-size: 26px;
   font-weight: bolder;
   margin: 0 auto; /* căn giữa ngang */
   margin-bottom: 20px;
@@ -61,11 +63,16 @@
 }
 
 .menuItem:hover {
-  background-color: #fff1f1; /* Hover nền nhẹ của đỏ */
+  background-color: #fff; 
+  box-shadow:
+    0 4px 18px 0 rgba(30, 30, 30, 0.13),
+    0 2px 8px 0 rgba(30, 30, 30, 0.09);
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);/* Hover nền nhẹ của đỏ */
 }
 
 .activeItem .menuItem {
-  background-color: #fff1f1;
+  border: #fda2a2 1px solid;
+  background-color: #fff;
   color: #ff0a0a;
   font-weight: 700;
   /* Hiệu ứng bóng đổ đen nhạt */
@@ -78,7 +85,7 @@
   width: 20px;
   height: 20px;
   color: #ff0a0a !important;
-  background-color: #fff1f1;
+  background-color: #fff;
 }
 
 .icon {
@@ -87,15 +94,15 @@
 }
 
 .title {
-  flex: 1;
-  font-weight: 600;
-  font-size: 18px;
+    flex: 1;
+    font-weight: 500;
+    font-size: 16px;
 }
 
 .content {
   flex: 1;
   padding: 20px 30px;
-  background-color: white;
+  background-color: whitesmoke ;
   height: 100vh;
   overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
 }
