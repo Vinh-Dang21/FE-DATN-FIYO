@@ -302,7 +302,9 @@
   background-color: #fff;
   border: 1px solid #e4e4e7;
   font-size: 1rem;
+  color: #000; /* Thêm dòng này */
 }
+
 .addAside .addButton {
   
   background: #ff0a0a;
