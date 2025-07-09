@@ -384,6 +384,17 @@
   min-width: 100px;
   text-align: center;
 }
+.statusLow {
+  background: #ffc107;
+  color: #fff;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-weight: 600;
+  display: inline-block;
+  min-width: 100px;
+  text-align: center;
+}
+
 .descBtn {
   background: none;
   border: none;
