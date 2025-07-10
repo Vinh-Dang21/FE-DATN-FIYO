@@ -1,5 +1,8 @@
 "use client";
 import {
+  BarChart as BarChartIcon,
+  Search,
+  Bell,
   Pencil,
   Trash2,
 } from "lucide-react";
@@ -14,8 +17,9 @@ export default function Categories() {
   const [parentCategories, setParentCategories] = useState([]);
   const [newCate, setNewCate] = useState({ name: "", slug: "", parentId: "" });
   const [editCate, setEditCate] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterParent, setFilterParent] = useState("");
 
-  // Lấy danh mục từ API
   const fetchCategories = () => {
     fetch("http://localhost:3000/category/")
       .then((res) => res.json())
@@ -75,19 +79,48 @@ export default function Categories() {
       });
   };
 
+  const filteredCategories = categories.filter((cate) => {
+    const matchSearch = cate.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchParent = filterParent ? cate.parentId === filterParent : true;
+    return matchSearch && matchParent;
+  });
+
   return (
     <main className={styles.main}>
       <Sidebar />
       <section className={styles.content}>
         <Topbar />
-        <div className={styles.spaceBetween}>
-          <h2 className={styles.userListTitle}>Danh Sách Danh Mục</h2>
-          <button className={styles.addButton} onClick={() => setShowAdd(true)}>
-            + Thêm danh mục
-          </button>
+        <div className={styles.searchProduct}>
+          <div className={styles.spaceBetween}>
+            <div className={styles.searchAndFillterBar}>
+              <input
+                type="text"
+                placeholder="Tìm kiếm ..."
+                className={styles.searchInput}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <select
+                className={styles.select}
+                value={filterParent}
+                onChange={(e) => setFilterParent(e.target.value)}
+              >
+                <option value="">Chọn danh mục cha</option>
+                {parentCategories.map((cate) => (
+                  <option key={cate._id} value={cate._id}>
+                    {cate.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              className={styles.addButton}
+              onClick={() => setShowAdd(true)}>
+              + Thêm danh mục
+            </button>
+          </div>
         </div>
 
-        {/* Form thêm danh mục */}
         {showAdd && (
           <div className={styles.addAside}>
             <h2 className={styles.addAsideTitle}>Thêm Danh Mục</h2>
@@ -128,7 +161,6 @@ export default function Categories() {
           </div>
         )}
 
-        {/* Danh sách danh mục */}
         <table className={styles.cateTable}>
           <thead>
             <tr>
@@ -140,7 +172,7 @@ export default function Categories() {
             </tr>
           </thead>
           <tbody>
-            {categories.map((cate) => (
+            {filteredCategories.map((cate) => (
               <tr key={cate._id}>
                 <td>{cate._id}</td>
                 <td>{cate.name}</td>
@@ -169,7 +201,6 @@ export default function Categories() {
           </tbody>
         </table>
 
-        {/* Form sửa danh mục */}
         {editCate && (
           <div className={styles.addAside}>
             <h2 className={styles.addAsideTitle}>Cập nhật Danh Mục</h2>
