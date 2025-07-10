@@ -1,7 +1,5 @@
 "use client";
 import {
-  Search,
-  Bell,
   Eye,
   Pencil,
   Calendar,
@@ -18,101 +16,64 @@ import { useEffect, useState } from "react";
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
 import Link from "next/link";
-// Dữ liệu giả
-const orders = [
-  {
-    id: "#1010",
-    date: "10/06/2024",
-    name: "Nguyễn Thị Lan",
-    email: "lan.nguyen@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/10.jpg",
-    status: "Chờ xác nhận",
-    address: "25 Nguyễn Đình Chiểu, Quận 3, TP.HCM",
-  },
-  {
-    id: "#1009",
-    date: "09/06/2024",
-    name: "Phạm Văn Hùng",
-    email: "hung.pham@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/9.jpg",
-    status: "Chờ xác nhận",
-    address: "88 Lý Thường Kiệt, Quận 10, TP.HCM",
-  },
-  {
-    id: "#1008",
-    date: "08/06/2024",
-    name: "Lê Thị Hồng",
-    email: "hong.le@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/8.jpg",
-    status: "Đang giao",
-    address: "12 Nguyễn Văn Linh, Quận 7, TP.HCM",
-  },
-  {
-    id: "#1007",
-    date: "07/06/2024",
-    name: "Trần Quốc Dũng",
-    email: "dung.tran@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/7.jpg",
-    status: "Đang giao",
-    address: "88 Cách Mạng Tháng 8, Quận 10, TP.HCM",
-  },
-  {
-    id: "#1006",
-    date: "06/06/2024",
-    name: "Ngô Thị Hạnh",
-    email: "hanh.ngo@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/6.jpg",
-    status: "Đã giao",
-    address: "22 Phan Đăng Lưu, Bình Thạnh, TP.HCM",
-  },
-  {
-    id: "#1005",
-    date: "05/06/2024",
-    name: "Võ Minh Tuấn",
-    email: "tuan.vo@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/5.jpg",
-    status: "Đã hủy",
-    address: "99 Trần Hưng Đạo, Quận 5, TP.HCM",
-  },
-  {
-    id: "#1004",
-    date: "04/06/2024",
-    name: "Phạm Thị Mai",
-    email: "mai.pham@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/4.jpg",
-    status: "Đã giao",
-    address: "210 Lê Lợi, Quận 3, TP.HCM",
-  },
-  {
-    id: "#1003",
-    date: "03/06/2024",
-    name: "Nguyễn Văn An",
-    email: "an.nguyen@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/3.jpg",
-    status: "Đã giao",
-    address: "15 Nguyễn Trãi, Quận 1, TP.HCM",
-  },
-  {
-    id: "#1002",
-    date: "02/06/2024",
-    name: "Lê Văn Cường",
-    email: "cuong.le@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/2.jpg",
-    status: "Đã giao",
-    address: "789 Cách Mạng Tháng 8, Quận 10, TP.HCM",
-  },
-  {
-    id: "#1001",
-    date: "01/06/2024",
-    name: "Trần Thị Bích",
-    email: "bich.tran@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/1.jpg",
-    status: "Đã hủy",
-    address: "45 Lê Lợi, Quận 3, TP.HCM",
-  },
-];
+
+interface Order {
+  _id: string;
+  total_price: number;
+  status_order: string;
+  createdAt: string;
+  user_id: User | null;
+  voucher_id?: Voucher;
+  payment_method: string;
+  transaction_code: string;
+  transaction_status: string;
+}
+
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+}
+
+interface Voucher {
+  _id: string;
+  value: number;
+  voucher_code: string;
+  type: string;
+  quantity: number;
+  created_at: string;
+  is_active: boolean;
+  expired_at: string | null;
+  max_total: number | null;
+  max_discount: number;
+  min_total: number;
+}
+
+
 
 export default function Order() {
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/orders");
+        const data = await res.json();
+        if (data.status && Array.isArray(data.result)) {
+          setOrders(data.result); // ✅ chính xác
+        } else {
+          console.error("Dữ liệu không hợp lệ:", data);
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy đơn hàng:", error);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
   return (
     <main className={styles.main}>
       <Sidebar />
@@ -176,48 +137,63 @@ export default function Order() {
                 <th>Ngày đặt</th>
                 <th>Người đặt</th>
                 <th>Trạng thái</th>
-                <th>Địa chỉ</th>
+                <th>Thông tin giao hàng</th>
                 <th>Chức năng</th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order) => (
-                <tr key={order.id}>
+                <tr key={order._id}>
                   <td>
-                    <Link href={`/orderdetail`}>{order.id}</Link>
+                    <Link href={`/orderdetail/${order._id}`}>{order._id}</Link>
                   </td>
-                  <td>{order.date}</td>
+                  <td>{order.createdAt}</td>
                   <td className={styles.userInfo}>
-                    <img
-                      src={order.avatar}
-                      alt="Hình SP"
-                      className={styles.userImage}
-                    />
                     <div className={styles.productDetails}>
-                      <div className={styles.userName}>{order.name}</div>
-                      <div className={styles.userDesc}>{order.email}</div>
+                      <div className={styles.userName}>
+                        {order.user_id?.name || "Khách lạ"}
+                      </div>
+                      <div className={styles.userDesc}>
+                        {order.user_id?.email || "Không có email"}
+                      </div>
                     </div>
                   </td>
+
                   <td>
                     <span
-                      className={`${styles.methodDelivered} ${
-                        order.status === "Chờ xác nhận"
-                          ? styles["status-choxacnhan"]
-                          : order.status === "Đang giao"
+                      className={`${styles.methodDelivered} ${order.status_order === "pending"
+                        ? styles["status-choxacnhan"]
+                        : order.status_order === "shipping"
                           ? styles["status-danggiao"]
-                          : order.status === "Đã giao"
-                          ? styles["status-dagiao"]
-                          : order.status === "Đã hủy"
-                          ? styles["status-dahuy"]
-                          : ""
-                      }`}
+                          : order.status_order === "confirmed"
+                            ? styles["status-dagiao"]
+                            : order.status_order === "cancelled"
+                              ? styles["status-dahuy"]
+                              : ""
+                        }`}
                     >
-                      {order.status}
+                      {order.status_order === "pending"
+                        ? "Chờ xác nhận"
+                        : order.status_order === "shipping"
+                          ? "Đang giao"
+                          : order.status_order === "delivered"
+                            ? "Đã giao"
+                            : order.status_order === "cancelled"
+                              ? "Đã hủy"
+                              : order.status_order}
                     </span>
                   </td>
-                  <td>{order.address}</td>
+                  <td className={styles.shippingInfo}>
+                    <div className={styles.userDesc}>
+                      <strong>SĐT:</strong> {order.user_id?.phone || "Chưa có"}
+                    </div>
+                    <div className={styles.userDesc}>
+                      <strong>Địa chỉ:</strong> {order.user_id?.address || "Chưa có"}
+                    </div>
+                  </td>
+
                   <td>
-                    <Link href={`/orderdetail`}>
+                    <Link href={`/orderdetail/${order._id}`}>
                       <button className={styles.actionBtn} title="Xem">
                         <Eye size={23} />
                       </button>
@@ -229,6 +205,8 @@ export default function Order() {
                 </tr>
               ))}
             </tbody>
+
+
           </table>
         </div>
       </section>

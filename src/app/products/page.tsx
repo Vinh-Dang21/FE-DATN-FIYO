@@ -7,6 +7,14 @@ import styles from "./products.module.css";
 import { useEffect, useState } from "react";
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
+interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  type?: string;
+}
+
 
 export default function Product() {
   const [showAdd, setShowAdd] = useState(false);
@@ -14,6 +22,13 @@ export default function Product() {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stockFilter, setStockFilter] = useState("");
+  const [parentCategories, setParentCategories] = useState<Category[]>([]);
+  const [childCategories, setChildCategories] = useState<Category[]>([]);
+  const [selectedParent, setSelectedParent] = useState("");
+  const [selectedChild, setSelectedChild] = useState("");
+
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImagePreview(URL.createObjectURL(e.target.files[0]));
@@ -72,6 +87,66 @@ export default function Product() {
     return styles.statusAvailable;
   };
 
+  useEffect(() => {
+    const fetchParents = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/category/parents");
+        const data = await res.json();
+
+        // Lọc bỏ phần tử có status (nếu là object không có _id)
+        const validCategories = data.filter((item: any) => item._id);
+        setParentCategories(validCategories);
+
+      } catch (error) {
+        console.error("Lỗi khi lấy danh mục cha:", error);
+      }
+    };
+    fetchParents();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchChildren = async () => {
+      if (!selectedParent) {
+        setChildCategories([]);
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://localhost:3000/category/children/${selectedParent}`);
+        const data = await res.json();
+
+        if (Array.isArray(data)) {
+          setChildCategories(data); // ✅ OK
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy danh mục con:", error);
+      }
+    };
+
+    fetchChildren();
+  }, [selectedParent]);
+
+  useEffect(() => {
+    const fetchProductsByCategory = async () => {
+      if (!selectedChild) return;
+
+      try {
+        const res = await fetch(`http://localhost:3000/products/category/${selectedChild}`);
+        const data = await res.json();
+        if (data.status) {
+          setProducts(data.products);
+        } else {
+          console.error("Không tìm thấy sản phẩm theo danh mục con.");
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy sản phẩm theo danh mục con:", error);
+      }
+    };
+
+    fetchProductsByCategory();
+  }, [selectedChild]);
+
 
 
   return (
@@ -86,22 +161,44 @@ export default function Product() {
           <div className={styles.filterBar}>
             <h2 className={styles.sectionTitle}>Lọc sản phẩm </h2>
             <div className={styles.selectRow}>
-              <select className={styles.select}>
-                <option value="">Tình trạng </option>
+              <select
+                className={styles.select}
+                value={stockFilter}
+                onChange={(e) => setStockFilter(e.target.value)}
+              >
+                <option value="">Tình trạng</option>
                 <option value="available">Còn hàng</option>
+                <option value="low">Sắp hết</option>
                 <option value="out">Hết hàng</option>
               </select>
-              <select className={styles.select}>
-                <option value="">Danh mục </option>
-                <option value="ao">Áo</option>
-                <option value="quan">Quần</option>
-                <option value="giay">Giày</option>
+              <select
+                className={styles.select}
+                value={selectedParent}
+                onChange={(e) => {
+                  console.log("Chọn danh mục cha:", e.target.value); // ✅ thêm log này
+                  setSelectedParent(e.target.value);
+                }}
+              >
+                <option value="">Danh mục</option>
+                {parentCategories.map((cat: any) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
-              <select className={styles.select}>
-                <option value="">Trạng thái</option>
-                <option value="">Đang mở bán </option>
-                <option value="">Đã ngưng bán </option>
+              <select
+                className={styles.select}
+                value={selectedChild}
+                onChange={(e) => setSelectedChild(e.target.value)}
+              >
+                <option value="">Danh mục con</option>
+                {childCategories.map((child: any) => (
+                  <option key={child._id} value={child._id}>
+                    {child.name}
+                  </option>
+                ))}
               </select>
+
             </div>
           </div>
         </div>
@@ -215,66 +312,74 @@ export default function Product() {
               </tr>
             </thead>
             <tbody>
-              {products.map((product: any) => (
-                <tr key={product._id}>
-                  <td className={styles.productInfo}>
-                    <img
-                      src={product.images?.[0]}
-                      alt={product.name}
-                      className={styles.productImage}
-                    />
-                    <div className={styles.productDetails}>
-                      <div className={styles.productName}>{product.name}</div>
-                      <div className={styles.productDesc}>
-                        {expandedRows.includes(product._id) ? (
-                          <>
-                            {product.description}
-                            <button
-                              className={styles.descBtn}
-                              onClick={() => handleToggleDesc(product._id)}
-                            >
-                              Thu gọn
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            {product.description.length > 80
-                              ? product.description.slice(0, 80) + "..."
-                              : product.description}
-                            {product.description.length > 80 && (
+              {products
+                .filter((product: any) => {
+                  const totalQty = getTotalQuantity(product.variants);
+
+                  if (stockFilter === "available") return totalQty >= 50;
+                  if (stockFilter === "low") return totalQty > 0 && totalQty < 50;
+                  if (stockFilter === "out") return totalQty === 0;
+                  return true; // nếu không chọn lọc gì
+                })
+                .map((product: any) => (
+                  <tr key={product._id}>
+                    <td className={styles.productInfo}>
+                      <img
+                        src={product.images?.[0]}
+                        alt={product.name}
+                        className={styles.productImage}
+                      />
+                      <div className={styles.productDetails}>
+                        <div className={styles.productName}>{product.name}</div>
+                        <div className={styles.productDesc}>
+                          {expandedRows.includes(product._id) ? (
+                            <>
+                              {product.description}
                               <button
                                 className={styles.descBtn}
                                 onClick={() => handleToggleDesc(product._id)}
                               >
-                                Xem thêm
+                                Thu gọn
                               </button>
-                            )}
-                          </>
-                        )}
+                            </>
+                          ) : (
+                            <>
+                              {product.description.length > 80
+                                ? product.description.slice(0, 80) + "..."
+                                : product.description}
+                              {product.description.length > 80 && (
+                                <button
+                                  className={styles.descBtn}
+                                  onClick={() => handleToggleDesc(product._id)}
+                                >
+                                  Xem thêm
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
-
-                    </div>
-                  </td>
-                  <td>{product.category_id?.categoryName}</td>
-                  <td>{product.price.toLocaleString()} VND</td>
-                  <td>{getTotalQuantity(product.variants)}</td>
-                  <td>
-                    <span className={getProductStatusClass(product.variants)}>
-                      {getProductStatus(product.variants)}
-                    </span>
-                  </td>
-
-                  <td>
-                    <button className={styles.actionBtn} title="Sửa">
-                      <Pencil size={20} />
-                    </button>
-                    <button className={styles.actionBtn} title="Xóa">
-                      <Trash2 size={20} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>{product.category_id?.categoryName}</td>
+                    <td>{product.price.toLocaleString()} VND</td>
+                    <td>{getTotalQuantity(product.variants)}</td>
+                    <td>
+                      <span className={getProductStatusClass(product.variants)}>
+                        {getProductStatus(product.variants)}
+                      </span>
+                    </td>
+                    <td>
+                      <button className={styles.actionBtn} title="Sửa">
+                        <Pencil size={20} />
+                      </button>
+                      <button className={styles.actionBtn} title="Xóa">
+                        <Trash2 size={20} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
+
           </table>
         </div>
       </section>

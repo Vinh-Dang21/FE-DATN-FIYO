@@ -4,8 +4,8 @@ import {
     Bell,
 } from "lucide-react";
 import styles from "./orderdetail.module.css";
-import Sidebar from "../component/Sidebar";
-import Topbar from "../component/Topbar";
+import Sidebar from "../../component/Sidebar";
+import Topbar from "../../component/Topbar";
 const orderDetailData = {
     orderId: "#DH20250613",
     orderDate: "13/06/2025",
