@@ -14,13 +14,32 @@ interface Category {
   parentId: string | null;
   type?: string;
 }
+interface Product {
+  _id: string;
+  name: string;
+  images: string[];
+  price: number;
+  sale: number;
+  material: string;
+  shop_id: number;
+  create_at: string; // hoặc Date
+  description: string;
+  sale_count?: number;
+  isHidden: boolean;
+  category_id: {
+    categoryName: string;
+    categoryId: string;
+  };
+}
+
 
 
 export default function Product() {
   const [showAdd, setShowAdd] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [noProduct, setNoProduct] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stockFilter, setStockFilter] = useState("");
   const [parentCategories, setParentCategories] = useState<Category[]>([]);
@@ -128,25 +147,66 @@ export default function Product() {
   }, [selectedParent]);
 
   useEffect(() => {
-    const fetchProductsByCategory = async () => {
-      if (!selectedChild) return;
-
+    const fetchProducts = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/products/category/${selectedChild}`);
+        let url = "http://localhost:3000/products";
+
+        // Nếu chọn danh mục con thì lọc theo danh mục con
+        if (selectedChild) {
+          url = `http://localhost:3000/products/category/${selectedChild}`;
+        }
+
+        const res = await fetch(url);
         const data = await res.json();
-        if (data.status) {
+
+        if (Array.isArray(data) && data.length > 1 && data[0].status === true) {
+          const products = data.slice(1);
+          setProducts(products);
+          setNoProduct(false);
+        } else if (data.products) {
+          // Trường hợp khi gọi toàn bộ sản phẩm từ /products
           setProducts(data.products);
+          setNoProduct(false);
         } else {
-          console.error("Không tìm thấy sản phẩm theo danh mục con.");
+          setProducts([]);
+          setNoProduct(true);
         }
       } catch (error) {
-        console.error("Lỗi khi lấy sản phẩm theo danh mục con:", error);
+        console.error("Lỗi khi lấy sản phẩm:", error);
+        setProducts([]);
+        setNoProduct(true);
       }
     };
 
-    fetchProductsByCategory();
+    fetchProducts();
   }, [selectedChild]);
 
+  const handleToggleVisibility = async (id: string, currentHidden: boolean) => {
+    try {
+      const response = await fetch(`http://localhost:3000/products/update/${id}`, {
+        method: "PUT", // hoặc PATCH, tuỳ theo backend bạn đang dùng
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isHidden: !currentHidden }),
+      });
+
+      const result = await response.json();
+
+      if (result.status) {
+        // Cập nhật UI ngay sau khi thay đổi
+        setProducts((prev) =>
+          prev.map((product) =>
+            product._id === id ? { ...product, isHidden: !currentHidden } : product
+          )
+        );
+      } else {
+        console.error("Cập nhật thất bại:", result.message || result);
+      }
+    } catch (error) {
+      console.error("Lỗi cập nhật trạng thái sản phẩm:", error);
+    }
+  };
 
 
   return (
@@ -175,10 +235,17 @@ export default function Product() {
                 className={styles.select}
                 value={selectedParent}
                 onChange={(e) => {
-                  console.log("Chọn danh mục cha:", e.target.value); // ✅ thêm log này
-                  setSelectedParent(e.target.value);
+                  const selected = e.target.value;
+                  setSelectedParent(selected);
+
+                  if (!selected) {
+                    // Nếu chọn "Danh mục" rỗng => reset danh mục con + gọi tất cả sản phẩm
+                    setSelectedChild("");
+                    setChildCategories([]);
+                  }
                 }}
               >
+
                 <option value="">Danh mục</option>
                 {parentCategories.map((cat: any) => (
                   <option key={cat._id} value={cat._id}>
@@ -189,7 +256,7 @@ export default function Product() {
               <select
                 className={styles.select}
                 value={selectedChild}
-                onChange={(e) => setSelectedChild(e.target.value)}
+                onChange={(e) => { console.log("Chọn danh mục con:", e.target.value); setSelectedChild(e.target.value) }}
               >
                 <option value="">Danh mục con</option>
                 {childCategories.map((child: any) => (
@@ -304,6 +371,7 @@ export default function Product() {
             <thead>
               <tr>
                 <th>Sản phẩm</th>
+                <th>Đóng/Mở bán</th>
                 <th>Danh mục</th>
                 <th>Giá</th>
                 <th>Số lượng</th>
@@ -312,72 +380,96 @@ export default function Product() {
               </tr>
             </thead>
             <tbody>
-              {products
-                .filter((product: any) => {
-                  const totalQty = getTotalQuantity(product.variants);
+              {products.filter((product: any) => {
+                const totalQty = getTotalQuantity(product.variants);
 
-                  if (stockFilter === "available") return totalQty >= 50;
-                  if (stockFilter === "low") return totalQty > 0 && totalQty < 50;
-                  if (stockFilter === "out") return totalQty === 0;
-                  return true; // nếu không chọn lọc gì
-                })
-                .map((product: any) => (
-                  <tr key={product._id}>
-                    <td className={styles.productInfo}>
-                      <img
-                        src={product.images?.[0]}
-                        alt={product.name}
-                        className={styles.productImage}
-                      />
-                      <div className={styles.productDetails}>
-                        <div className={styles.productName}>{product.name}</div>
-                        <div className={styles.productDesc}>
-                          {expandedRows.includes(product._id) ? (
-                            <>
-                              {product.description}
-                              <button
-                                className={styles.descBtn}
-                                onClick={() => handleToggleDesc(product._id)}
-                              >
-                                Thu gọn
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              {product.description.length > 80
-                                ? product.description.slice(0, 80) + "..."
-                                : product.description}
-                              {product.description.length > 80 && (
+                if (stockFilter === "available") return totalQty >= 50;
+                if (stockFilter === "low") return totalQty > 0 && totalQty < 50;
+                if (stockFilter === "out") return totalQty === 0;
+                return true;
+              }).length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
+                    Không có sản phẩm nào trong danh mục này.
+                  </td>
+                </tr>
+              ) : (
+                products
+                  .filter((product: any) => {
+                    const totalQty = getTotalQuantity(product.variants);
+
+                    if (stockFilter === "available") return totalQty >= 50;
+                    if (stockFilter === "low") return totalQty > 0 && totalQty < 50;
+                    if (stockFilter === "out") return totalQty === 0;
+                    return true;
+                  })
+                  .map((product: any) => (
+                    <tr key={product._id}>
+                      <td className={styles.productInfo}>
+                        <img
+                          src={product.images?.[0]}
+                          alt={product.name}
+                          className={styles.productImage}
+                        />
+                        <div className={styles.productDetails}>
+                          <div className={styles.productName}>{product.name}</div>
+                          <div className={styles.productDesc}>
+                            {expandedRows.includes(product._id) ? (
+                              <>
+                                {product.description}
                                 <button
                                   className={styles.descBtn}
                                   onClick={() => handleToggleDesc(product._id)}
                                 >
-                                  Xem thêm
+                                  Thu gọn
                                 </button>
-                              )}
-                            </>
-                          )}
+                              </>
+                            ) : (
+                              <>
+                                {product.description.length > 80
+                                  ? product.description.slice(0, 80) + "..."
+                                  : product.description}
+                                {product.description.length > 80 && (
+                                  <button
+                                    className={styles.descBtn}
+                                    onClick={() => handleToggleDesc(product._id)}
+                                  >
+                                    Xem thêm
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>{product.category_id?.categoryName}</td>
-                    <td>{product.price.toLocaleString()} VND</td>
-                    <td>{getTotalQuantity(product.variants)}</td>
-                    <td>
-                      <span className={getProductStatusClass(product.variants)}>
-                        {getProductStatus(product.variants)}
-                      </span>
-                    </td>
-                    <td>
-                      <button className={styles.actionBtn} title="Sửa">
-                        <Pencil size={20} />
-                      </button>
-                      <button className={styles.actionBtn} title="Xóa">
-                        <Trash2 size={20} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>
+                        <label className={styles.switch}>
+                          <input
+                            type="checkbox"
+                            checked={!product.isHidden}
+                            onChange={() => handleToggleVisibility(product._id, product.isHidden)}
+                          />
+
+                          <span className={styles.slider}></span>
+                        </label>
+                      </td>
+
+                      <td>{product.category_id?.categoryName}</td>
+                      <td>{product.price.toLocaleString()} VND</td>
+                      <td>{getTotalQuantity(product.variants)}</td>
+                      <td>
+                        <span className={getProductStatusClass(product.variants)}>
+                          {getProductStatus(product.variants)}
+                        </span>
+                      </td>
+                      <td>
+                        <button className={styles.actionBtn} title="Sửa">
+                          <Pencil size={20} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+              )}
             </tbody>
 
           </table>
