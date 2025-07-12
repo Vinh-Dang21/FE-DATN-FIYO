@@ -15,6 +15,14 @@ interface Category {
   parentId: string | null;
   type?: string;
 }
+interface CategoryForm {
+  _id?: string;
+  name: string;
+  slug: string;
+  parentId: string;
+  type?: string;
+}
+
 
 export default function Categories() {
   const [showAdd, setShowAdd] = useState(false);
@@ -54,12 +62,33 @@ export default function Categories() {
     return parent ? parent.name : "Không có";
   };
 
-  const [formData, setFormData] = useState({
-    name: "",
-    slug: "",
-    parentId: "",
-    type: "cloth", // mặc định
-  });
+const [formData, setFormData] = useState<CategoryForm>({
+  name: "",
+  slug: "",
+  parentId: "",
+  type: "cloth", // default để đảm bảo luôn có
+});
+
+
+
+
+  const resetForm = () => {
+  setShowAdd(false);
+  setShowEdit(false);
+  setEditingId(null);
+  setFormData({ name: "", slug: "", parentId: ""});
+};
+
+const refreshCategories = async () => {
+  const url = selectedParentId
+    ? `http://localhost:3000/category/children/${selectedParentId}`
+    : `http://localhost:3000/category/`;
+
+  const res = await fetch(url);
+  const data: Category[] = await res.json();
+  setCategories(data);
+};
+
 
 
 
@@ -71,59 +100,63 @@ export default function Categories() {
     }));
   };
 
-  const handleSubmit = async () => {
-    const safeType = formData.type || "cloth";
+const handleSubmit = async () => {
+  if (!formData.name || !formData.slug) {
+    alert("Vui lòng nhập tên và slug!");
+    return;
+  }
 
-    if (!formData.name || !formData.slug) {
-      alert("Vui lòng nhập tên và slug!");
-      return;
+const payload = {
+  ...formData,
+  type: formData.type || "cloth", // 👈 dòng này giúp backend không lỗi
+  parentId: formData.parentId || null,
+};
+
+
+  const method = editingId ? "PUT" : "POST";
+  const url = editingId
+    ? `http://localhost:3000/category/${editingId}`
+    : `http://localhost:3000/category/create`;
+
+  console.log("🚀 Gửi yêu cầu:", { method, url, payload });
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+    console.log("📦 Phản hồi từ server:", result);
+
+    if (res.ok) {
+      alert(editingId ? "✅ Cập nhật thành công!" : "✅ Thêm thành công!");
+
+      // Reset lại form
+      setEditingId(null);
+      setShowAdd(false);
+      setShowEdit(false);
+      setFormData({ name: "", slug: "", parentId: "" });
+
+
+      // Refresh lại danh sách
+      const refreshUrl = selectedParentId
+        ? `http://localhost:3000/category/children/${selectedParentId}`
+        : `http://localhost:3000/category/`;
+
+      const refreshed = await fetch(refreshUrl);
+      const newData: Category[] = await refreshed.json();
+      setCategories(newData);
+    } else {
+      console.warn("❌ Lỗi cập nhật:", result);
+      alert(result.message || "Có lỗi khi xử lý danh mục.");
     }
-
-    const method = editingId ? "PUT" : "POST";
-    const url = editingId
-      ? `http://localhost:3000/category/${editingId}`
-      : `http://localhost:3000/category/create`;
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          type: safeType,
-          parentId: formData.parentId || null,
-        }),
-      });
-
-      const result = await res.json();
-      console.log("Kết quả từ API:", result);
-
-      if (res.ok) {
-        alert(editingId ? "Cập nhật thành công!" : "Thêm thành công!");
-
-        setShowAdd(false);
-        setShowEdit(false);
-        setEditingId(null);
-        setFormData({ name: "", slug: "", parentId: "", type: "cloth" });
-
-        const refreshUrl = selectedParentId
-          ? `http://localhost:3000/category/children/${selectedParentId}`
-          : `http://localhost:3000/category/`;
-
-        const refreshed = await fetch(refreshUrl);
-        const newData: Category[] = await refreshed.json();
-        setCategories(newData);
-      } else {
-        const errMsg = result.message || result.error || "Lỗi xử lý danh mục!";
-        alert(errMsg);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Có lỗi xảy ra.");
-    }
-  };
+  } catch (err) {
+    console.error("🚨 Lỗi khi gửi request:", err);
+    alert("Lỗi mạng hoặc server.");
+  }
+};
 
 
 
@@ -160,39 +193,50 @@ export default function Categories() {
   };
 
   const handleEdit = async (id: string) => {
-    try {
-      const res = await fetch(`http://localhost:3000/category/${id}`);
-      const data = await res.json();
+  try {
+    console.log("👉 Bắt đầu handleEdit với ID:", id);
 
-      if (res.ok) {
-        setEditingId(id);
+    const res = await fetch(`http://localhost:3000/category/${id}`);
+    console.log("🔄 Trạng thái HTTP:", res.status);
 
-        setFormData({
-          name: data.name || "",
-          slug: data.slug || "",
-          parentId: data.parentId || "",
-          type: data.type || "cloth",
-        });
+    const data = await res.json();
+    console.log("📦 Dữ liệu trả về từ API:", data);
 
-        // ✅ Mở form sau khi dữ liệu đã được set xong
-        setShowEdit(true);
+    const result = data.result;
 
-        // ✅ Log để kiểm tra
-        console.log("Dữ liệu được set:", data);
-      } else {
-        alert("Không tìm thấy danh mục.");
-      }
-    } catch (err) {
-      console.error("Lỗi khi lấy dữ liệu danh mục:", err);
-      alert("Có lỗi xảy ra.");
+    if (res.ok && result) {
+      console.log("✅ Dữ liệu hợp lệ, đang set formData...");
+
+      setEditingId(id);
+      setFormData({
+  name: result.name || "",
+  slug: result.slug || "",
+  parentId: result.parentId || "",
+});
+
+
+      setShowEdit(true);
+      console.log("✅ Đã mở form sửa, formData:", {
+        name: result.name || "",
+        slug: result.slug || "",
+        parentId: result.parentId || "",
+        type: result.type || "cloth",
+      });
+    } else {
+      alert("Không tìm thấy danh mục.");
+      console.warn("❌ Server trả về lỗi:", data.message || data);
     }
-  };
-  useEffect(() => {
-  if (showEdit) {
-    console.log("Form sửa đang hiện");
-    console.log("Giá trị đang được bind:", formData);
+  } catch (err) {
+    console.error("🚨 Lỗi khi lấy dữ liệu danh mục:", err);
   }
-}, [showEdit, formData]);
+};
+
+  useEffect(() => {
+    if (showEdit) {
+      console.log("Form sửa đang hiện");
+      console.log("Giá trị đang được bind:", formData);
+    }
+  }, [showEdit, formData]);
 
 
 
@@ -252,6 +296,8 @@ export default function Categories() {
               ))}
             </select>
 
+
+
             {/* Tên danh mục */}
             <input
               className={styles.input}
@@ -260,6 +306,7 @@ export default function Categories() {
               value={formData.name}
               onChange={handleChange}
             />
+
 
             <input
               className={styles.input}
@@ -280,7 +327,7 @@ export default function Categories() {
                 setShowAdd(false);
                 setShowEdit(false);
                 setEditingId(null);
-                setFormData({ name: "", slug: "", parentId: "", type: "cloth" });
+                setFormData({ name: "", slug: "", parentId: ""});
               }}
               style={{ marginTop: 10 }}
             >
