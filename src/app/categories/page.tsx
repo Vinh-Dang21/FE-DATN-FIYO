@@ -20,20 +20,52 @@ export default function Categories() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterParent, setFilterParent] = useState("");
 
-  const fetchCategories = () => {
-    fetch("http://localhost:3000/category/")
+  // ✅ Tách API lấy danh mục cha ra riêng
+  const fetchParentCategories = () => {
+    fetch("http://localhost:3000/category/parents")
       .then((res) => res.json())
       .then((data) => {
-        setCategories(data);
-        const parents = data.filter((c) => !c.parentId);
-        setParentCategories(parents);
+        const valid = Array.isArray(data)
+          ? data.filter((d) => d._id) // loại bỏ {status: true}
+          : [];
+        setParentCategories(valid);
       })
-      .catch((err) => console.error("Lỗi khi load danh mục:", err));
+      .catch(() => setParentCategories([]));
+  };
+
+  const fetchCategories = () => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.append("search", searchTerm);
+    if (filterParent) params.append("parentId", filterParent);
+
+    fetch(`http://localhost:3000/category/search?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        let result = [];
+
+        if (Array.isArray(data)) {
+          result = data;
+        } else if (Array.isArray(data.result)) {
+          result = data.result;
+        } else {
+          console.error("Không phải dữ liệu danh mục hợp lệ", data);
+        }
+
+        setCategories(result);
+      })
+      .catch((err) => {
+        console.error("Lỗi khi load danh mục:", err);
+        setCategories([]);
+      });
   };
 
   useEffect(() => {
-    fetchCategories();
+    fetchParentCategories(); // lấy danh mục cha khi khởi động
   }, []);
+
+  useEffect(() => {
+    fetchCategories(); // gọi khi search/filter thay đổi
+  }, [searchTerm, filterParent]);
 
   const handleAddCategory = () => {
     fetch("http://localhost:3000/category/create", {
@@ -48,6 +80,7 @@ export default function Categories() {
       .then((res) => res.json())
       .then(() => {
         fetchCategories();
+        fetchParentCategories(); // reload parent list sau khi thêm mới
         setShowAdd(false);
         setNewCate({ name: "", slug: "", parentId: "" });
       });
@@ -59,7 +92,10 @@ export default function Categories() {
       method: "DELETE",
     })
       .then((res) => res.json())
-      .then(() => fetchCategories());
+      .then(() => {
+        fetchCategories();
+        fetchParentCategories();
+      });
   };
 
   const handleUpdateCategory = () => {
@@ -76,14 +112,9 @@ export default function Categories() {
       .then(() => {
         setEditCate(null);
         fetchCategories();
+        fetchParentCategories();
       });
   };
-
-  const filteredCategories = categories.filter((cate) => {
-    const matchSearch = cate.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchParent = filterParent ? cate.parentId === filterParent : true;
-    return matchSearch && matchParent;
-  });
 
   return (
     <main className={styles.main}>
@@ -115,7 +146,8 @@ export default function Categories() {
             </div>
             <button
               className={styles.addButton}
-              onClick={() => setShowAdd(true)}>
+              onClick={() => setShowAdd(true)}
+            >
               + Thêm danh mục
             </button>
           </div>
@@ -127,7 +159,10 @@ export default function Categories() {
             <select
               className={styles.select}
               value={newCate.parentId}
-              onChange={(e) => setNewCate({ ...newCate, parentId: e.target.value })}>
+              onChange={(e) =>
+                setNewCate({ ...newCate, parentId: e.target.value })
+              }
+            >
               <option value="">Chọn danh mục cha</option>
               {parentCategories.map((cate) => (
                 <option key={cate._id} value={cate._id}>
@@ -140,14 +175,18 @@ export default function Categories() {
               type="text"
               placeholder="Tên danh mục"
               value={newCate.name}
-              onChange={(e) => setNewCate({ ...newCate, name: e.target.value })}
+              onChange={(e) =>
+                setNewCate({ ...newCate, name: e.target.value })
+              }
             />
             <textarea
               className={styles.input}
               placeholder="Slug danh mục"
               rows={3}
               value={newCate.slug}
-              onChange={(e) => setNewCate({ ...newCate, slug: e.target.value })}
+              onChange={(e) =>
+                setNewCate({ ...newCate, slug: e.target.value })
+              }
             />
             <button className={styles.addButton} onClick={handleAddCategory}>
               Lưu danh mục
@@ -155,7 +194,8 @@ export default function Categories() {
             <button
               className={styles.closeBtn}
               onClick={() => setShowAdd(false)}
-              style={{ marginTop: 10 }}>
+              style={{ marginTop: 10 }}
+            >
               Đóng
             </button>
           </div>
@@ -164,7 +204,7 @@ export default function Categories() {
         <table className={styles.cateTable}>
           <thead>
             <tr>
-              <th>ID</th>
+              <th>STT</th>
               <th>Tên danh mục</th>
               <th>Slug</th>
               <th>Danh mục cha</th>
@@ -172,27 +212,30 @@ export default function Categories() {
             </tr>
           </thead>
           <tbody>
-            {filteredCategories.map((cate) => (
+            {categories.map((cate, index) => (
               <tr key={cate._id}>
-                <td>{cate._id}</td>
+                <td>{index + 1}</td>
                 <td>{cate.name}</td>
                 <td>{cate.slug || ""}</td>
                 <td>
                   {cate.parentId
-                    ? categories.find((c) => c._id === cate.parentId)?.name || "Không rõ"
+                    ? parentCategories.find((c) => c._id === cate.parentId)
+                        ?.name || "Không rõ"
                     : "Không có"}
                 </td>
                 <td>
                   <button
                     className={styles.actionBtn}
                     title="Sửa"
-                    onClick={() => setEditCate(cate)}>
+                    onClick={() => setEditCate(cate)}
+                  >
                     <Pencil size={18} />
                   </button>
                   <button
                     className={styles.actionBtn}
                     title="Xóa"
-                    onClick={() => handleDeleteCategory(cate._id)}>
+                    onClick={() => handleDeleteCategory(cate._id)}
+                  >
                     <Trash2 size={18} />
                   </button>
                 </td>
@@ -207,7 +250,10 @@ export default function Categories() {
             <select
               className={styles.select}
               value={editCate.parentId || ""}
-              onChange={(e) => setEditCate({ ...editCate, parentId: e.target.value })}>
+              onChange={(e) =>
+                setEditCate({ ...editCate, parentId: e.target.value })
+              }
+            >
               <option value="">Chọn danh mục cha</option>
               {parentCategories.map((cate) => (
                 <option key={cate._id} value={cate._id}>
@@ -220,22 +266,30 @@ export default function Categories() {
               type="text"
               placeholder="Tên danh mục"
               value={editCate.name}
-              onChange={(e) => setEditCate({ ...editCate, name: e.target.value })}
+              onChange={(e) =>
+                setEditCate({ ...editCate, name: e.target.value })
+              }
             />
             <textarea
               className={styles.input}
               placeholder="Slug danh mục"
               rows={3}
               value={editCate.slug || ""}
-              onChange={(e) => setEditCate({ ...editCate, slug: e.target.value })}
+              onChange={(e) =>
+                setEditCate({ ...editCate, slug: e.target.value })
+              }
             />
-            <button className={styles.addButton} onClick={handleUpdateCategory}>
+            <button
+              className={styles.addButton}
+              onClick={handleUpdateCategory}
+            >
               Cập nhật
             </button>
             <button
               className={styles.closeBtn}
               onClick={() => setEditCate(null)}
-              style={{ marginTop: 10 }}>
+              style={{ marginTop: 10 }}
+            >
               Hủy
             </button>
           </div>

@@ -71,7 +71,7 @@ export default function UsersPage() {
           <table className={styles.userTable}>
             <thead>
               <tr>
-                <th>ID</th>
+                <th>STT</th>
                 <th>Họ tên</th>
                 <th>Email</th>
                 <th>Số điện thoại</th>
@@ -79,28 +79,27 @@ export default function UsersPage() {
                 <th>Chức năng</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user._id}>
-                  <td>
-                    <Link href={`/userdetail/${user._id}`}>{user._id}</Link>
-                  </td>
-                  <td>{user.name}</td>
-                  <td>{user.email}</td>
-                  <td>{user.phone}</td>
-                  <td>
-                    <span>{user.role === 0 ? "Admin" : "User"}</span>
-                  </td>
-                  <td>
-                    <Link href={`/userdetail/${user._id}`}>
-                      <button className={styles.actionBtn} title="Xem">
-                        <Eye size={20} />
-                      </button>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  <tbody>
+  {filteredUsers.map((user, index) => (
+    <tr key={user._id}>
+      <td>{index + 1}</td> 
+      <td>{user.name}</td>
+      <td>{user.email}</td>
+      <td>{user.phone}</td>
+      <td>
+        <span>{user.role === 0 ? "Admin" : "User"}</span>
+      </td>
+      <td>
+<Link href={`/userdetail/${user._id}`}>
+          <button className={styles.actionBtn} title="Xem">
+            <Eye size={20} />
+          </button>
+        </Link>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
           </table>
         </div>
       </section>
