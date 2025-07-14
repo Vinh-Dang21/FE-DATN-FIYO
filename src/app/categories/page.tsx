@@ -24,7 +24,7 @@ interface CategoryForm {
 }
 
 
-export default function Categories() {
+export default function Categories() {111
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
