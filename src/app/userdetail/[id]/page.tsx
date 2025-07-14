@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Sidebar from "../../component/Sidebar";
 import Topbar from "../../component/Topbar";
 import styles from "../userdetail.module.css";
+import dayjs from 'dayjs';
 
 export default function UserDetailPage() {
   const { id } = useParams(); // Lấy userId từ URL
@@ -61,7 +62,9 @@ export default function UserDetailPage() {
             <h2 className={styles.usertitle}>
               Mã người dùng: {user.code || `#${user._id.slice(-4).toUpperCase()}`}
             </h2>
-            <p className={styles.createdAt}>Ngày tạo: {user.createdAt}</p>
+          <p className={styles.createdAt}>
+            Ngày tạo: {dayjs(user.createdAt).format("DD-MM-YYYY HH:mm")}
+</p>
           </div>
 
           <div className={styles.leftPanel}>
@@ -76,7 +79,7 @@ export default function UserDetailPage() {
             <div className={styles.stats}>
               <div className={styles.statItem}>
                 <div className={styles.statContent}>
-                  <span className={styles.statValue}>{user.totalOrders}</span>
+                  <span className={styles.statValue}>{user.totalOrders.toLocaleString() || "0"}</span>
                   <span className={styles.statLabel}>Đơn hàng</span>
                 </div>
               </div>
@@ -115,9 +118,10 @@ export default function UserDetailPage() {
                         <br />
                         <span className={styles.addressText}>{item.address}</span>
                       </p>
-                      {item.status && (
+                     {item.isDefault && (
                         <div className={styles.defaultBadge}>Mặc định</div>
                       )}
+
                     </div>
                   </div>
                 </div>
