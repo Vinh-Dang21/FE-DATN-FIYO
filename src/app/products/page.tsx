@@ -31,6 +31,11 @@ interface Product {
     categoryId: string;
   };
 }
+interface Variant {
+  color: string; // mã hex hoặc tên màu
+  sizes: { size: string; quantity: number }[];
+}
+
 
 
 
@@ -46,21 +51,52 @@ export default function Product() {
   const [childCategories, setChildCategories] = useState<Category[]>([]);
   const [selectedParent, setSelectedParent] = useState("");
   const [selectedChild, setSelectedChild] = useState("");
-
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setImagePreview(URL.createObjectURL(e.target.files[0]));
-    }
-  };
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [currentColor, setCurrentColor] = useState<string>("");
+  const [sizeInput, setSizeInput] = useState<string>("");
+  const [quantityInput, setQuantityInput] = useState<number>(1);
+  const [sizes, setSizes] = useState<{ size: string; quantity: number }[]>([]);
+  const [images, setImages] = useState<(File | null)[]>([null, null, null, null]);
+  const [previews, setPreviews] = useState<string[]>(["", "", "", ""]);
 
   const handleToggleDesc = (id: string) => {
     setExpandedRows((prev) =>
       prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
     );
   };
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
+    const newImages = [...images];
+    newImages[index] = file;
+    setImages(newImages);
 
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const newPreviews = [...previews];
+      newPreviews[index] = reader.result as string;
+      setPreviews(newPreviews);
+    };
+    reader.readAsDataURL(file);
+  };
+  const handleSubmit = () => {
+  const validImages = images.filter(Boolean);
+  if (validImages.length < 4) {
+    alert("Vui lòng chọn đủ 4 ảnh!");
+    return;
+  }
+
+  const formData = new FormData();
+  validImages.forEach((img, i) => {
+    if (img) formData.append("images", img); // hoặc `images[]` tùy API
+  });
+
+  // append các trường khác (name, price,...)
+
+  // Gửi qua fetch hoặc axios
+};
+  
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -207,6 +243,62 @@ export default function Product() {
       console.error("Lỗi cập nhật trạng thái sản phẩm:", error);
     }
   };
+  const handlePickColor = async () => {
+    if (!("EyeDropper" in window)) {
+      alert("Trình duyệt không hỗ trợ EyeDropper");
+      return;
+    }
+    const eyeDropper = new (window as any).EyeDropper();
+    try {
+      const result = await eyeDropper.open();
+      setCurrentColor(result.sRGBHex);
+    } catch (err) {
+      console.error("Lỗi EyeDropper:", err);
+    }
+  };
+
+  const handleAddSize = () => {
+    const trimmedSize = sizeInput.trim();
+    if (!trimmedSize || quantityInput <= 0) return;
+
+    const isDuplicate = sizes.some(s => s.size.toLowerCase() === trimmedSize.toLowerCase());
+    if (isDuplicate) {
+      alert("Size này đã được thêm rồi!");
+      return;
+    }
+
+    setSizes([...sizes, { size: trimmedSize, quantity: quantityInput }]);
+    setSizeInput("");
+    setQuantityInput(1);
+  };
+
+  const handleAddVariant = () => {
+    if (!currentColor) {
+      alert("Chưa chọn màu");
+      return;
+    }
+    if (sizes.length === 0) {
+      alert("Chưa thêm size");
+      return;
+    }
+
+    const newVariant: Variant = {
+      color: currentColor,
+      sizes,
+    };
+
+    console.log("✅ Biến thể mới được thêm:", newVariant);
+
+    setVariants(prev => {
+      const updated = [...prev, newVariant];
+      console.log("📦 Danh sách biến thể hiện tại:", updated);
+      return updated;
+    });
+
+    // Reset tạm
+    setCurrentColor("");
+    setSizes([]);
+  };
 
 
   return (
@@ -310,36 +402,100 @@ export default function Product() {
 
             {/* Hàng 4: Ảnh chính */}
             <div className={styles.rowColumn}>
-              <input
-                className={styles.input}
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                name="images"
-                style={{ width: "100%" }}
-              />
-              {imagePreview && (
-                <img src={imagePreview} alt="Preview" className={styles.imagePreview} />
-              )}
+              <label>Chọn 4 ảnh sản phẩm:</label>
+              <div className={styles.imageGrid}>
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className={styles.imageSlot}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e, i)}
+                    />
+                    {previews[i] && (
+                      <img src={previews[i]} alt={`Preview ${i + 1}`} className={styles.imagePreview} />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
+
 
             {/* Hàng 5: Variants (gợi ý nhập JSON thủ công) */}
-            <div className={styles.rowColumn}>
-              <textarea
-                className={styles.input}
-                placeholder='Variants (ví dụ: [{"color":"Đen","sizes":[{"size":"M","quantity":10}]}])'
-                name="variants"
-                rows={4}
-              />
+            <div className={styles.variantSection}>
+              <h3>Thêm biến thể sản phẩm</h3>
+              {/* Chọn màu */}
+              <div className={styles.rowvarian}>
+                <label>Màu sắc:</label>
+                <input type="color" value={currentColor} onChange={(e) => setCurrentColor(e.target.value)} />
+                <button type="button" onClick={handlePickColor}>Chọn màu</button>
+              </div>
+
+              {/* Nhập size và số lượng */}
+              <div className={styles.rowvarian}>
+                <input
+                  type="text"
+                  placeholder="Size (VD: M)"
+                  value={sizeInput}
+                  onChange={(e) => setSizeInput(e.target.value)}
+                />
+                <input
+                  type="number"
+                  placeholder="Số lượng"
+                  value={quantityInput}
+                  onChange={(e) => setQuantityInput(Number(e.target.value))}
+                />
+                <button type="button" onClick={handleAddSize}>Thêm size</button>
+              </div>
+
+              {/* Danh sách size đã thêm */}
+              <div className={styles.showvarian}>
+                {sizes.map((s, index) => (
+                  <div key={index}>
+                    Size: {s.size} - Số lượng: {s.quantity}
+                  </div>
+                ))}
+              </div>
+
+              {/* Thêm variant */}
+              <button className={styles.addvarian} type="button" onClick={handleAddVariant}>+ Thêm biến thể</button>
+
+              {/* Hiển thị các variant đã thêm */}
+              <div className={styles.showvarian}>
+                {variants.map((v, index) => (
+                  <div className={styles.listvarian} key={index} style={{ marginTop: 10 }}>
+                    <div className={styles.colorvarian}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          width: 30,
+                          height: 30,
+                          borderRadius: "50%",
+                          backgroundColor: v.color,
+                          border: "1px solid #e4e4e7",
+                          marginRight: 8,
+                        }}
+                      ></span>
+                    </div>
+                    <ul>
+                      {v.sizes.map((s, i) => (
+                        <li key={i}>
+                          Size: {s.size} - Số lượng : {s.quantity}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             </div>
 
+
             {/* Hàng 6: Mô tả sản phẩm */}
-            <div className={styles.rowColumn}>
+            <div className={styles.row}>
               <textarea className={styles.input} placeholder="Mô tả" name="description" rows={3} />
             </div>
 
             {/* Hàng 7: Sale count */}
-            <div className={styles.rowColumn}>
+            <div className={styles.row}>
               <input
                 className={styles.input}
                 type="number"

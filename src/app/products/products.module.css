@@ -489,11 +489,50 @@
   gap: 16px;
   width: 100%;
 }
+.imageGrid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.imageSlot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.imageSlot input[type="file"] {
+  font-size: 13px;
+  color: #444;
+}
+
+.imagePreview {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
 
 .rowColumn {
   display: flex;
   flex-direction: column;
   width: 100%;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
+  padding: 20px;
+}
+.rowColumn label {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  color: #444;
+  font-weight: 600;
 }
 
 .input,
@@ -536,3 +575,106 @@
   font-size: 1rem;
   cursor: pointer;
 }
+
+.variantSection {
+  border: 1px solid #ddd;
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 20px;
+  background-color: #f9f9f9;
+}
+
+.variantSection h3 {
+  margin-bottom: 12px;
+  font-size: 16px;
+  color: #333;
+}
+
+.rowvarian {
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.rowvarian label {
+  color: #444;
+  font-size: 14px;
+}
+.rowvarian input[type="color"] {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  outline: none;
+  cursor: pointer;
+  appearance: none; /* ẩn giao diện mặc định của trình duyệt */
+  -webkit-appearance: none;
+  background-color: transparent;
+  overflow: hidden;
+  
+}
+
+.rowvarian input[type="text"],
+.rowvarian input[type="number"]{
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #fff;
+  color: #444;
+}
+.showvarian{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  color: #444;
+}
+
+.rowvarian button {
+  padding: 8px 12px;
+  background-color: #ff0a0a;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.addvarian{padding: 8px 12px;
+  background-color: #ff0a0a;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;}
+
+.rowvarian button:hover {
+  background-color: #cc0909;
+}
+.showvarian{
+  display: flex;
+  flex-direction: column;
+}
+.listvarian{
+  display: flex;
+}
+.colorvarian{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.variantSection ul {
+  padding-left: 20px;
+  margin-top: 5px;
+  list-style: none;
+}
+
+.variantSection ul li {
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+
