@@ -58,6 +58,13 @@ export default function Product() {
   const [sizes, setSizes] = useState<{ size: string; quantity: number }[]>([]);
   const [images, setImages] = useState<(File | null)[]>([null, null, null, null]);
   const [previews, setPreviews] = useState<string[]>(["", "", "", ""]);
+  const [productName, setProductName] = useState("");
+  const [price, setPrice] = useState(0);
+  const [sale, setSale] = useState(0);
+  const [material, setMaterial] = useState("");
+  const [description, setDescription] = useState("");
+  const [saleCount, setSaleCount] = useState(0);
+
 
   const handleToggleDesc = (id: string) => {
     setExpandedRows((prev) =>
@@ -80,23 +87,84 @@ export default function Product() {
     };
     reader.readAsDataURL(file);
   };
-  const handleSubmit = () => {
-  const validImages = images.filter(Boolean);
-  if (validImages.length < 4) {
-    alert("Vui lòng chọn đủ 4 ảnh!");
-    return;
-  }
+  const handleSubmit = async () => {
+    // Validate cơ bản
+    if (!productName || !material || !selectedChild) {
+      alert("Vui lòng nhập đầy đủ thông tin sản phẩm và chọn danh mục con!");
+      return;
+    }
 
-  const formData = new FormData();
-  validImages.forEach((img, i) => {
-    if (img) formData.append("images", img); // hoặc `images[]` tùy API
-  });
+    // Validate ảnh
+    const validImages = images.filter(Boolean);
+    if (validImages.length < 4) {
+      alert("Vui lòng chọn đủ 4 ảnh!");
+      return;
+    }
 
-  // append các trường khác (name, price,...)
+    const formData = new FormData();
 
-  // Gửi qua fetch hoặc axios
-};
-  
+    // Append ảnh
+    validImages.forEach((img) => {
+      if (img) formData.append("images", img);
+    });
+
+    // Append dữ liệu form
+    formData.append("name", productName);
+    formData.append("price", price.toString());
+    formData.append("sale", sale.toString());
+    formData.append("material", material);
+    formData.append("description", description);
+    formData.append("sale_count", saleCount.toString());
+    formData.append("category_id", selectedChild); // chỉ ID string
+    formData.append("shop_id", "1");               // ID shop mặc định
+
+
+    formData.append("variants", JSON.stringify(variants));
+
+    try {
+      const response = await fetch("http://localhost:3000/products/create", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      console.log("📥 Kết quả phản hồi:", result);
+
+      if (result.status) {
+        alert("✅ Thêm sản phẩm thành công!");
+
+        // Reset form
+        setShowAdd(false);
+        setVariants([]);
+        setImages([null, null, null, null]);
+        setPreviews(["", "", "", ""]);
+        setSizes([]);
+        setCurrentColor("");
+        setProductName("");
+        setPrice(0);
+        setSale(0);
+        setMaterial("");
+        setDescription("");
+        setSaleCount(0);
+        setSelectedParent("");
+        setSelectedChild("");
+
+        // Gọi lại API danh sách
+        const fetchAgain = await fetch("http://localhost:3000/products");
+        const reload = await fetchAgain.json();
+        setProducts(reload.products || []);
+      } else {
+        console.error("❌ Thêm thất bại:", result); // sẽ hiện chi tiết hơn
+        alert("Thêm sản phẩm thất bại");
+      }
+    } catch (error) {
+      console.error("❌ Lỗi gửi dữ liệu:", error);
+      alert("Lỗi khi gửi dữ liệu");
+    }
+  };
+
+
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -282,23 +350,34 @@ export default function Product() {
       return;
     }
 
+    // Lấy mã màu từ chuỗi "TênMàu MãMàu" → ví dụ: "Trắng SW001"
+    const colorParts = currentColor.trim().split(" ");
+    const colorCode = colorParts[colorParts.length - 1]; // SW001
+
+    // Thêm sku cho từng size
+    const updatedSizes = sizes.map((s) => ({
+      ...s,
+      sku: `${colorCode}-${s.size}`, // ví dụ: SW001-104
+    }));
+
     const newVariant: Variant = {
       color: currentColor,
-      sizes,
+      sizes: updatedSizes,
     };
 
     console.log("✅ Biến thể mới được thêm:", newVariant);
 
-    setVariants(prev => {
+    setVariants((prev) => {
       const updated = [...prev, newVariant];
       console.log("📦 Danh sách biến thể hiện tại:", updated);
       return updated;
     });
 
-    // Reset tạm
+    // Reset sau khi thêm
     setCurrentColor("");
     setSizes([]);
   };
+
 
 
   return (
@@ -384,20 +463,77 @@ export default function Product() {
 
             {/* Hàng 1: Tên sản phẩm & Giá */}
             <div className={styles.row}>
-              <input className={styles.input} type="text" placeholder="Tên sản phẩm" name="name" />
-              <input className={styles.input} type="number" placeholder="Giá (price)" name="price" />
+              <input
+                className={styles.input}
+                type="text"
+                placeholder="Tên sản phẩm"
+                name="name"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+              />
+              <input
+                className={styles.input}
+                type="number"
+                placeholder="Giá (price)"
+                name="price"
+                value={price}
+                onChange={(e) => setPrice(Number(e.target.value))}
+              />
             </div>
 
             {/* Hàng 2: Giảm giá & Chất liệu */}
             <div className={styles.row}>
-              <input className={styles.input} type="number" placeholder="Giảm giá (%)" name="sale" />
-              <input className={styles.input} type="text" placeholder="Chất liệu (material)" name="material" />
+              <input
+                className={styles.input}
+                type="number"
+                placeholder="Giảm giá (%)"
+                name="sale"
+                value={sale}
+                onChange={(e) => setSale(Number(e.target.value))}
+              />
+              <input
+                className={styles.input}
+                type="text"
+                placeholder="Chất liệu (material)"
+                name="material"
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
+              />
             </div>
 
-            {/* Hàng 3: Danh mục & Shop */}
+            {/* Hàng 3: Danh mục*/}
             <div className={styles.row}>
-              <input className={styles.input} type="text" placeholder="ID danh mục (category_id)" name="category_id" />
-              <input className={styles.input} type="text" placeholder="ID cửa hàng (shop_id)" name="shop_id" />
+              <select
+                className={styles.input}
+                value={selectedParent}
+                onChange={(e) => {
+                  const parentId = e.target.value;
+                  setSelectedParent(parentId);
+                  setSelectedChild(""); // reset danh mục con khi chọn lại cha
+                }}
+              >
+                <option value="">-- Chọn danh mục cha --</option>
+                {parentCategories.map((parent) => (
+                  <option key={parent._id} value={parent._id}>
+                    {parent.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className={styles.input}
+                value={selectedChild}
+                onChange={(e) => setSelectedChild(e.target.value)}
+                disabled={!selectedParent}
+              >
+                <option value="">-- Chọn danh mục con --</option>
+                {childCategories.map((child) => (
+                  <option key={child._id} value={child._id}>
+                    {child.name}
+                  </option>
+                ))}
+              </select>
+
             </div>
 
             {/* Hàng 4: Ảnh chính */}
@@ -491,7 +627,14 @@ export default function Product() {
 
             {/* Hàng 6: Mô tả sản phẩm */}
             <div className={styles.row}>
-              <textarea className={styles.input} placeholder="Mô tả" name="description" rows={3} />
+              <textarea
+                className={styles.input}
+                placeholder="Mô tả"
+                name="description"
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
 
             {/* Hàng 7: Sale count */}
@@ -501,12 +644,17 @@ export default function Product() {
                 type="number"
                 placeholder="Số lượt bán (sale_count)"
                 name="sale_count"
+                value={saleCount}
+                onChange={(e) => setSaleCount(Number(e.target.value))}
               />
             </div>
 
             {/* Hàng 8: Nút Thêm bên phải */}
             <div className={styles.row} style={{ justifyContent: "flex-end" }}>
-              <button className={styles.addButton}>Thêm</button>
+              <button className={styles.addButton} type="button" onClick={handleSubmit}>
+                Thêm
+              </button>
+
             </div>
 
             {/* Hàng 9: Nút Đóng ở giữa */}
