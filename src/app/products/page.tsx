@@ -73,6 +73,8 @@ export default function Product() {
   const [filterChild, setFilterChild] = useState(""); // cho bộ lọc
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
   const [editingSizeIndex, setEditingSizeIndex] = useState<number | null>(null);
+  const [searchKeyword, setSearchKeyword] = useState("");
+
 
   const handleEditProduct = async (product: Product) => {
     const categoryId = product.category_id?.categoryId;
@@ -512,16 +514,54 @@ export default function Product() {
     setSizes([]);
     setEditingVariantIndex(null); // reset mode sửa
   };
+  const handleSearch = async () => {
+    if (!searchKeyword.trim()) {
+      console.log("🔄 Không có từ khóa. Đang load lại tất cả sản phẩm...");
+
+      const res = await fetch("http://localhost:3000/products");
+      const data = await res.json();
+
+      console.log("✅ Danh sách sản phẩm đầy đủ:", data.products);
+      setProducts(data.products || []);
+      setNoProduct(false);
+      return;
+    }
+
+    try {
+      const encodedKeyword = encodeURIComponent(searchKeyword.trim());
+      const url = `http://localhost:3000/products/search?name=${encodedKeyword}`;
+      console.log("🔍 Gửi request tìm sản phẩm với keyword:", searchKeyword);
+      console.log("📤 URL gửi đi:", url);
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      console.log("📥 Phản hồi từ server:", data);
+
+      if (data && data.length > 0) {
+        console.log(`✅ Tìm thấy ${data.length} sản phẩm`);
+        data.forEach((product: Product, i: number) => {
+          console.log(`📦 Sản phẩm ${i + 1}:`, product);
+        });
+        setProducts(data);
+        setNoProduct(false);
+      }
+
+
+    } catch (error) {
+      console.error("❌ Lỗi khi tìm kiếm sản phẩm:", error);
+      setProducts([]);
+      setNoProduct(true);
+    }
+  };
 
 
 
   return (
     <main className={styles.main}>
       <Sidebar />
-
       <section className={styles.content}>
         <Topbar />
-
         {/* Bộ lọc */}
         <div className={styles.filterProduct}>
           <div className={styles.filterBar}>
@@ -545,14 +585,9 @@ export default function Product() {
                   setSelectedParent(selected);
 
                   if (!selected) {
-                    // Reset danh mục con khi bỏ chọn danh mục cha
                     setSelectedChild("");
                     setChildCategories([]);
-
-                    // ❗ Reset luôn bộ lọc danh mục con
                     setFilterChild("");
-
-                    // ❗ Gọi lại tất cả sản phẩm
                     fetch("http://localhost:3000/products")
                       .then(res => res.json())
                       .then(data => {
@@ -572,8 +607,6 @@ export default function Product() {
                   }
                 }}
               >
-
-
                 <option value="">Danh mục</option>
                 {parentCategories.map((cat: any) => (
                   <option key={cat._id} value={cat._id}>
@@ -607,7 +640,15 @@ export default function Product() {
               type="text"
               placeholder="Tìm kiếm sản phẩm..."
               className={styles.searchInput}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSearch(); // Gọi hàm tìm kiếm khi nhấn Enter
+                }
+              }}
             />
+
             <button
               className={styles.addButton}
               onClick={() => setShowAdd(true)}
@@ -640,8 +681,7 @@ export default function Product() {
               />
             </div>
 
-
-            {/* Hàng 3: Danh mục*/}
+            {/* Hàng 2: Danh mục*/}
             <div className={styles.row}>
               <select
                 className={styles.input}
@@ -659,7 +699,6 @@ export default function Product() {
                   </option>
                 ))}
               </select>
-
               <select
                 className={styles.input}
                 value={selectedChild}
@@ -673,10 +712,9 @@ export default function Product() {
                   </option>
                 ))}
               </select>
-
             </div>
 
-            {/* Hàng 4: Ảnh chính */}
+            {/* Hàng 3: Ảnh */}
             <div className={styles.rowColumn}>
               <label>Chọn 4 ảnh sản phẩm:</label>
               <div className={styles.imageGrid}>
@@ -695,8 +733,7 @@ export default function Product() {
               </div>
             </div>
 
-
-            {/* Hàng 5: Variants (gợi ý nhập JSON thủ công) */}
+            {/* Hàng 4: Variants */}
             <div className={styles.variantSection}>
               <h3>Thêm biến thể sản phẩm</h3>
               {/* Chọn màu */}
@@ -721,33 +758,33 @@ export default function Product() {
                   onChange={(e) => setQuantityInput(Number(e.target.value))}
                 />
                 <button type="button" onClick={handleSaveSize}>
-                  {editingSizeIndex !== null ? "💾 Lưu size" : "Thêm size"}
+                  {editingSizeIndex !== null ? "Lưu size" : "Thêm size"}
                 </button>
-
               </div>
 
               {/* Danh sách size đã thêm */}
               <div className={styles.showvarian}>
                 {sizes.map((s, index) => (
                   <div key={index} className={styles.sizeRow}>
-                    <span>Size: {s.size} - SL: {s.quantity}</span>
-                    <button onClick={() => {
-                      setSizeInput(s.size);
-                      setQuantityInput(s.quantity);
-                      setEditingSizeIndex(index); // bật chế độ sửa size
-                    }}>
-                      sửa
-                    </button>
-                    <button onClick={() => {
-                      const newSizes = [...sizes];
-                      newSizes.splice(index, 1);
-                      setSizes(newSizes);
-                    }}>
-                      xóa
-                    </button>
+                    <span className={styles.sizeText}>Size: {s.size} - SL: {s.quantity}</span>
+                    <div className={styles.buttonGroup}>
+                      <button className={styles.editButton} onClick={() => {
+                        setSizeInput(s.size);
+                        setQuantityInput(s.quantity);
+                        setEditingSizeIndex(index);
+                      }}>
+                        sửa
+                      </button>
+                      <button className={styles.deleteButton} onClick={() => {
+                        const newSizes = [...sizes];
+                        newSizes.splice(index, 1);
+                        setSizes(newSizes);
+                      }}>
+                        xóa
+                      </button>
+                    </div>
                   </div>
                 ))}
-
               </div>
 
               {/* Thêm variant */}
@@ -758,7 +795,7 @@ export default function Product() {
                   type="button"
                   onClick={handleUpdateVariant}
                 >
-                  💾 Lưu biến thể
+                  Lưu biến thể
                 </button>
               ) : (
                 <button
@@ -770,41 +807,32 @@ export default function Product() {
                 </button>
               )}
 
-
               {/* Hiển thị các variant đã thêm */}
-              <div className={styles.showvarian}>
+              <div className={styles.variantSizeList}>
                 {variants.map((v, index) => (
-                  <div className={styles.listvarian} key={index} style={{ marginTop: 10 }}>
-                    <div className={styles.colorvarian}>
+                  <div className={styles.variantRow} key={index}>
+                    <div className={styles.colorBlock}>
                       <span
-                        style={{
-                          display: "inline-block",
-                          width: 30,
-                          height: 30,
-                          borderRadius: "50%",
-                          backgroundColor: v.color,
-                          border: "1px solid #e4e4e7",
-                          marginRight: 8,
-                        }}
+                        className={styles.colorCircle}
+                        style={{ backgroundColor: v.color }}
                       ></span>
                       <strong>Màu: {v.color}</strong>
                     </div>
-                    <ul>
+
+                    <ul className={styles.sizeList}>
                       {v.sizes.map((s, i) => (
                         <li key={i}>
-                          Size: {s.size} - SL: {s.quantity}
+                          <strong>Size:</strong> {s.size} – <strong>SL:</strong> {s.quantity}
                         </li>
                       ))}
                     </ul>
 
-                    {/* ➕ Nút sửa và xoá */}
-                    <div style={{ marginTop: 8 }}>
+                    <div className={styles.actionGroup}>
                       <button onClick={() => handleEditVariant(index)}>Sửa</button>
                       <button onClick={() => handleDeleteVariant(index)}>Xoá</button>
                     </div>
                   </div>
                 ))}
-
               </div>
             </div>
 
