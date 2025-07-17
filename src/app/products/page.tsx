@@ -7,6 +7,16 @@ import styles from "./products.module.css";
 import { useEffect, useState } from "react";
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
+
+interface Variant {
+  color: string;
+  sizes: {
+    size: string;
+    quantity: number;
+    sku?: string; // nếu có dùng SKU
+  }[];
+}
+
 interface Category {
   _id: string;
   name: string;
@@ -22,7 +32,7 @@ interface Product {
   sale: number;
   material: string;
   shop_id: number;
-  create_at: string; // hoặc Date
+  create_at: string;
   description: string;
   sale_count?: number;
   isHidden: boolean;
@@ -30,11 +40,9 @@ interface Product {
     categoryName: string;
     categoryId: string;
   };
+  variants: Variant[]; // 👈 Thêm dòng này
 }
-interface Variant {
-  color: string; // mã hex hoặc tên màu
-  sizes: { size: string; quantity: number }[];
-}
+
 
 
 
@@ -60,10 +68,50 @@ export default function Product() {
   const [previews, setPreviews] = useState<string[]>(["", "", "", ""]);
   const [productName, setProductName] = useState("");
   const [price, setPrice] = useState(0);
-  const [sale, setSale] = useState(0);
-  const [material, setMaterial] = useState("");
   const [description, setDescription] = useState("");
-  const [saleCount, setSaleCount] = useState(0);
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [filterChild, setFilterChild] = useState(""); // cho bộ lọc
+  const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
+  const [editingSizeIndex, setEditingSizeIndex] = useState<number | null>(null);
+
+  const handleEditProduct = async (product: Product) => {
+    const categoryId = product.category_id?.categoryId;
+
+    // 1. Tìm danh mục cha tương ứng
+    let foundParent: Category | undefined;
+
+    for (const parent of parentCategories) {
+      try {
+        const res = await fetch(`http://localhost:3000/category/children/${parent._id}`);
+        const children = await res.json();
+
+        const match = children.find((child: Category) => child._id === categoryId);
+        if (match) {
+          foundParent = parent;
+          setChildCategories(children); // set danh mục con
+          break;
+        }
+      } catch (error) {
+        console.error("❌ Lỗi khi fetch danh mục con:", error);
+      }
+    }
+
+    if (foundParent) {
+      setSelectedParent(foundParent._id); // set danh mục cha
+      setSelectedChild(categoryId || ""); // set danh mục con
+    } else {
+      console.warn("⚠️ Không tìm thấy danh mục cha phù hợp");
+    }
+
+    // Gán các giá trị khác vào form
+    setEditProduct(product);
+    setShowAdd(true);
+    setProductName(product.name);
+    setPrice(product.price);
+    setDescription(product.description);
+    setVariants(product.variants || []);
+    setPreviews(product.images || []);
+  };
 
 
   const handleToggleDesc = (id: string) => {
@@ -87,43 +135,75 @@ export default function Product() {
     };
     reader.readAsDataURL(file);
   };
-  const handleSubmit = async () => {
-    // Validate cơ bản
-    if (!productName || !material || !selectedChild) {
-      alert("Vui lòng nhập đầy đủ thông tin sản phẩm và chọn danh mục con!");
-      return;
-    }
+  const resetForm = () => {
+    setShowAdd(false);
+    setEditProduct(null); // reset về trạng thái thêm mới
+    setVariants([]);
+    setImages([null, null, null, null]);
+    setPreviews(["", "", "", ""]);
+    setSizes([]);
+    setCurrentColor("");
+    setProductName("");
+    setPrice(0);
+    setDescription("");
+    setSelectedParent("");
+    setSelectedChild("");
+  };
 
-    // Validate ảnh
-    const validImages = images.filter(Boolean);
-    if (validImages.length < 4) {
-      alert("Vui lòng chọn đủ 4 ảnh!");
+  const handleSubmit = async () => {
+    if (!productName || !selectedChild) {
+      alert("Vui lòng nhập đầy đủ thông tin sản phẩm và chọn danh mục con!");
       return;
     }
 
     const formData = new FormData();
 
-    // Append ảnh
-    validImages.forEach((img) => {
-      if (img) formData.append("images", img);
-    });
+    const validImages = images.filter(Boolean);
+    if (editProduct && validImages.length === 0) {
+      // Gửi lại ảnh cũ
+      previews.forEach((link) => {
+        if (link) formData.append("images", link); // ⚠️ Gửi link thay vì file
+      });
+    } else {
+      // Gửi file mới
+      validImages.forEach((img) => {
+        if (img) formData.append("images", img);
+      });
+    }
 
-    // Append dữ liệu form
+    // Ảnh chỉ cần gửi khi thêm mới hoặc người dùng đổi ảnh
+    if (validImages.length > 0) {
+      validImages.forEach((img) => {
+        if (img) formData.append("images", img);
+      });
+    }
+
     formData.append("name", productName);
     formData.append("price", price.toString());
-    formData.append("sale", sale.toString());
-    formData.append("material", material);
     formData.append("description", description);
-    formData.append("sale_count", saleCount.toString());
-    formData.append("category_id", selectedChild); // chỉ ID string
-    formData.append("shop_id", "1");               // ID shop mặc định
-
-
+    formData.append("category_id", selectedChild);
+    formData.append("shop_id", "1");
     formData.append("variants", JSON.stringify(variants));
 
+    // Tính tổng quantity từ tất cả variants
+    const totalQuantity = variants.reduce((total, variant) => {
+      return total + variant.sizes.reduce((sum, size) => sum + size.quantity, 0);
+    }, 0);
+
+    // Nếu không có variants hoặc tổng quantity bằng 0 => ẩn
+    const isHiddenFlag = variants.length === 0 || totalQuantity === 0;
+    formData.append("isHidden", isHiddenFlag.toString());
+
+
     try {
-      const response = await fetch("http://localhost:3000/products/create", {
-        method: "POST",
+      const url = editProduct
+        ? `http://localhost:3000/products/update/${editProduct._id}`
+        : `http://localhost:3000/products/create`;
+
+      const method = editProduct ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         body: formData,
       });
 
@@ -131,31 +211,17 @@ export default function Product() {
       console.log("📥 Kết quả phản hồi:", result);
 
       if (result.status) {
-        alert("✅ Thêm sản phẩm thành công!");
+        alert(editProduct ? "✅ Cập nhật thành công!" : "✅ Thêm thành công!");
 
         // Reset form
-        setShowAdd(false);
-        setVariants([]);
-        setImages([null, null, null, null]);
-        setPreviews(["", "", "", ""]);
-        setSizes([]);
-        setCurrentColor("");
-        setProductName("");
-        setPrice(0);
-        setSale(0);
-        setMaterial("");
-        setDescription("");
-        setSaleCount(0);
-        setSelectedParent("");
-        setSelectedChild("");
+        resetForm();
 
         // Gọi lại API danh sách
         const fetchAgain = await fetch("http://localhost:3000/products");
         const reload = await fetchAgain.json();
         setProducts(reload.products || []);
       } else {
-        console.error("❌ Thêm thất bại:", result); // sẽ hiện chi tiết hơn
-        alert("Thêm sản phẩm thất bại");
+        alert("❌ " + (editProduct ? "Cập nhật thất bại" : "Thêm thất bại"));
       }
     } catch (error) {
       console.error("❌ Lỗi gửi dữ liệu:", error);
@@ -165,25 +231,40 @@ export default function Product() {
 
 
 
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("http://localhost:3000/products/");
-        const result = await response.json();
-        if (result.status) {
-          setProducts(result.products);
+        let url = "http://localhost:3000/products";
+
+        if (filterChild) {
+          url = `http://localhost:3000/products/category/${filterChild}`;
+        }
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (Array.isArray(data) && data.length > 1 && data[0].status === true) {
+          const products = data.slice(1);
+          setProducts(products);
+          setNoProduct(false);
+        } else if (data.products) {
+          setProducts(data.products);
+          setNoProduct(false);
         } else {
-          console.error("Dữ liệu trả về không hợp lệ");
+          setProducts([]);
+          setNoProduct(true);
         }
       } catch (error) {
-        console.error("Lỗi khi fetch:", error);
-      } finally {
-        setLoading(false);
+        console.error("Lỗi khi lấy sản phẩm:", error);
+        setProducts([]);
+        setNoProduct(true);
       }
     };
 
     fetchProducts();
-  }, []);
+  }, [filterChild]);
+
 
   const getTotalQuantity = (variants: any[]) => {
     return variants.reduce((total: number, variant: any) => {
@@ -325,20 +406,34 @@ export default function Product() {
     }
   };
 
-  const handleAddSize = () => {
+  const handleSaveSize = () => {
     const trimmedSize = sizeInput.trim();
     if (!trimmedSize || quantityInput <= 0) return;
 
-    const isDuplicate = sizes.some(s => s.size.toLowerCase() === trimmedSize.toLowerCase());
+    const isDuplicate = sizes.some(
+      (s, i) =>
+        s.size.toLowerCase() === trimmedSize.toLowerCase() &&
+        i !== editingSizeIndex
+    );
     if (isDuplicate) {
       alert("Size này đã được thêm rồi!");
       return;
     }
 
-    setSizes([...sizes, { size: trimmedSize, quantity: quantityInput }]);
+    let updatedSizes = [...sizes];
+
+    if (editingSizeIndex !== null) {
+      updatedSizes[editingSizeIndex] = { size: trimmedSize, quantity: quantityInput };
+    } else {
+      updatedSizes.push({ size: trimmedSize, quantity: quantityInput });
+    }
+
+    setSizes(updatedSizes);
     setSizeInput("");
     setQuantityInput(1);
+    setEditingSizeIndex(null); // reset mode sửa
   };
+
 
   const handleAddVariant = () => {
     if (!currentColor) {
@@ -378,6 +473,46 @@ export default function Product() {
     setSizes([]);
   };
 
+  const handleEditVariant = (index: number) => {
+    const variant = variants[index];
+    setCurrentColor(variant.color);
+    setSizes(variant.sizes.map(({ size, quantity }) => ({ size, quantity })));
+    setEditingVariantIndex(index); // Đánh dấu đang sửa
+  };
+
+  const handleDeleteVariant = (index: number) => {
+    const updated = [...variants];
+    updated.splice(index, 1);
+    setVariants(updated);
+  };
+
+  const handleUpdateVariant = () => {
+    if (editingVariantIndex === null) return;
+
+    if (!currentColor) {
+      alert("Chưa chọn màu");
+      return;
+    }
+
+    if (sizes.length === 0) {
+      alert("Chưa thêm size");
+      return;
+    }
+
+    const updatedVariant: Variant = {
+      color: currentColor,
+      sizes,
+    };
+
+    const newVariants = [...variants];
+    newVariants[editingVariantIndex] = updatedVariant;
+
+    setVariants(newVariants);
+    setCurrentColor("");
+    setSizes([]);
+    setEditingVariantIndex(null); // reset mode sửa
+  };
+
 
 
   return (
@@ -410,12 +545,34 @@ export default function Product() {
                   setSelectedParent(selected);
 
                   if (!selected) {
-                    // Nếu chọn "Danh mục" rỗng => reset danh mục con + gọi tất cả sản phẩm
+                    // Reset danh mục con khi bỏ chọn danh mục cha
                     setSelectedChild("");
                     setChildCategories([]);
+
+                    // ❗ Reset luôn bộ lọc danh mục con
+                    setFilterChild("");
+
+                    // ❗ Gọi lại tất cả sản phẩm
+                    fetch("http://localhost:3000/products")
+                      .then(res => res.json())
+                      .then(data => {
+                        if (data.products) {
+                          setProducts(data.products);
+                          setNoProduct(false);
+                        } else {
+                          setProducts([]);
+                          setNoProduct(true);
+                        }
+                      })
+                      .catch(err => {
+                        console.error("Lỗi khi lấy sản phẩm:", err);
+                        setProducts([]);
+                        setNoProduct(true);
+                      });
                   }
                 }}
               >
+
 
                 <option value="">Danh mục</option>
                 {parentCategories.map((cat: any) => (
@@ -426,8 +583,11 @@ export default function Product() {
               </select>
               <select
                 className={styles.select}
-                value={selectedChild}
-                onChange={(e) => { console.log("Chọn danh mục con:", e.target.value); setSelectedChild(e.target.value) }}
+                value={filterChild}
+                onChange={(e) => {
+                  console.log("Chọn danh mục con (lọc):", e.target.value);
+                  setFilterChild(e.target.value);
+                }}
               >
                 <option value="">Danh mục con</option>
                 {childCategories.map((child: any) => (
@@ -436,7 +596,6 @@ export default function Product() {
                   </option>
                 ))}
               </select>
-
             </div>
           </div>
         </div>
@@ -481,25 +640,6 @@ export default function Product() {
               />
             </div>
 
-            {/* Hàng 2: Giảm giá & Chất liệu */}
-            <div className={styles.row}>
-              <input
-                className={styles.input}
-                type="number"
-                placeholder="Giảm giá (%)"
-                name="sale"
-                value={sale}
-                onChange={(e) => setSale(Number(e.target.value))}
-              />
-              <input
-                className={styles.input}
-                type="text"
-                placeholder="Chất liệu (material)"
-                name="material"
-                value={material}
-                onChange={(e) => setMaterial(e.target.value)}
-              />
-            </div>
 
             {/* Hàng 3: Danh mục*/}
             <div className={styles.row}>
@@ -580,20 +720,56 @@ export default function Product() {
                   value={quantityInput}
                   onChange={(e) => setQuantityInput(Number(e.target.value))}
                 />
-                <button type="button" onClick={handleAddSize}>Thêm size</button>
+                <button type="button" onClick={handleSaveSize}>
+                  {editingSizeIndex !== null ? "💾 Lưu size" : "Thêm size"}
+                </button>
+
               </div>
 
               {/* Danh sách size đã thêm */}
               <div className={styles.showvarian}>
                 {sizes.map((s, index) => (
-                  <div key={index}>
-                    Size: {s.size} - Số lượng: {s.quantity}
+                  <div key={index} className={styles.sizeRow}>
+                    <span>Size: {s.size} - SL: {s.quantity}</span>
+                    <button onClick={() => {
+                      setSizeInput(s.size);
+                      setQuantityInput(s.quantity);
+                      setEditingSizeIndex(index); // bật chế độ sửa size
+                    }}>
+                      sửa
+                    </button>
+                    <button onClick={() => {
+                      const newSizes = [...sizes];
+                      newSizes.splice(index, 1);
+                      setSizes(newSizes);
+                    }}>
+                      xóa
+                    </button>
                   </div>
                 ))}
+
               </div>
 
               {/* Thêm variant */}
-              <button className={styles.addvarian} type="button" onClick={handleAddVariant}>+ Thêm biến thể</button>
+              {/* Thêm hoặc Lưu variant */}
+              {editingVariantIndex !== null ? (
+                <button
+                  className={styles.addvarian}
+                  type="button"
+                  onClick={handleUpdateVariant}
+                >
+                  💾 Lưu biến thể
+                </button>
+              ) : (
+                <button
+                  className={styles.addvarian}
+                  type="button"
+                  onClick={handleAddVariant}
+                >
+                  + Thêm biến thể
+                </button>
+              )}
+
 
               {/* Hiển thị các variant đã thêm */}
               <div className={styles.showvarian}>
@@ -611,16 +787,24 @@ export default function Product() {
                           marginRight: 8,
                         }}
                       ></span>
+                      <strong>Màu: {v.color}</strong>
                     </div>
                     <ul>
                       {v.sizes.map((s, i) => (
                         <li key={i}>
-                          Size: {s.size} - Số lượng : {s.quantity}
+                          Size: {s.size} - SL: {s.quantity}
                         </li>
                       ))}
                     </ul>
+
+                    {/* ➕ Nút sửa và xoá */}
+                    <div style={{ marginTop: 8 }}>
+                      <button onClick={() => handleEditVariant(index)}>Sửa</button>
+                      <button onClick={() => handleDeleteVariant(index)}>Xoá</button>
+                    </div>
                   </div>
                 ))}
+
               </div>
             </div>
 
@@ -637,36 +821,24 @@ export default function Product() {
               />
             </div>
 
-            {/* Hàng 7: Sale count */}
-            <div className={styles.row}>
-              <input
-                className={styles.input}
-                type="number"
-                placeholder="Số lượt bán (sale_count)"
-                name="sale_count"
-                value={saleCount}
-                onChange={(e) => setSaleCount(Number(e.target.value))}
-              />
-            </div>
-
             {/* Hàng 8: Nút Thêm bên phải */}
             <div className={styles.row} style={{ justifyContent: "flex-end" }}>
               <button className={styles.addButton} type="button" onClick={handleSubmit}>
-                Thêm
+                {editProduct ? "Cập nhật" : "Thêm"}
               </button>
-
             </div>
 
             {/* Hàng 9: Nút Đóng ở giữa */}
             <div className={styles.row} style={{ justifyContent: "center" }}>
               <button
                 className={styles.closeBtn}
-                onClick={() => setShowAdd(false)}
+                onClick={resetForm}
                 type="button"
               >
                 Đóng
               </button>
             </div>
+
           </div>
 
         )}
@@ -767,9 +939,15 @@ export default function Product() {
                         </span>
                       </td>
                       <td>
-                        <button className={styles.actionBtn} title="Sửa">
+                        <button
+                          className={styles.actionBtn}
+                          title="Sửa"
+                          onClick={() => handleEditProduct(product)}
+                        >
                           <Pencil size={20} />
                         </button>
+
+
                       </td>
                     </tr>
                   ))
