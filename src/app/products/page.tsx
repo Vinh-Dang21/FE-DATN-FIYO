@@ -67,6 +67,9 @@ export default function Product() {
   const [images, setImages] = useState<(File | null)[]>([null, null, null, null]);
   const [previews, setPreviews] = useState<string[]>(["", "", "", ""]);
   const [productName, setProductName] = useState("");
+  const [sale, setSale] = useState(0);
+  const [saleCount, setSaleCount] = useState(0);
+  const [material, setMaterial] = useState("");
   const [price, setPrice] = useState(0);
   const [description, setDescription] = useState("");
   const [editProduct, setEditProduct] = useState<Product | null>(null);
@@ -186,6 +189,10 @@ export default function Product() {
     formData.append("category_id", selectedChild);
     formData.append("shop_id", "1");
     formData.append("variants", JSON.stringify(variants));
+    formData.append("sale", sale.toString());
+    formData.append("sale_count", saleCount.toString());
+    formData.append("material", material);
+
 
     // Tính tổng quantity từ tất cả variants
     const totalQuantity = variants.reduce((total, variant) => {
@@ -515,59 +522,59 @@ export default function Product() {
     setEditingVariantIndex(null); // reset mode sửa
   };
   const handleSearch = async () => {
-  if (!searchKeyword.trim()) {
-    console.log("🔄 Không có từ khóa. Đang load lại tất cả sản phẩm...");
+    if (!searchKeyword.trim()) {
+      console.log("🔄 Không có từ khóa. Đang load lại tất cả sản phẩm...");
 
-    const res = await fetch("http://localhost:3000/products");
-    const data = await res.json();
+      const res = await fetch("http://localhost:3000/products");
+      const data = await res.json();
 
-    console.log("✅ Danh sách sản phẩm đầy đủ:", data.products);
+      console.log("✅ Danh sách sản phẩm đầy đủ:", data.products);
 
-    // Đảm bảo mỗi sản phẩm có mảng variants
-    const updatedData = (data.products || []).map((product: any) => ({
-      ...product,
-      variants: product.variants ?? [],
-    }));
-
-    setProducts(updatedData);
-    setNoProduct(false);
-    return;
-  }
-
-  try {
-    const encodedKeyword = encodeURIComponent(searchKeyword.trim());
-    const url = `http://localhost:3000/products/search?name=${encodedKeyword}`;
-    console.log("🔍 Gửi request tìm sản phẩm với keyword:", searchKeyword);
-    console.log("📤 URL gửi đi:", url);
-
-    const res = await fetch(url);
-    const data = await res.json();
-
-    console.log("📥 Phản hồi từ server:", data);
-
-    if (data && data.length > 0) {
-      console.log(`✅ Tìm thấy ${data.length} sản phẩm`);
-      const updatedData = data.map((product: any, i: number) => {
-        console.log(`📦 Sản phẩm ${i + 1}:`, product);
-        return {
-          ...product,
-          variants: product.variants ?? [],
-        };
-      });
+      // Đảm bảo mỗi sản phẩm có mảng variants
+      const updatedData = (data.products || []).map((product: any) => ({
+        ...product,
+        variants: product.variants ?? [],
+      }));
 
       setProducts(updatedData);
       setNoProduct(false);
-    } else {
+      return;
+    }
+
+    try {
+      const encodedKeyword = encodeURIComponent(searchKeyword.trim());
+      const url = `http://localhost:3000/products/search?name=${encodedKeyword}`;
+      console.log("🔍 Gửi request tìm sản phẩm với keyword:", searchKeyword);
+      console.log("📤 URL gửi đi:", url);
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      console.log("📥 Phản hồi từ server:", data);
+
+      if (data && data.length > 0) {
+        console.log(`✅ Tìm thấy ${data.length} sản phẩm`);
+        const updatedData = data.map((product: any, i: number) => {
+          console.log(`📦 Sản phẩm ${i + 1}:`, product);
+          return {
+            ...product,
+            variants: product.variants ?? [],
+          };
+        });
+
+        setProducts(updatedData);
+        setNoProduct(false);
+      } else {
+        setProducts([]);
+        setNoProduct(true);
+      }
+
+    } catch (error) {
+      console.error("❌ Lỗi khi tìm kiếm sản phẩm:", error);
       setProducts([]);
       setNoProduct(true);
     }
-
-  } catch (error) {
-    console.error("❌ Lỗi khi tìm kiếm sản phẩm:", error);
-    setProducts([]);
-    setNoProduct(true);
-  }
-};
+  };
 
   return (
     <main className={styles.main}>
@@ -692,7 +699,38 @@ export default function Product() {
                 onChange={(e) => setPrice(Number(e.target.value))}
               />
             </div>
+            {/* Hàng mới: Sale, Sale Count, Material */}
+            <div className={styles.row}>
+              {/* Material input bên trái */}
+              <input
+                className={styles.inputMaterial}
+                type="text"
+                placeholder="Chất liệu (material)"
+                name="material"
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
+              />
 
+              {/* Sale và Sale count cùng trong 1 div */}
+              <div className={styles.saleGroup}>
+                <input
+                  className={styles.inputHalf}
+                  type="number"
+                  placeholder="Giảm giá (%) - sale"
+                  name="sale"
+                  value={sale}
+                  onChange={(e) => setSale(Number(e.target.value))}
+                />
+                <input
+                  className={styles.inputHalf}
+                  type="number"
+                  placeholder="Đã bán (sale_count)"
+                  name="sale_count"
+                  value={saleCount}
+                  onChange={(e) => setSaleCount(Number(e.target.value))}
+                />
+              </div>
+            </div>
             {/* Hàng 2: Danh mục*/}
             <div className={styles.row}>
               <select
@@ -987,13 +1025,11 @@ export default function Product() {
                           <Pencil size={20} />
                         </button>
 
-
                       </td>
                     </tr>
                   ))
               )}
             </tbody>
-
           </table>
         </div>
       </section>
