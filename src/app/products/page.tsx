@@ -515,47 +515,59 @@ export default function Product() {
     setEditingVariantIndex(null); // reset mode sửa
   };
   const handleSearch = async () => {
-    if (!searchKeyword.trim()) {
-      console.log("🔄 Không có từ khóa. Đang load lại tất cả sản phẩm...");
+  if (!searchKeyword.trim()) {
+    console.log("🔄 Không có từ khóa. Đang load lại tất cả sản phẩm...");
 
-      const res = await fetch("http://localhost:3000/products");
-      const data = await res.json();
+    const res = await fetch("http://localhost:3000/products");
+    const data = await res.json();
 
-      console.log("✅ Danh sách sản phẩm đầy đủ:", data.products);
-      setProducts(data.products || []);
+    console.log("✅ Danh sách sản phẩm đầy đủ:", data.products);
+
+    // Đảm bảo mỗi sản phẩm có mảng variants
+    const updatedData = (data.products || []).map((product: any) => ({
+      ...product,
+      variants: product.variants ?? [],
+    }));
+
+    setProducts(updatedData);
+    setNoProduct(false);
+    return;
+  }
+
+  try {
+    const encodedKeyword = encodeURIComponent(searchKeyword.trim());
+    const url = `http://localhost:3000/products/search?name=${encodedKeyword}`;
+    console.log("🔍 Gửi request tìm sản phẩm với keyword:", searchKeyword);
+    console.log("📤 URL gửi đi:", url);
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    console.log("📥 Phản hồi từ server:", data);
+
+    if (data && data.length > 0) {
+      console.log(`✅ Tìm thấy ${data.length} sản phẩm`);
+      const updatedData = data.map((product: any, i: number) => {
+        console.log(`📦 Sản phẩm ${i + 1}:`, product);
+        return {
+          ...product,
+          variants: product.variants ?? [],
+        };
+      });
+
+      setProducts(updatedData);
       setNoProduct(false);
-      return;
-    }
-
-    try {
-      const encodedKeyword = encodeURIComponent(searchKeyword.trim());
-      const url = `http://localhost:3000/products/search?name=${encodedKeyword}`;
-      console.log("🔍 Gửi request tìm sản phẩm với keyword:", searchKeyword);
-      console.log("📤 URL gửi đi:", url);
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      console.log("📥 Phản hồi từ server:", data);
-
-      if (data && data.length > 0) {
-        console.log(`✅ Tìm thấy ${data.length} sản phẩm`);
-        data.forEach((product: Product, i: number) => {
-          console.log(`📦 Sản phẩm ${i + 1}:`, product);
-        });
-        setProducts(data);
-        setNoProduct(false);
-      }
-
-
-    } catch (error) {
-      console.error("❌ Lỗi khi tìm kiếm sản phẩm:", error);
+    } else {
       setProducts([]);
       setNoProduct(true);
     }
-  };
 
-
+  } catch (error) {
+    console.error("❌ Lỗi khi tìm kiếm sản phẩm:", error);
+    setProducts([]);
+    setNoProduct(true);
+  }
+};
 
   return (
     <main className={styles.main}>
