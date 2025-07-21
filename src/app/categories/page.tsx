@@ -111,7 +111,9 @@ const payload = {
   type: formData.type || "cloth", // 👈 dòng này giúp backend không lỗi
   parentId: formData.parentId || null,
 };
-const method = editingId ? "PUT" : "POST";
+
+
+  const method = editingId ? "PUT" : "POST";
   const url = editingId
     ? `http://localhost:3000/category/${editingId}`
     : `http://localhost:3000/category/create`;
@@ -217,7 +219,7 @@ const method = editingId ? "PUT" : "POST";
       console.log("✅ Đã mở form sửa, formData:", {
         name: result.name || "",
         slug: result.slug || "",
-parentId: result.parentId || "",
+        parentId: result.parentId || "",
         type: result.type || "cloth",
       });
     } else {
@@ -321,7 +323,7 @@ parentId: result.parentId || "",
 
             <button
               className={styles.closeBtn}
-onClick={() => {
+              onClick={() => {
                 setShowAdd(false);
                 setShowEdit(false);
                 setEditingId(null);

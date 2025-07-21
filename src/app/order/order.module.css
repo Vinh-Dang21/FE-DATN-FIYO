@@ -325,6 +325,12 @@
   align-items: flex-start;
   gap: 16px;
 }
+.shippingInfo {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #444;
+}
+
 
 .userImage {
   width: 40px;

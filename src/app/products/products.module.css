@@ -1,7 +1,8 @@
 .main {
   display: flex;
   height: 100vh;
-  overflow: hidden; /* Ngăn main cuộn, chỉ content cuộn */
+  overflow: hidden;
+  /* Ngăn main cuộn, chỉ content cuộn */
 }
 
 .aside {
@@ -10,11 +11,15 @@
   padding: 30px;
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Luôn cao 100vh */
-  position: sticky; /* Giữ cố định khi cuộn */
+  height: 100vh;
+  /* Luôn cao 100vh */
+  position: sticky;
+  /* Giữ cố định khi cuộn */
   top: 0;
-  flex-shrink: 0; /* Không co lại khi content cuộn */
-  border-right: 1px solid #e4e4e7; /* Thêm đường viền bên phải */
+  flex-shrink: 0;
+  /* Không co lại khi content cuộn */
+  border-right: 1px solid #e4e4e7;
+  /* Thêm đường viền bên phải */
 }
 
 .logo {
@@ -27,9 +32,11 @@
   padding: 10px 20px;
   font-size: 26px;
   font-weight: bolder;
-  margin: 0 auto; /* căn giữa ngang */
+  margin: 0 auto;
+  /* căn giữa ngang */
   margin-bottom: 20px;
-  width: fit-content; /* hoặc set width cụ thể nếu cần */
+  width: fit-content;
+  /* hoặc set width cụ thể nếu cần */
 }
 
 
@@ -48,7 +55,8 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px; /* Thêm dòng này để tạo khoảng cách giữa các mục */
+  gap: 10px;
+  /* Thêm dòng này để tạo khoảng cách giữa các mục */
 }
 
 .menuItem {
@@ -57,7 +65,8 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 6px;
-  color: #444; /* Đổi màu chữ thành đỏ */
+  color: #444;
+  /* Đổi màu chữ thành đỏ */
   text-decoration: none;
   transition: background 0.2s ease;
   font-weight: 600;
@@ -65,12 +74,14 @@
 }
 
 .menuItem:hover {
-  background-color: #fff; 
+  background-color: #fff;
   box-shadow:
     0 4px 18px 0 rgba(30, 30, 30, 0.13),
     0 2px 8px 0 rgba(30, 30, 30, 0.09);
-  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);/* Hover nền nhẹ của đỏ */
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Hover nền nhẹ của đỏ */
 }
+
 .activeItem .menuItem {
   border: #fda2a2 1px solid;
   background-color: #fff;
@@ -80,8 +91,9 @@
   box-shadow:
     0 4px 18px 0 rgba(30, 30, 30, 0.13),
     0 2px 8px 0 rgba(30, 30, 30, 0.09);
-  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .activeItem .icon {
   width: 20px;
   height: 20px;
@@ -95,9 +107,9 @@
 }
 
 .title {
-    flex: 1;
-    font-weight: 500;
-    font-size: 16px;
+  flex: 1;
+  font-weight: 500;
+  font-size: 16px;
 }
 
 .content {
@@ -105,7 +117,8 @@
   padding: 20px 30px;
   background-color: whitesmoke;
   height: 100vh;
-  overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
+  overflow-y: auto;
+  /* Cho phép cuộn khi nội dung dài */
 }
 
 /* topbar */
@@ -142,10 +155,12 @@
   color: #444;
   flex: 1;
 }
+
 .searchInput::placeholder {
-  color: #A1A1AA; 
-  opacity: 1;     
+  color: #A1A1AA;
+  opacity: 1;
 }
+
 .actions {
   display: flex;
   align-items: center;
@@ -248,6 +263,7 @@
 
   gap: 12px;
 }
+
 .searchAddBar .searchInput {
   max-width: 200px;
   padding: 8px 14px;
@@ -284,6 +300,7 @@
   border: 1px solid #e4e4e7;
   border-radius: 0 0 8px 8px;
 }
+
 .switch {
   position: relative;
   display: inline-block;
@@ -321,11 +338,11 @@
   border-radius: 50%;
 }
 
-.switch input:checked + .slider {
+.switch input:checked+.slider {
   background-color: #ff0a0a;
 }
 
-.switch input:checked + .slider:before {
+.switch input:checked+.slider:before {
   transform: translateX(20px);
 }
 
@@ -374,6 +391,7 @@
   min-width: 100px;
   text-align: center;
 }
+
 .statusOut {
   background: #ef4444;
   color: #fff;
@@ -384,6 +402,18 @@
   min-width: 100px;
   text-align: center;
 }
+
+.statusLow {
+  background: #ffc107;
+  color: #fff;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-weight: 600;
+  display: inline-block;
+  min-width: 100px;
+  text-align: center;
+}
+
 .descBtn {
   background: none;
   border: none;
@@ -393,6 +423,7 @@
   font-size: 12px;
   text-decoration: none;
 }
+
 .productDesc {
   font-size: 13px;
   color: #666;
@@ -422,6 +453,7 @@
 .actionBtn:hover {
   color: #d90429;
 }
+
 .productInfo {
   display: flex;
   align-items: flex-start;
@@ -466,6 +498,7 @@
   flex-direction: column;
   gap: 12px;
 }
+
 .addProductTitle {
   text-align: center;
   color: #444;
@@ -473,21 +506,99 @@
   font-weight: 700;
   margin-bottom: 10px;
 }
+
 .row {
   display: flex;
   gap: 16px;
   width: 100%;
 }
 
+.row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.inputMaterial {
+  width: calc(50% - 8px);
+  color: #444;
+  background-color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e4e4e7;
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+.saleGroup {
+  width: calc(50% - 8px);
+  display: flex;
+  gap: 8px;
+}
+
+.inputHalf {
+  width: calc(50% - 4px);
+  /* vì gap trong saleGroup là 8px */
+  color: #444;
+  background-color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e4e4e7;
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+.imageGrid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.imageSlot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.imageSlot input[type="file"] {
+  font-size: 13px;
+  color: #444;
+}
+
+.imagePreview {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+
 .rowColumn {
   display: flex;
   flex-direction: column;
   width: 100%;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.rowColumn label {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  color: #444;
+  font-weight: 600;
 }
 
 .input,
 .select {
   width: 100%;
+  color: #444;
   background-color: #fff;
   padding: 8px 12px;
   border-radius: 6px;
@@ -524,4 +635,215 @@
   padding: 8px 28px;
   font-size: 1rem;
   cursor: pointer;
+}
+
+.variantSection {
+  border: 1px solid #ddd;
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 20px;
+  background-color: #f9f9f9;
+}
+
+.variantSection h3 {
+  padding: 10px 0px;
+  font-size: 18px;
+  color: #444;
+}
+
+.rowvarian {
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0px;
+  flex-wrap: wrap;
+}
+
+.rowvarian label {
+  color: #444;
+  font-size: 14px;
+}
+
+.rowvarian input[type="color"] {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  /* ẩn giao diện mặc định của trình duyệt */
+  -webkit-appearance: none;
+  background-color: transparent;
+  overflow: hidden;
+
+}
+
+.rowvarian input[type="text"],
+.rowvarian input[type="number"] {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #fff;
+  color: #444;
+}
+
+.showvarian {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0px;
+  color: #444;
+}
+
+.rowvarian button {
+  padding: 8px 12px;
+  background-color: #ff0a0a;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.addvarian {
+  padding: 8px 12px;
+  background-color: #ff0a0a;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.rowvarian button:hover {
+  background-color: #cc0909;
+}
+
+.variantSizeList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.variantRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+  gap: 20px;
+  color: #444;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.colorBlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+  /* để cố định độ rộng phần màu */
+}
+
+.colorCircle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid #e4e4e7;
+}
+
+.sizeList {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sizeList li {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  color: #444;
+  letter-spacing: 0.5px;
+  word-spacing: 2px;
+}
+
+.sizeList li strong {
+  font-weight: 500;
+  color: #444;
+}
+
+
+.actionGroup {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+}
+
+.actionGroup button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #007bff;
+}
+
+.actionGroup button:last-child {
+  color: #FF0A0A;
+}
+
+
+.sizeRow {
+  padding: 9px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: fit-content;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+}
+
+.sizeText {
+  min-width: 150px;
+  color: #444;
+  letter-spacing: 0.5px;
+  word-spacing: 2px;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 20px;
+}
+
+.editButton {
+  color: #007bff;
+  /* màu xanh dương chuẩn */
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.deleteButton {
+  color: #dc3545;
+  /* màu đỏ chuẩn */
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.editButton:hover {
+  text-decoration: underline;
+}
+
+.deleteButton:hover {
+  text-decoration: underline;
 }
