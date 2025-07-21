@@ -276,11 +276,17 @@ export default function Product() {
 
 
   const getTotalQuantity = (variants: any[]) => {
-    return variants.reduce((total: number, variant: any) => {
-      const variantQty = variant.sizes.reduce((sum: number, size: any) => sum + size.quantity, 0);
-      return total + variantQty;
+  return variants.reduce((total: number, variant: any) => {
+    // Bỏ qua nếu variant hoặc sizes không tồn tại hoặc không phải mảng
+    if (!variant || !Array.isArray(variant.sizes)) return total;
+
+    const variantQty = variant.sizes.reduce((sum: number, size: any) => {
+      return sum + (size?.quantity || 0); // tránh lỗi nếu size là null
     }, 0);
-  };
+
+    return total + variantQty;
+  }, 0);
+};
 
   const isAvailable = (variants: any[]) => {
     return getTotalQuantity(variants) > 0;
