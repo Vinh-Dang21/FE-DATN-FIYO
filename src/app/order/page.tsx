@@ -10,11 +10,13 @@ import {
   Truck,
   CheckCircle,
   XCircle,
+  Table,
 } from "lucide-react";
 import styles from "./order.module.css";
 import { useEffect, useState } from "react";
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
+import Tabs from "../component/filterorder";
 import Link from "next/link";
 
 interface Order {
@@ -129,6 +131,7 @@ export default function Order() {
             />
           </div>
         </div>
+        <Tabs />
         <div className={styles.usertList}>
           <table className={styles.userTable}>
             <thead>

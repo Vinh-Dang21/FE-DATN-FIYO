@@ -359,3 +359,52 @@
   text-decoration: none;
   font-weight: 400;
 }
+
+.tabWrapper {
+  display: flex;
+  justify-content: space-around;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+}
+
+/* .tabItem {
+  font-size: 16px;
+  color: #333;
+  cursor: pointer;
+  padding: 10px;
+  position: relative;
+  transition: color 0.2s ease;
+} */
+
+.tabItem {
+  flex: 1; /* mỗi tab chiếm đều khoảng trống */
+  text-align: center;
+  margin-right: 0; /* bỏ margin để tránh thừa khoảng cách */
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  padding: 12px;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+
+.tabItem:hover {
+  color: #FF0A0A;
+}
+
+.active {
+  color: #FF0A0A;
+  font-weight: 500;
+}
+
+.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 2px;
+  background-color: #FF0A0A;
+}
