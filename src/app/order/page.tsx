@@ -57,24 +57,60 @@ interface Voucher {
 
 export default function Order() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredStatus, setFilteredStatus] = useState<string>("pending");
+
 
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchFilteredOrders = async () => {
       try {
-        const res = await fetch("http://localhost:3000/orders");
+        let url = "http://localhost:3000/orders/filter";
+        if (filteredStatus !== "all") {
+          url += `?status_order=${filteredStatus}`;
+        }
+
+        const res = await fetch(url);
         const data = await res.json();
+
         if (data.status && Array.isArray(data.result)) {
-          setOrders(data.result); // ✅ chính xác
+          setOrders(data.result);
         } else {
-          console.error("Dữ liệu không hợp lệ:", data);
+          setOrders([]); // clear nếu không có dữ liệu
         }
       } catch (error) {
-        console.error("Lỗi khi lấy đơn hàng:", error);
+        console.error("Lỗi khi lọc đơn hàng:", error);
       }
     };
 
-    fetchOrders();
-  }, []);
+    fetchFilteredOrders();
+  }, [filteredStatus]);
+
+
+  const handleConfirmOrder = async (orderId: string) => {
+    try {
+      const res = await fetch(`http://localhost:3000/orders/${orderId}/confirm`, {
+        method: "PATCH",
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Đơn hàng đã được xác nhận!");
+
+        // Cập nhật trạng thái trong danh sách
+        setOrders((prev) =>
+          prev.map((order) =>
+            order._id === orderId
+              ? { ...order, status_order: "preparing" }
+              : order
+          )
+        );
+      } else {
+        alert((data.message || "Xác nhận thất bại"));
+      }
+    } catch (error) {
+      console.error("Lỗi xác nhận:", error);
+      alert("Lỗi kết nối máy chủ");
+    }
+  };
 
   return (
     <main className={styles.main}>
@@ -131,7 +167,7 @@ export default function Order() {
             />
           </div>
         </div>
-        <Tabs />
+        <Tabs onFilter={(status) => setFilteredStatus(status)} />
         <div className={styles.usertList}>
           <table className={styles.userTable}>
             <thead>
@@ -166,25 +202,34 @@ export default function Order() {
                     <span
                       className={`${styles.methodDelivered} ${order.status_order === "pending"
                         ? styles["status-choxacnhan"]
-                        : order.status_order === "shipping"
-                          ? styles["status-danggiao"]
-                          : order.status_order === "confirmed"
-                            ? styles["status-dagiao"]
-                            : order.status_order === "cancelled"
-                              ? styles["status-dahuy"]
-                              : ""
+                        : order.status_order === "preparing"
+                          ? styles["status-dangsoan"]
+                          : order.status_order === "shipping"
+                            ? styles["status-danggiao"]
+                            : order.status_order === "delivered"
+                              ? styles["status-dagiao"]
+                              : order.status_order === "cancelled"
+                                ? styles["status-dahuy"]
+                                : order.status_order === "refund"
+                                  ? styles["status-trahang"]
+                                  : ""
                         }`}
                     >
                       {order.status_order === "pending"
                         ? "Chờ xác nhận"
-                        : order.status_order === "shipping"
-                          ? "Đang giao"
-                          : order.status_order === "delivered"
-                            ? "Đã giao"
-                            : order.status_order === "cancelled"
-                              ? "Đã hủy"
-                              : order.status_order}
+                        : order.status_order === "preparing"
+                          ? "Đang soạn hàng"
+                          : order.status_order === "shipping"
+                            ? "Đang giao hàng"
+                            : order.status_order === "delivered"
+                              ? "Đã giao hàng"
+                              : order.status_order === "cancelled"
+                                ? "Đã hủy"
+                                : order.status_order === "refund"
+                                  ? "Trả hàng / Hoàn tiền"
+                                  : order.status_order}
                     </span>
+
                   </td>
                   <td className={styles.shippingInfo}>
                     <div className={styles.userDesc}>
@@ -201,10 +246,18 @@ export default function Order() {
                         <Eye size={23} />
                       </button>
                     </Link>
-                    <button className={styles.actionBtn} title="Sửa">
-                      <Pencil size={20} />
-                    </button>
+                    {order.status_order === "pending" && (
+                      <button
+                        className={styles.actionBtn}
+                        title="Xác nhận"
+                        onClick={() => handleConfirmOrder(order._id)}
+                      >
+                        <CheckCircle size={20} />
+                      </button>
+                    )}
+
                   </td>
+
                 </tr>
               ))}
             </tbody>

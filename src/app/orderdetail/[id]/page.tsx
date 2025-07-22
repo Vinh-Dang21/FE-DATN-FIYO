@@ -40,31 +40,39 @@ export default function Order() {
     const params = useParams();
     const orderId = params?.id;
     const [order, setOrder] = useState<any>(null);
+    const [orderProducts, setOrderProducts] = useState<any[]>([]);
+    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        const fetchOrder = async () => {
+        const fetchData = async () => {
             if (!orderId) return;
 
             try {
-                const res = await fetch(`http://localhost:3000/orders/${orderId}`);
-                const data = await res.json();
+                const [orderDetailRes, orderInfoRes] = await Promise.all([
+                    fetch(`http://localhost:3000/orderDetail/${orderId}`),
+                    fetch(`http://localhost:3000/orders/${orderId}`)
+                ]);
 
-                if (data.status) {
-                    setOrder(data.result);
-                } else {
-                    console.error("Không tìm thấy đơn hàng");
+                const orderDetailData = await orderDetailRes.json();
+                const orderInfoData = await orderInfoRes.json();
+
+                if (orderDetailData.status) {
+                    setOrderProducts(orderDetailData.result);
                 }
-            } catch (err) {
-                console.error("Lỗi gọi API:", err);
+
+                if (orderInfoData.status) {
+                    setOrder(orderInfoData.result); // 🟢 đây mới có các field như total_price, status_order, v.v.
+                    setUser(orderInfoData.result.user_id); // 🟢 user nằm trong order.result.user_id
+                }
+
+            } catch (error) {
+                console.error("Lỗi khi fetch order:", error);
             }
         };
 
-        fetchOrder();
+        fetchData();
     }, [orderId]);
 
-    if (!order) {
-        return <div>Đang tải dữ liệu đơn hàng...</div>;
-    }
 
     return (
         <main className={styles.main}>
@@ -74,65 +82,66 @@ export default function Order() {
                 <Topbar />
                 <div className={styles.orderSummary}>
                     <div className={styles.orderInfoLeft}>
-                        <h2 className={styles.orderTitle}>Mã hóa đơn: {order._id}</h2>
+                        <h2 className={styles.orderTitle}>Mã hóa đơn: {orderProducts[0]?.order_id || "Đang tải..."}</h2>
 
                         <p className={styles.statusLine}>
                             Trạng thái:
-                            <span className={styles.badge}>{order.status_order}</span>
+                            <span className={styles.badge}>{order?.status_order || "..."}</span>
                         </p>
 
                         <p className={styles.orderDate}>
-                            Ngày đặt: {order.createdAt}
-                        </p>
+                            Ngày đặt: {order?.createdAt || "..."}</p>
                     </div>
+
 
                     <div className={styles.orderDetailGrid}>
                         <div className={styles.productSection}>
                             <table className={styles.orderDetailTable}>
-                                {/* <thead>
+                                <thead>
                                     <tr>
                                         <th>Sản phẩm</th>
                                         <th>Giá</th>
+                                        <th>loại</th>
                                         <th>Số lượng</th>
                                         <th>Thành tiền</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {order.products?.map((product: Product, i: number) => (
-
-                                        <tr key={i}>
-
-                                            <td className={styles.orderDetailInfo}>
-                                                <img
-                                                    src={product.images}
-                                                    alt={product.name}
-                                                    className={styles.userImage}
-                                                />
-                                                <div className={styles.productDetails}>
-                                                    <div className={styles.userName}>
-                                                        {product.name}
+                                    {orderProducts.map((item, index) => {
+                                        const product = item.product;
+                                        return (
+                                            <tr key={index}>
+                                                <td className={styles.orderDetailInfo}>
+                                                    <img
+                                                        src={product.images?.[0] || "/no-image.png"}
+                                                        alt={product.name}
+                                                        className={styles.userImage}
+                                                    />
+                                                    <div className={styles.productDetails}>
+                                                        <div className={styles.userName}>{product.name}</div>
+                                                        <div className={styles.userDesc}>{product.description}</div>
                                                     </div>
-                                                    <div className={styles.userDesc}>
-                                                        {product.desc}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                {product.price.toLocaleString("vi-VN", {
-                                                    style: "currency",
-                                                    currency: "VND",
-                                                })}
-                                            </td>
-                                            <td>{product.quantity}</td>
-                                            <td>
-                                                {product.total.toLocaleString("vi-VN", {
-                                                    style: "currency",
-                                                    currency: "VND",
-                                                })}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody> */}
+                                                </td>
+                                                <td>
+                                                    {product.price.toLocaleString("vi-VN", {
+                                                        style: "currency",
+                                                        currency: "VND",
+                                                    })}
+                                                </td>
+                                                <td>
+                                                    {product.variant.color} / {product.size.size}
+                                                </td>
+                                                <td>{item.quantity}</td>
+                                                <td>
+                                                    {(product.price * item.quantity).toLocaleString("vi-VN", {
+                                                        style: "currency",
+                                                        currency: "VND",
+                                                    })}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
                             </table>
 
                             <div className={styles.totalSection}>
@@ -147,20 +156,21 @@ export default function Order() {
                                 </p>
                                 <p>
                                     Giảm:{" "}
-                                    {/* <span className={styles.totalValue}>
-                                        {total.discount.toLocaleString("vi-VN", {
+                                    <span className={styles.totalValue}>
+                                        {order?.voucher?.discount?.toLocaleString("vi-VN", {
                                             style: "currency",
                                             currency: "VND",
-                                        })}
-                                    </span> */}
+                                        }) || "0 ₫"}
+                                    </span>
                                 </p>
+
                                 <p className={styles.totalFinal}>
                                     Tổng tiền thanh toán:{" "}
                                     <span className={styles.totalAmount}>
-                                        {order.total_price.toLocaleString("vi-VN", {
+                                        {order?.total_price?.toLocaleString("vi-VN", {
                                             style: "currency",
                                             currency: "VND",
-                                        })}
+                                        }) || "0 ₫"}
                                     </span>
                                 </p>
 
@@ -203,27 +213,26 @@ export default function Order() {
                                 <h3>Chi tiết khách hàng</h3>
                                 <div className={styles.userInfo}>
                                     <img
-                                        src="https://randomuser.me/api/portraits/men/32.jpg" // Avatar mẫu
+                                        src="https://randomuser.me/api/portraits/men/32.jpg"
                                         alt="Avatar"
                                         className={styles.userImage}
                                     />
                                     <div className={styles.productDetails}>
-                                        <div className={styles.userName}>
-                                            {order.user_id?.name}
-                                        </div>
+                                        <div className={styles.userName}>{order?.user_id?.name}</div>
                                         <div className={styles.userDesc}>
-                                            ID người dùng:{" "}
-                                            <strong>{order.user_id?.id}</strong>
+                                            <strong>Email:</strong> {order?.user_id?.email}
                                         </div>
                                     </div>
                                 </div>
                                 <p className={styles.userMeta}>
-                                    <strong>Email</strong>: {order.user_id?.email}
+                                    <strong>SĐT</strong>: {order?.user_id?.phone || "Chưa có"}
                                 </p>
                                 <p className={styles.userMeta}>
-                                    <strong>SDT</strong>: {order.user_id?.phone}
+                                    <strong>Địa chỉ</strong>: {order?.user_id?.address || "Chưa có"}
                                 </p>
                             </div>
+
+
 
                             <div className={styles.box}>
                                 <h3>Địa chỉ giao hàng</h3>
@@ -239,18 +248,21 @@ export default function Order() {
                                 </p> */}
                             </div>
 
-                            <div className={styles.box}>
-                                <h3>Phương thức thanh toán</h3>
-                                <p>
-                                    <strong>Phương thức</strong>: {order.payment_method}
-                                </p>
-                                <p>
-                                    <strong>Mã giao dịch</strong>: {order.transaction_code}
-                                </p>
-                                <p>
-                                    <strong>Trạng thái</strong>: {order.transaction_status === "unpaid" ? "Chưa thanh toán" : "Đã thanh toán"}
-                                </p>
-                            </div>
+                            {order && (
+                                <div className={styles.box}>
+                                    <h3>Phương thức thanh toán</h3>
+                                    <p>
+                                        <strong>Phương thức</strong>: {order?.payment_method}
+                                    </p>
+                                    <p>
+                                        <strong>Mã giao dịch</strong>: {order?.transaction_code}
+                                    </p>
+                                    <p>
+                                        <strong>Trạng thái</strong>: {order?.transaction_status === "unpaid" ? "Chưa thanh toán" : "Đã thanh toán"}
+                                    </p>
+                                </div>
+                            )}
+
 
                         </div>
                     </div>

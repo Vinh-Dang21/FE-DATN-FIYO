@@ -279,17 +279,35 @@
 
 /* Các trạng thái mới */
 .status-choxacnhan {
-  background: #ffc107; /* vàng - chờ xác nhận */
+  background: #ffc107;     /* vàng - chờ xác nhận */
+  color: #fff;
 }
+
+.status-dangsoan {
+  background: #0ea5e9;     /* xanh nhạt - đang soạn hàng */
+  color: #fff;
+}
+
 .status-danggiao {
-  background: #3b82f6; /* xanh dương - đang giao */
+  background: #3b82f6;     /* xanh dương - đang giao */
+  color: #fff;
 }
+
 .status-dagiao {
-  background: #28a745; /* xanh lá - đã giao */
+  background: #28a745;     /* xanh lá - đã giao */
+  color: #fff;
 }
+
 .status-dahuy {
-  background: #ef4444; /* đỏ - đã hủy */
+  background: #ef4444;     /* đỏ - đã hủy */
+  color: #fff;
 }
+
+.status-trahang {
+  background: #6c757d;     /* xám - trả hàng / hoàn tiền */
+  color: #fff;
+}
+
 
 
 .statusAvailable {
