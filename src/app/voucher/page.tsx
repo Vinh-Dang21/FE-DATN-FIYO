@@ -1,138 +1,145 @@
 "use client";
 import {
-  LayoutDashboard,
-  BarChart as BarChartIcon, // Đổi tên để tránh trùng
-  Users,
-  ShoppingCart,
-  GraduationCap,
-  MessageCircle,
-  Columns3,
-  LogOut,
-  Search,
-  Bell,
   Pencil,
   Trash2,
-  MoreVertical,
-  Shirt,
 } from "lucide-react";
 import styles from "./voucher.module.css";
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
 
-import { useState } from "react";
-const vouchers = [
-  {
-    id: "V001",
-    code: "SALE50",
-    minOrder: 50000,
-    maxDiscount: 100000,
-    quantity: 20,
-    active: true,
-    startDate: "01/06/2025",
-    endDate: "30/06/2025",
-  },
-  {
-    id: "V002",
-    code: "FREESHIP",
-    minOrder: 300000,
-    maxDiscount: 30000,
-    quantity: 50,
-    active: true,
-    startDate: "05/06/2025",
-    endDate: "20/06/2025",
-  },
-  {
-    id: "V003",
-    code: "SUMMER10",
-    minOrder: 200000,
-    maxDiscount: 50000,
-    quantity: 100,
-    active: false,
-    startDate: "10/06/2025",
-    endDate: "15/07/2025",
-  },
-  {
-    id: "V004",
-    code: "WELCOME20",
-    minOrder: 100000,
-    maxDiscount: 20000,
-    quantity: 150,
-    active: true,
-    startDate: "01/07/2025",
-    endDate: "31/07/2025",
-  },
-  {
-    id: "V005",
-    code: "VIP100",
-    minOrder: 1000000,
-    maxDiscount: 200000,
-    quantity: 10,
-    active: false,
-    startDate: "01/06/2025",
-    endDate: "01/08/2025",
-  },
-  {
-    id: "V006",
-    code: "NEWUSER",
-    minOrder: 0,
-    maxDiscount: 50000,
-    quantity: 500,
-    active: true,
-    startDate: "01/06/2025",
-    endDate: "31/12/2025",
-  },
-  {
-    id: "V007",
-    code: "WEEKEND15",
-    minOrder: 150000,
-    maxDiscount: 15000,
-    quantity: 80,
-    active: true,
-    startDate: "15/06/2025",
-    endDate: "17/06/2025",
-  },
-  {
-    id: "V008",
-    code: "BIRTHDAY",
-    minOrder: 0,
-    maxDiscount: 100000,
-    quantity: 1000,
-    active: true,
-    startDate: "01/06/2025",
-    endDate: "31/12/2025",
-  },
-  {
-    id: "V009",
-    code: "FLASHSALE",
-    minOrder: 100000,
-    maxDiscount: 70000,
-    quantity: 30,
-    active: false,
-    startDate: "20/06/2025",
-    endDate: "21/06/2025",
-  },
-  {
-    id: "V010",
-    code: "SHOP20K",
-    minOrder: 200000,
-    maxDiscount: 20000,
-    quantity: 200,
-    active: true,
-    startDate: "01/07/2025",
-    endDate: "31/07/2025",
-  },
-];
+import { useState, useEffect } from "react";
 
 export default function Voucher() {
+  const [vouchers, setVouchers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
+  const [editVoucher, setEditVoucher] = useState(null);
+  const [form, setForm] = useState({
+    voucher_code: "",
+    min_total: "",
+    max_total: "",
+    quantity: "",
+    expired_at: "",
+  });
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    fetchVouchers();
+  }, []);
+
+  const fetchVouchers = async () => {
+    try {
+      const url = search.trim()
+        ? `http://localhost:3000/voucher/search?keyword=${search}`
+        : "http://localhost:3000/voucher";
+      const res = await fetch(url);
+      const data = await res.json();
+      setVouchers(data.vouchers);
+    } catch (error) {
+      console.error("Lỗi khi fetch voucher:", error);
+    }
+  };
+
+  const handleAddVoucher = async () => {
+    try {
+      const payload = {
+        ...form,
+        value: 1,
+        is_active: true,
+      };
+
+      const res = await fetch("http://localhost:3000/voucher", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Thêm thất bại");
+
+      alert("Thêm voucher thành công");
+      setShowAdd(false);
+      setForm({
+        voucher_code: "",
+        min_total: "",
+        max_total: "",
+        quantity: "",
+        expired_at: "",
+      });
+      fetchVouchers();
+    } catch (error) {
+      alert("Lỗi: " + error.message);
+    }
+  };
+
+  const handleUpdateVoucher = async () => {
+    try {
+      const res = await fetch(`http://localhost:3000/voucher/${editVoucher._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      alert("Cập nhật thành công");
+      setEditVoucher(null);
+      setShowAdd(false);
+      setForm({
+        voucher_code: "",
+        min_total: "",
+        max_total: "",
+        quantity: "",
+        expired_at: "",
+      });
+      fetchVouchers();
+    } catch (error) {
+      alert("Lỗi: " + error.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Bạn có chắc muốn xoá voucher này không?")) return;
+    try {
+      const res = await fetch(`http://localhost:3000/voucher/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      fetchVouchers();
+    } catch (error) {
+      alert("Lỗi: " + error.message);
+    }
+  };
+
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      const res = await fetch(`http://localhost:3000/voucher/status/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ is_active: !currentStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      fetchVouchers();
+    } catch (error) {
+      alert("Lỗi: " + error.message);
+    }
+  };
+
+  const handleSearch = () => {
+    fetchVouchers();
+  };
+
   return (
     <main className={styles.main}>
       <Sidebar />
-
       <section className={styles.content}>
         <Topbar />
-
-        {/* Thanh tìm kiếm + Thêm sản phẩm */}
         <div className={styles.searchProduct}>
           <div className={styles.searchAddBar}>
             <div className={styles.spaceBetween}>
@@ -140,11 +147,23 @@ export default function Voucher() {
                 type="text"
                 placeholder="Tìm kiếm ..."
                 className={styles.searchInput}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />
-
               <button
                 className={styles.addButton}
-                onClick={() => setShowAdd(true)}>
+                onClick={() => {
+                  setShowAdd(true);
+                  setEditVoucher(null);
+                  setForm({
+                    voucher_code: "",
+                    min_total: "",
+                    max_total: "",
+                    quantity: "",
+                    expired_at: "",
+                  });
+                }}>
                 + Thêm mã giảm giá
               </button>
             </div>
@@ -152,39 +171,62 @@ export default function Voucher() {
         </div>
         {showAdd && (
           <div className={styles.addAside}>
-            <h2 className={styles.addAsideTitle}>Thêm Voucher</h2>
+            <h2 className={styles.addAsideTitle}>{editVoucher ? "Cập nhật Voucher" : "Thêm Voucher"}</h2>
             <input
               className={styles.input}
               type="text"
               placeholder="Mã voucher"
+              value={form.voucher_code}
+              onChange={(e) => setForm({ ...form, voucher_code: e.target.value })}
             />
             <input
               className={styles.input}
               type="number"
               placeholder="Giá trị đơn hàng tối thiểu"
+              value={form.min_total}
+              onChange={(e) => setForm({ ...form, min_total: e.target.value })}
             />
             <input
               className={styles.input}
               type="number"
               placeholder="Giảm giá tối đa"
+              value={form.max_total}
+              onChange={(e) => setForm({ ...form, max_total: e.target.value })}
             />
             <input
               className={styles.input}
               type="number"
               placeholder="Số lượng"
+              value={form.quantity}
+              onChange={(e) => setForm({ ...form, quantity: e.target.value })}
             />
             <div className={styles.dateRow}>
-              <label className={styles.label}>Ngày phát hành</label>
-              <input className={styles.input} type="date" />
+              <label className={styles.label}>Ngày hết hạn</label>
+              <input
+                className={styles.input}
+                type="date"
+                value={form.expired_at}
+                onChange={(e) => setForm({ ...form, expired_at: e.target.value })}
+              />
             </div>
-            <div className={styles.dateRow}>
-              <label className={styles.label}>Ngày kết thúc</label>
-              <input className={styles.input} type="date" />
-            </div>
-            <button className={styles.addButton}>Thêm voucher</button>
+            <button
+              className={styles.addButton}
+              onClick={editVoucher ? handleUpdateVoucher : handleAddVoucher}>
+              {editVoucher ? "Cập nhật" : "Thêm voucher"}
+            </button>
             <button
               className={styles.closeBtn}
-              onClick={() => setShowAdd(false)}
+              onClick={() => {
+                setShowAdd(false);
+                setEditVoucher(null);
+                setForm({
+                  voucher_code: "",
+                  min_total: "",
+                  max_total: "",
+                  quantity: "",
+                  expired_at: "",
+                });
+              }}
               style={{ marginTop: 10 }}>
               Đóng
             </button>
@@ -195,38 +237,56 @@ export default function Voucher() {
           <table className={styles.userTable}>
             <thead>
               <tr>
-                <th>ID</th>
+                <th>STT</th>
                 <th>Mã giảm giá</th>
                 <th>Đơn hàng tối thiểu</th>
                 <th>Giảm giá tối đa</th>
                 <th>Số lượng</th>
-                <th>Phát hành</th>
-                <th>Thời gian áp dụng</th>
+                <th>Trạng thái</th>
+                <th>Hết hạn</th>
                 <th>Chức năng</th>
               </tr>
             </thead>
             <tbody>
-              {vouchers.map((v) => (
-                <tr key={v.id}>
-                  <td>{v.id}</td>
-                  <td>{v.code}</td>
-                  <td>{v.minOrder.toLocaleString()}đ</td>
-                  <td>{v.maxDiscount.toLocaleString()}đ</td>
+              {Array.isArray(vouchers) && vouchers.map((v, index) => (
+                <tr key={v._id}>
+                  <td>{index + 1}</td>
+                  <td>{v.voucher_code}</td>
+                  <td>{v.min_total?.toLocaleString()}đ</td>
+                  <td>{v.max_total?.toLocaleString()}đ</td>
                   <td>{v.quantity}</td>
                   <td>
                     <label className={styles.switch}>
-                      <input type="checkbox" checked={v.active} readOnly />
+                      <input
+                        type="checkbox"
+                        checked={v.is_active}
+                        onChange={() => handleToggleStatus(v._id, v.is_active)}
+                      />
                       <span className={styles.slider}></span>
                     </label>
                   </td>
+                  <td>{v.expired_at?.split("T")[0]}</td>
                   <td>
-                    {v.startDate} - {v.endDate}
-                  </td>
-                  <td>
-                    <button className={styles.actionBtn} title="Sửa">
+                    <button
+                      className={styles.actionBtn}
+                      title="Sửa"
+                      onClick={() => {
+                        setShowAdd(true);
+                        setEditVoucher(v);
+                        setForm({
+                          voucher_code: v.voucher_code,
+                          min_total: v.min_total,
+                          max_total: v.max_total,
+                          quantity: v.quantity,
+                          expired_at: v.expired_at?.split("T")[0],
+                        });
+                      }}>
                       <Pencil size={18} />
                     </button>
-                    <button className={styles.actionBtn} title="Xóa">
+                    <button
+                      className={styles.actionBtn}
+                      title="Xóa"
+                      onClick={() => handleDelete(v._id)}>
                       <Trash2 size={18} />
                     </button>
                   </td>
