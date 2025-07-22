@@ -6,10 +6,30 @@ import Topbar from "../../component/Topbar";
 import styles from "../userdetail.module.css";
 import dayjs from 'dayjs';
 
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  gender: string;
+  code?: string;
+  createdAt: string;
+  totalOrders: number;
+  totalSpent: number;
+}
+interface Address {
+  _id: string;
+  name: string;
+  phone: string;
+  address: string;
+  isDefault: boolean;
+}
+
 export default function UserDetailPage() {
   const { id } = useParams(); // Lấy userId từ URL
-  const [user, setUser] = useState(null);
-  const [addresses, setAddresses] = useState([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+
 
   // Lấy user theo ID
   useEffect(() => {
@@ -47,9 +67,10 @@ export default function UserDetailPage() {
 
   if (!user) return <p>Đang tải dữ liệu người dùng...</p>;
 
-  const getInitial = (name) => {
-  return name?.trim()?.split(" ").pop().charAt(0).toUpperCase() || "?";
-};
+  const getInitial = (name: string | undefined): string => {
+    return name?.trim()?.split(" ").pop()?.charAt(0).toUpperCase() || "?";
+  };
+
 
 
   return (
@@ -62,9 +83,9 @@ export default function UserDetailPage() {
             <h2 className={styles.usertitle}>
               Mã người dùng: {user.code || `#${user._id.slice(-4).toUpperCase()}`}
             </h2>
-          <p className={styles.createdAt}>
-            Ngày tạo: {dayjs(user.createdAt).format("DD-MM-YYYY HH:mm")}
-</p>
+            <p className={styles.createdAt}>
+              Ngày tạo: {dayjs(user.createdAt).format("DD-MM-YYYY HH:mm")}
+            </p>
           </div>
 
           <div className={styles.leftPanel}>
@@ -118,7 +139,7 @@ export default function UserDetailPage() {
                         <br />
                         <span className={styles.addressText}>{item.address}</span>
                       </p>
-                     {item.isDefault && (
+                      {item.isDefault && (
                         <div className={styles.defaultBadge}>Mặc định</div>
                       )}
 
