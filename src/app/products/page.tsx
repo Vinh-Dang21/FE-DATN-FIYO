@@ -276,17 +276,17 @@ export default function Product() {
 
 
   const getTotalQuantity = (variants: any[]) => {
-  return variants.reduce((total: number, variant: any) => {
-    // Bỏ qua nếu variant hoặc sizes không tồn tại hoặc không phải mảng
-    if (!variant || !Array.isArray(variant.sizes)) return total;
+    return variants.reduce((total: number, variant: any) => {
+      // Bỏ qua nếu variant hoặc sizes không tồn tại hoặc không phải mảng
+      if (!variant || !Array.isArray(variant.sizes)) return total;
 
-    const variantQty = variant.sizes.reduce((sum: number, size: any) => {
-      return sum + (size?.quantity || 0); // tránh lỗi nếu size là null
+      const variantQty = variant.sizes.reduce((sum: number, size: any) => {
+        return sum + (size?.quantity || 0); // tránh lỗi nếu size là null
+      }, 0);
+
+      return total + variantQty;
     }, 0);
-
-    return total + variantQty;
-  }, 0);
-};
+  };
 
   const isAvailable = (variants: any[]) => {
     return getTotalQuantity(variants) > 0;
@@ -965,40 +965,42 @@ export default function Product() {
                   })
                   .map((product: any) => (
                     <tr key={product._id}>
-                      <td className={styles.productInfo}>
-                        <img
-                          src={product.images?.[0]}
-                          alt={product.name}
-                          className={styles.productImage}
-                        />
-                        <div className={styles.productDetails}>
-                          <div className={styles.productName}>{product.name}</div>
-                          <div className={styles.productDesc}>
-                            {expandedRows.includes(product._id) ? (
-                              <>
-                                {product.description}
-                                <button
-                                  className={styles.descBtn}
-                                  onClick={() => handleToggleDesc(product._id)}
-                                >
-                                  Thu gọn
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                {product.description.length > 80
-                                  ? product.description.slice(0, 80) + "..."
-                                  : product.description}
-                                {product.description.length > 80 && (
+                      <td>
+                        <div className={styles.productInfo}>
+                          <img
+                            src={product.images?.[0]}
+                            alt={product.name}
+                            className={styles.productImage}
+                          />
+                          <div className={styles.productDetails}>
+                            <div className={styles.productName}>{product.name}</div>
+                            <div className={styles.productDesc}>
+                              {expandedRows.includes(product._id) ? (
+                                <>
+                                  {product.description}
                                   <button
                                     className={styles.descBtn}
                                     onClick={() => handleToggleDesc(product._id)}
                                   >
-                                    Xem thêm
+                                    Thu gọn
                                   </button>
-                                )}
-                              </>
-                            )}
+                                </>
+                              ) : (
+                                <>
+                                  {product.description.length > 80
+                                    ? product.description.slice(0, 80) + "..."
+                                    : product.description}
+                                  {product.description.length > 80 && (
+                                    <button
+                                      className={styles.descBtn}
+                                      onClick={() => handleToggleDesc(product._id)}
+                                    >
+                                      Xem thêm
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>

@@ -72,6 +72,26 @@ export default function Order() {
 
         fetchData();
     }, [orderId]);
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case "pending":
+                return "Chờ xác nhận";
+            case "preparing":
+                return "Đang soạn";
+            case "awaiting_shipment":
+                return "Chờ gửi";
+            case "shipping":
+                return "Đang giao";
+            case "delivered":
+                return "Đã giao";
+            case "cancelled":
+                return "Đã hủy";
+            case "refund":
+                return "Trả hàng / Hoàn tiền";
+            default:
+                return "Không xác định";
+        }
+    };
 
 
     return (
@@ -86,7 +106,27 @@ export default function Order() {
 
                         <p className={styles.statusLine}>
                             Trạng thái:
-                            <span className={styles.badge}>{order?.status_order || "..."}</span>
+                            <span
+                                className={`${styles.badge} ${order?.status_order === "pending"
+                                    ? styles["status-choxacnhan"]
+                                    : order?.status_order === "preparing"
+                                        ? styles["status-dangsoan"]
+                                        : order?.status_order === "awaiting_shipment"
+                                            ? styles["status-chogui"]
+                                            : order?.status_order === "shipping"
+                                                ? styles["status-danggiao"]
+                                                : order?.status_order === "delivered"
+                                                    ? styles["status-dagiao"]
+                                                    : order?.status_order === "cancelled"
+                                                        ? styles["status-dahuy"]
+                                                        : order?.status_order === "refund"
+                                                            ? styles["status-trahang"]
+                                                            : ""
+                                    }`}
+                            >
+                                {getStatusLabel(order?.status_order || "")}
+                            </span>
+
                         </p>
 
                         <p className={styles.orderDate}>

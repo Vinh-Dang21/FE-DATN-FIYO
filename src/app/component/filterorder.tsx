@@ -8,12 +8,14 @@ interface TabsProps {
 const tabs = [
   { label: "Tất cả", value: "all" },
   { label: "Chờ xác nhận", value: "pending" },
-  { label: "Đang soạn hàng", value: "preparing" },
+  { label: "Đang soạn", value: "preparing" },
+  { label: "Chờ gửi", value: "awaiting_shipment" },
   { label: "Đang vận chuyển", value: "shipping" },
   { label: "Hoàn thành", value: "delivered" },
   { label: "Đã hủy", value: "cancelled" },
   { label: "Trả hàng/Hoàn tiền", value: "refund" },
 ];
+
 
 export default function Tabs({ onFilter }: TabsProps) {
   const [activeTabs, setActiveTabs] = useState<string[]>(["pending"]);

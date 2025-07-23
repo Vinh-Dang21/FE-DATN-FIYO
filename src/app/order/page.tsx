@@ -85,32 +85,37 @@ export default function Order() {
   }, [filteredStatus]);
 
 
-  const handleConfirmOrder = async (orderId: string) => {
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/orders/${orderId}/confirm`, {
+      const res = await fetch(`http://localhost:3000/orders/${orderId}/status`, {
         method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
       });
+
       const data = await res.json();
 
-      if (res.ok) {
-        alert("Đơn hàng đã được xác nhận!");
+      if (res.ok && data.status) {
+        alert("Cập nhật trạng thái thành công!");
 
-        // Cập nhật trạng thái trong danh sách
         setOrders((prev) =>
           prev.map((order) =>
             order._id === orderId
-              ? { ...order, status_order: "preparing" }
+              ? { ...order, status_order: newStatus }
               : order
           )
         );
       } else {
-        alert((data.message || "Xác nhận thất bại"));
+        alert(data.message || "Cập nhật thất bại");
       }
     } catch (error) {
-      console.error("Lỗi xác nhận:", error);
+      console.error("Lỗi cập nhật trạng thái:", error);
       alert("Lỗi kết nối máy chủ");
     }
   };
+
 
   return (
     <main className={styles.main}>
@@ -187,8 +192,8 @@ export default function Order() {
                     <Link href={`/orderdetail/${order._id}`}>{order._id}</Link>
                   </td>
                   <td>{order.createdAt}</td>
-                  <td className={styles.userInfo}>
-                    <div className={styles.productDetails}>
+                  <td>
+                    <div className={styles.userInfo}>
                       <div className={styles.userName}>
                         {order.user_id?.name || "Khách lạ"}
                       </div>
@@ -198,37 +203,43 @@ export default function Order() {
                     </div>
                   </td>
 
+
                   <td>
                     <span
                       className={`${styles.methodDelivered} ${order.status_order === "pending"
                         ? styles["status-choxacnhan"]
                         : order.status_order === "preparing"
                           ? styles["status-dangsoan"]
-                          : order.status_order === "shipping"
-                            ? styles["status-danggiao"]
-                            : order.status_order === "delivered"
-                              ? styles["status-dagiao"]
-                              : order.status_order === "cancelled"
-                                ? styles["status-dahuy"]
-                                : order.status_order === "refund"
-                                  ? styles["status-trahang"]
-                                  : ""
+                          : order.status_order === "awaiting_shipment"
+                            ? styles["status-chogui"]
+                            : order.status_order === "shipping"
+                              ? styles["status-danggiao"]
+                              : order.status_order === "delivered"
+                                ? styles["status-dagiao"]
+                                : order.status_order === "cancelled"
+                                  ? styles["status-dahuy"]
+                                  : order.status_order === "refund"
+                                    ? styles["status-trahang"]
+                                    : ""
                         }`}
                     >
                       {order.status_order === "pending"
                         ? "Chờ xác nhận"
                         : order.status_order === "preparing"
                           ? "Đang soạn hàng"
-                          : order.status_order === "shipping"
-                            ? "Đang giao hàng"
-                            : order.status_order === "delivered"
-                              ? "Đã giao hàng"
-                              : order.status_order === "cancelled"
-                                ? "Đã hủy"
-                                : order.status_order === "refund"
-                                  ? "Trả hàng / Hoàn tiền"
-                                  : order.status_order}
+                          : order.status_order === "awaiting_shipment"
+                            ? "Chờ gửi hàng"
+                            : order.status_order === "shipping"
+                              ? "Đang giao hàng"
+                              : order.status_order === "delivered"
+                                ? "Đã giao hàng"
+                                : order.status_order === "cancelled"
+                                  ? "Đã hủy"
+                                  : order.status_order === "refund"
+                                    ? "Trả hàng / Hoàn tiền"
+                                    : order.status_order}
                     </span>
+
 
                   </td>
                   <td className={styles.shippingInfo}>
@@ -241,22 +252,51 @@ export default function Order() {
                   </td>
 
                   <td>
-                    <Link href={`/orderdetail/${order._id}`}>
-                      <button className={styles.actionBtn} title="Xem">
-                        <Eye size={23} />
-                      </button>
-                    </Link>
-                    {order.status_order === "pending" && (
-                      <button
-                        className={styles.actionBtn}
-                        title="Xác nhận"
-                        onClick={() => handleConfirmOrder(order._id)}
-                      >
-                        <CheckCircle size={20} />
-                      </button>
-                    )}
+                    <div className={styles.actionGroup}>
+                      <Link href={`/orderdetail/${order._id}`}>
+                        <button className={styles.actionBtn} title="Xem">
+                          <Eye size={20} />
+                        </button>
+                      </Link>
 
+                      {order.status_order === "pending" && (
+                        <button
+                          className={styles.statusBtn}
+                          onClick={() => handleUpdateStatus(order._id, "preparing")}
+                        >
+                          Xác nhận
+                        </button>
+                      )}
+
+                      {order.status_order === "preparing" && (
+                        <button
+                          className={styles.statusBtn}
+                          onClick={() => handleUpdateStatus(order._id, "awaiting_shipment")}
+                        >
+                          Chờ gửi
+                        </button>
+                      )}
+
+                      {order.status_order === "awaiting_shipment" && (
+                        <button
+                          className={styles.statusBtn}
+                          onClick={() => handleUpdateStatus(order._id, "shipping")}
+                        >
+                          Đang giao
+                        </button>
+                      )}
+
+                      {order.status_order === "shipping" && (
+                        <button
+                          className={styles.statusBtn}
+                          onClick={() => handleUpdateStatus(order._id, "delivered")}
+                        >
+                          Đã giao
+                        </button>
+                      )}
+                    </div>
                   </td>
+
 
                 </tr>
               ))}
