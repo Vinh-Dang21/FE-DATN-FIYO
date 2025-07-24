@@ -108,18 +108,6 @@
   overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
 }
 
-/* topbar */
-.topbar {
-  height: 45px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px;
-  background-color: #fff;
-  border: 1px solid #e4e4e7;
-  border-radius: 10px;
-}
-
 .searchWrapper {
   display: flex;
   align-items: center;

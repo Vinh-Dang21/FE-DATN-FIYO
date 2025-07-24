@@ -18,6 +18,8 @@ interface User {
   avatar?: string;
   totalOrders?: number;
   totalSpent?: number;
+  addresses?: Address[];
+  defaultAddress?: Address | null;
 }
 
 interface Address {
@@ -36,25 +38,14 @@ export default function UserDetailPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [userRes, addressRes] = await Promise.all([
-          fetch(`http://localhost:3000/user/${id}`),
-          fetch(`http://localhost:3000/address/user/${id}`),
-        ]);
+        const res = await fetch(`http://localhost:3000/user/${id}`);
+        const json = await res.json();
 
-        const userData = await userRes.json();
-        const addressData = await addressRes.json();
-
-        if (userData.status && userData.data) {
-          setUser(userData.data);
+        if (json.status && json.data) {
+          setUser(json.data);
+          setAddresses(json.data.addresses || []);
         } else {
-          console.error("Lỗi lấy user:", userData.message);
-        }
-
-        if (addressData.status && Array.isArray(addressData.data)) {
-          setAddresses(addressData.data);
-        } else {
-          console.error("Lỗi lấy địa chỉ:", addressData.message);
-          setAddresses([]);
+          console.error("Lỗi lấy user:", json.message);
         }
       } catch (err) {
         console.error("Lỗi fetch dữ liệu:", err);
@@ -76,17 +67,26 @@ export default function UserDetailPage() {
             <h2 className={styles.usertitle}>
               Mã người dùng: {user.code || `#${user._id.slice(-4).toUpperCase()}`}
             </h2>
-            <p className={styles.createdAt}>Ngày tạo: {user.createdAt}</p>
+           <p className={styles.createdAt}>
+              Ngày tạo: {user.createdAt ? user.createdAt.slice(0, 10) : "Không xác định"}
+          </p>
+
           </div>
 
           <div className={styles.leftPanel}>
-            <img
-              src={user.avatar || "/default-avatar.png"}
-              alt="avatar"
-              className={styles.userAvatar}
-            />
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt="avatar"
+                className={styles.userAvatar}
+              />
+            ) : (
+              <div className={styles.userAvatarFallback}>
+                {user.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
             <h3 className={styles.name}>{user.name}</h3>
-            <p className={styles.userId}>MÃ khách hàng: {user.code}</p>
+            <p className={styles.userId}>Mã khách hàng: {user.code}</p>
 
             <div className={styles.stats}>
               <div className={styles.statItem}>
@@ -112,7 +112,6 @@ export default function UserDetailPage() {
               <p><strong>Email:</strong> {user.email}</p>
               <p><strong>Số điện thoại:</strong> {user.phone || "Chưa có"}</p>
               <p><strong>Giới tính:</strong> {user.gender || "Chưa xác định"}</p>
-              <p><strong>Vai trò:</strong> {user.role || "user"}</p>
             </div>
           </div>
 
@@ -130,7 +129,7 @@ export default function UserDetailPage() {
                           <br />
                           <span className={styles.addressText}>{item.address}</span>
                         </p>
-                        {item.is_default && (
+                        {(item.is_default || index === 0) && (
                           <div className={styles.defaultBadge}>Mặc định</div>
                         )}
                       </div>

@@ -544,19 +544,20 @@
     font-weight: 500;
     user-select: none;
 }
-.avatarCircle {
-  width: 80px;
-  height: 80px;
+.userAvatarFallback {
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  background-color: #ff0a0a;
-  color: white;
-  font-size: 32px;
-  font-weight: bold;
+  background-color:#ff0a0a;
+  color: #fff;
+  font-size: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px auto;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+  font-weight: bold;
   text-transform: uppercase;
+  margin: 0 auto; 
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); 
 }
+
 
