@@ -81,7 +81,47 @@ interface Voucher {
 export default function Order() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredStatus, setFilteredStatus] = useState<string>("pending");
+  const [statusCounts, setStatusCounts] = useState({
+  pending: 0,
+  delivered: 0,
+  refunded: 0,
+  failed: 0,
+  shipping: 0, // 🆕 thêm dòng này
+});
 
+  useEffect(() => {
+    const fetchAllOrders = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/orders");
+        const data = await res.json();
+
+        if (data.status && Array.isArray(data.result)) {
+          const counts = {
+            pending: 0,
+            delivered: 0,
+            refunded: 0,
+            failed: 0,
+            shipping: 0,
+          };
+
+          data.result.forEach((order: Order) => {
+            if (order.status_order === "pending") counts.pending++;
+            if (order.status_order === "delivered") counts.delivered++;
+            if (order.status_order === "refund") counts.refunded++;
+            if (order.transaction_status === "failed") counts.failed++;
+            if (order.status_order === "shipping") counts.shipping++;
+
+          });
+
+          setStatusCounts(counts);
+        }
+      } catch (error) {
+        console.error("Lỗi khi đếm đơn hàng theo trạng thái:", error);
+      }
+    };
+
+    fetchAllOrders();
+  }, []);
 
   useEffect(() => {
     const fetchFilteredOrders = async () => {
@@ -150,34 +190,37 @@ export default function Order() {
         <div className={styles.orderSummary}>
           <div className={styles.orderItem}>
             <div className={styles.orderInfo}>
-              <div className={styles.orderNumber}>56</div>
+              <div className={styles.orderNumber}>{statusCounts.pending}</div>
               <div className={styles.orderLabel}>Chờ xác nhận</div>
             </div>
             <div className={styles.orderIcon}>
               <Calendar />
             </div>
           </div>
+
           <div className={styles.orderItem}>
             <div className={styles.orderInfo}>
-              <div className={styles.orderNumber}>12,689</div>
+              <div className={styles.orderNumber}>{statusCounts.delivered.toLocaleString("vi-VN")}</div>
               <div className={styles.orderLabel}>Đã hoàn thành</div>
             </div>
             <div className={styles.orderIcon}>
               <Check />
             </div>
           </div>
+
           <div className={styles.orderItem}>
             <div className={styles.orderInfo}>
-              <div className={styles.orderNumber}>124</div>
-              <div className={styles.orderLabel}>Đã hoàn tiền</div>
+              <div className={styles.orderNumber}>{statusCounts.shipping}</div>
+              <div className={styles.orderLabel}>Đang giao</div>
             </div>
             <div className={styles.orderIcon}>
-              <CreditCard />
+              <Truck />
             </div>
           </div>
+
           <div className={styles.orderItem}>
             <div className={styles.orderInfo}>
-              <div className={styles.orderNumber}>32</div>
+              <div className={styles.orderNumber}>{statusCounts.failed}</div>
               <div className={styles.orderLabel}>Thất bại</div>
             </div>
             <div className={styles.orderIcon}>
