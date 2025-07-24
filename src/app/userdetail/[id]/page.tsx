@@ -5,110 +5,145 @@ import { useParams } from "next/navigation";
 import Sidebar from "../../component/Sidebar";
 import Topbar from "../../component/Topbar";
 import styles from "../userdetail.module.css";
-import dayjs from "dayjs";
+
+interface User {
+  _id: string;
+  code?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role?: string;
+  gender?: string;
+  createdAt?: string;
+  avatar?: string;
+  totalOrders?: number;
+  totalSpent?: number;
+}
 
 interface Address {
+  _id: string;
   name: string;
   phone: string;
   address: string;
   is_default: boolean;
 }
 
-interface User {
-  name: string;
-  email: string;
-  phone: string;
-  gender: string;
-  createdAt: string;
-  rank: string;
-  point: number;
-  totalOrders: number;
-  totalSpent: number;
-}
-
 export default function UserDetailPage() {
   const { id } = useParams();
   const [user, setUser] = useState<User | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!/^[a-f\d]{24}$/i.test(String(id))) return;
-
     const fetchData = async () => {
-      setLoading(true);
       try {
         const [userRes, addressRes] = await Promise.all([
-          fetch(`/user/${id}`),
-          fetch(`/address?user_id=${id}`),
+          fetch(`http://localhost:3000/user/${id}`),
+          fetch(`http://localhost:3000/address/user/${id}`),
         ]);
-
-        if (!userRes.ok || !addressRes.ok) {
-          throw new Error("Lỗi khi fetch dữ liệu");
-        }
 
         const userData = await userRes.json();
         const addressData = await addressRes.json();
 
-        setUser(userData);
-        setAddresses(addressData);
+        if (userData.status && userData.data) {
+          setUser(userData.data);
+        } else {
+          console.error("Lỗi lấy user:", userData.message);
+        }
+
+        if (addressData.status && Array.isArray(addressData.data)) {
+          setAddresses(addressData.data);
+        } else {
+          console.error("Lỗi lấy địa chỉ:", addressData.message);
+          setAddresses([]);
+        }
       } catch (err) {
-        console.error("Lỗi khi lấy dữ liệu:", err);
-      } finally {
-        setLoading(false);
+        console.error("Lỗi fetch dữ liệu:", err);
       }
     };
 
-    fetchData();
+    if (id) fetchData();
   }, [id]);
 
-  const getInitial = (name: string) => name?.charAt(0)?.toUpperCase() ?? "U";
-
-  const defaultAddress = addresses.find(addr => addr.is_default);
-  const genderVN = {
-    male: "Nam",
-    female: "Nữ",
-    other: "Khác",
-  }[user?.gender ?? ""] || "Không xác định";
-
-  if (loading) return <p>Đang tải dữ liệu người dùng...</p>;
-  if (!user) return <p>Không tìm thấy người dùng.</p>;
+  if (!user) return <p>Đang tải dữ liệu...</p>;
 
   return (
-    <div className={styles.container}>
+    <main className={styles.main}>
       <Sidebar />
-      <div className={styles.content}>
+      <section className={styles.content}>
         <Topbar />
-        <h1 className={styles.title}>Chi tiết người dùng</h1>
-
-        <div className={styles.profile}>
-          <div className={styles.avatarCircle}>
-            {getInitial(user.name)}
+        <div className={styles.orderSummary}>
+          <div className={styles.orderInfoLeft}>
+            <h2 className={styles.usertitle}>
+              Mã người dùng: {user.code || `#${user._id.slice(-4).toUpperCase()}`}
+            </h2>
+            <p className={styles.createdAt}>Ngày tạo: {user.createdAt}</p>
           </div>
-          <div>
-            <p><strong>Tên:</strong> {user.name}</p>
-            <p><strong>Email:</strong> {user.email ?? "Chưa có"}</p>
-            <p><strong>SĐT:</strong> {user.phone ?? "Chưa có"}</p>
-            <p><strong>Giới tính:</strong> {genderVN}</p>
-            <p><strong>Ngày tham gia:</strong> {dayjs(user.createdAt).format("DD/MM/YYYY HH:mm")}</p>
-            <p><strong>Hạng:</strong> {user.rank}</p>
-            <p><strong>Điểm tích lũy:</strong> {user.point?.toLocaleString() || 0}</p>
-            <p><strong>Tổng đơn hàng:</strong> {user.totalOrders?.toLocaleString() || 0}</p>
-            <p><strong>Tổng tiền đã chi:</strong> {user.totalSpent?.toLocaleString()}₫</p>
+
+          <div className={styles.leftPanel}>
+            <img
+              src={user.avatar || "/default-avatar.png"}
+              alt="avatar"
+              className={styles.userAvatar}
+            />
+            <h3 className={styles.name}>{user.name}</h3>
+            <p className={styles.userId}>MÃ khách hàng: {user.code}</p>
+
+            <div className={styles.stats}>
+              <div className={styles.statItem}>
+                <div className={styles.statContent}>
+                  <span className={styles.statValue}>{user.totalOrders || 0}</span>
+                  <span className={styles.statLabel}>Đơn hàng</span>
+                </div>
+              </div>
+              <div className={styles.statItem}>
+                <div className={styles.statContent}>
+                  <span className={styles.statValue}>
+                    {(user.totalSpent || 0).toLocaleString()}
+                  </span>
+                  <span className={styles.statLabel}>Đã chi</span>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.customerInfo}>
+              <div className={styles.customerInfoTitle}>Thông tin khách hàng</div>
+              <hr className={styles.customerInfoDivider} />
+              <p><strong>Tên đăng nhập:</strong> {user.name}</p>
+              <p><strong>Email:</strong> {user.email}</p>
+              <p><strong>Số điện thoại:</strong> {user.phone || "Chưa có"}</p>
+              <p><strong>Giới tính:</strong> {user.gender || "Chưa xác định"}</p>
+              <p><strong>Vai trò:</strong> {user.role || "user"}</p>
+            </div>
+          </div>
+
+          <div className={styles.rightPanel}>
+            <div className={styles.addressList}>
+              <div className={styles.addressTitle}>Địa chỉ</div>
+              {addresses.length > 0 ? (
+                addresses.map((item, index) => (
+                  <div className={styles.addressItem} key={item._id}>
+                    <div className={styles.addressItemRow}>
+                      <div>
+                        <p className={styles.addressInfo}>
+                          <strong className={styles.addressName}>{item.name}</strong>
+                          <span className={styles.addressPhone}> | {item.phone}</span>
+                          <br />
+                          <span className={styles.addressText}>{item.address}</span>
+                        </p>
+                        {item.is_default && (
+                          <div className={styles.defaultBadge}>Mặc định</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>Chưa có địa chỉ nào</p>
+              )}
+            </div>
           </div>
         </div>
-
-        <h2 className={styles.subtitle}>Địa chỉ mặc định</h2>
-        {defaultAddress ? (
-          <div className={styles.addressCard}>
-            <p><strong>Người nhận:</strong> {defaultAddress.name}</p>
-            <p><strong>SĐT:</strong> {defaultAddress.phone}</p>
-            <p><strong>Địa chỉ:</strong> {defaultAddress.address}</p>
-          </div>
-        ) : (
-          <p>Người dùng chưa có địa chỉ mặc định.</p>
-        )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
