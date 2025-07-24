@@ -18,7 +18,7 @@ const menuItems = [
     { label: "Danh mục", href: "/categories", icon: Layers },
     { label: "Người dùng", href: "/users", icon: Users },
     { label: "Khuyến mãi", href: "/voucher", icon: GraduationCap },
-    { label: "Bình luận", href: "/comments", icon: MessageCircle },
+    { label: "Đánh giá", href: "/comments", icon: MessageCircle },
     { label: "Đăng xuất", href: "/logout", icon: LogOut },
 ];
 
