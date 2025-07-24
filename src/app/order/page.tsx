@@ -25,18 +25,41 @@ interface Order {
   status_order: string;
   createdAt: string;
   user_id: User | null;
+  address_id: Address | null;
   voucher_id?: Voucher;
   payment_method: string;
-  transaction_code: string;
+  transaction_code: string | null;
   transaction_status: string;
 }
+
+
+interface Address {
+  _id: string;
+  name: string;
+  phone: string;
+  address: string;
+  detail: string;
+  type: string;
+  is_default?: boolean;
+  user_id?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 
 interface User {
   _id: string;
   name: string;
   email: string;
   phone?: string;
-  address?: string;
+  gender?: string;
+  role?: number;
+  authType?: string;
+  point?: number;
+  rank?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  id?: string;
 }
 
 interface Voucher {
@@ -244,11 +267,16 @@ export default function Order() {
                   </td>
                   <td className={styles.shippingInfo}>
                     <div className={styles.userDesc}>
-                      <strong>SĐT:</strong> {order.user_id?.phone || "Chưa có"}
+                      <strong>SĐT:</strong> {order.address_id?.phone || order.user_id?.phone || "Chưa có"}
+
                     </div>
                     <div className={styles.userDesc}>
-                      <strong>Địa chỉ:</strong> {order.user_id?.address || "Chưa có"}
+                      <strong>Địa chỉ:</strong>{" "}
+                      {order.address_id?.detail && order.address_id?.address
+                        ? `${order.address_id.detail}, ${order.address_id.address}`
+                        : "Chưa có"}
                     </div>
+
                   </td>
 
                   <td>

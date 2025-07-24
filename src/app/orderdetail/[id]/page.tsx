@@ -5,6 +5,8 @@ import styles from "./orderdetail.module.css";
 import Sidebar from "../../component/Sidebar";
 import Topbar from "../../component/Topbar";
 import { useParams } from "next/navigation";
+import dayjs from "dayjs";
+
 interface Product {
     _id: string;
     name: string;
@@ -62,7 +64,7 @@ export default function Order() {
 
                 if (orderInfoData.status) {
                     setOrder(orderInfoData.result); // 🟢 đây mới có các field như total_price, status_order, v.v.
-                    setUser(orderInfoData.result.user_id); // 🟢 user nằm trong order.result.user_id
+                    setUser(orderDetailData.user); // ✅ đúng source user // 🟢 user nằm trong order.result.user_id
                 }
 
             } catch (error) {
@@ -92,6 +94,10 @@ export default function Order() {
                 return "Không xác định";
         }
     };
+
+    const orderSubtotal = orderProducts.reduce((total, item) => {
+        return total + item.product.price * item.quantity;
+    }, 0);
 
 
     return (
@@ -130,7 +136,9 @@ export default function Order() {
                         </p>
 
                         <p className={styles.orderDate}>
-                            Ngày đặt: {order?.createdAt || "..."}</p>
+                            Ngày đặt: {order?.createdAt ? dayjs(order.createdAt).format("DD/MM/YYYY HH:mm") : "..."}
+                        </p>
+
                     </div>
 
 
@@ -169,8 +177,9 @@ export default function Order() {
                                                     })}
                                                 </td>
                                                 <td>
-                                                    {product.variant.color} / {product.size.size}
+                                                    {product.variant?.color || "Không rõ"} / {product.size || "Không rõ"}
                                                 </td>
+
                                                 <td>{item.quantity}</td>
                                                 <td>
                                                     {(product.price * item.quantity).toLocaleString("vi-VN", {
@@ -187,13 +196,14 @@ export default function Order() {
                             <div className={styles.totalSection}>
                                 <p>
                                     Giá trị đơn hàng:{" "}
-                                    {/* <span className={styles.totalValue}>
-                                        {total.value.toLocaleString("vi-VN", {
+                                    <span className={styles.totalValue}>
+                                        {orderSubtotal.toLocaleString("vi-VN", {
                                             style: "currency",
                                             currency: "VND",
                                         })}
-                                    </span> */}
+                                    </span>
                                 </p>
+
                                 <p>
                                     Giảm:{" "}
                                     <span className={styles.totalValue}>
@@ -258,50 +268,73 @@ export default function Order() {
                                         className={styles.userImage}
                                     />
                                     <div className={styles.productDetails}>
-                                        <div className={styles.userName}>{order?.user_id?.name}</div>
+                                        <div className={styles.userName}>{user?.name}</div>
                                         <div className={styles.userDesc}>
-                                            <strong>Email:</strong> {order?.user_id?.email}
+                                            <strong>Email:</strong> {user?.email}
                                         </div>
+
                                     </div>
                                 </div>
                                 <p className={styles.userMeta}>
-                                    <strong>SĐT</strong>: {order?.user_id?.phone || "Chưa có"}
+                                    <strong>SĐT</strong>: {user?.phone || "Chưa có"}
                                 </p>
                                 <p className={styles.userMeta}>
-                                    <strong>Địa chỉ</strong>: {order?.user_id?.address || "Chưa có"}
+                                    <strong>Địa chỉ</strong>:{" "}
+                                    {(user?.address?.detail || user?.address?.address)
+                                        ? `${user?.address?.detail || ""}, ${user?.address?.address || ""}`
+                                        : "Chưa có"}
                                 </p>
+
                             </div>
 
 
 
                             <div className={styles.box}>
                                 <h3>Địa chỉ giao hàng</h3>
-                                {/* <p>
-                                    <strong>Tên người nhận</strong>:{" "}
-                                    {shipping.receiver}
+                                <p>
+                                    <strong>Tên người nhận</strong>: {order?.address_id?.name || "Chưa có"}
                                 </p>
                                 <p>
-                                    <strong>Địa chỉ</strong>: {shipping.address}
+                                    <strong>SĐT</strong>: {order?.address_id?.phone || "Chưa có"}
                                 </p>
                                 <p>
-                                    <strong>Ghi chú</strong>: {shipping.note}
-                                </p> */}
+                                    <strong>Địa chỉ</strong>: {(order?.address_id?.detail || order?.address_id?.address)
+                                        ? `${order?.address_id?.detail || ""}, ${order?.address_id?.address || ""}`
+                                        : "Chưa có"}
+                                </p>
+                                <p>
+                                    <strong>Loại địa chỉ</strong>: {order?.address_id?.type || "Không rõ"}
+                                </p>
                             </div>
+
 
                             {order && (
                                 <div className={styles.box}>
                                     <h3>Phương thức thanh toán</h3>
+
                                     <p>
-                                        <strong>Phương thức</strong>: {order?.payment_method}
+                                        <strong>Phương thức</strong>:{" "}
+                                        {order.payment_method?.toUpperCase() === "COD" ? "Thanh toán khi nhận hàng (COD)" : order.payment_method || "Không rõ"}
                                     </p>
+
                                     <p>
-                                        <strong>Mã giao dịch</strong>: {order?.transaction_code}
+                                        <strong>Mã giao dịch</strong>:{" "}
+                                        {order.transaction_code ? order.transaction_code : "Không có"}
                                     </p>
+
                                     <p>
-                                        <strong>Trạng thái</strong>: {order?.transaction_status === "unpaid" ? "Chưa thanh toán" : "Đã thanh toán"}
+                                        <strong>Trạng thái</strong>:{" "}
+                                        {{
+                                            unpaid: "Chưa thanh toán",
+                                            paid: "Đã thanh toán",
+                                            failed: "Thanh toán thất bại",
+                                            refunded: "Đã hoàn tiền",
+                                        }[order.transaction_status as "unpaid" | "paid" | "failed" | "refunded"] || "Không rõ"}
                                     </p>
+
                                 </div>
                             )}
+
 
 
                         </div>
