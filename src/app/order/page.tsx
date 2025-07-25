@@ -82,12 +82,12 @@ export default function Order() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredStatus, setFilteredStatus] = useState<string>("pending");
   const [statusCounts, setStatusCounts] = useState({
-  pending: 0,
-  delivered: 0,
-  refunded: 0,
-  failed: 0,
-  shipping: 0, // 🆕 thêm dòng này
-});
+    pending: 0,
+    delivered: 0,
+    refunded: 0,
+    failed: 0,
+    shipping: 0, // 🆕 thêm dòng này
+  });
 
   useEffect(() => {
     const fetchAllOrders = async () => {
@@ -200,21 +200,22 @@ export default function Order() {
 
           <div className={styles.orderItem}>
             <div className={styles.orderInfo}>
-              <div className={styles.orderNumber}>{statusCounts.delivered.toLocaleString("vi-VN")}</div>
-              <div className={styles.orderLabel}>Đã hoàn thành</div>
-            </div>
-            <div className={styles.orderIcon}>
-              <Check />
-            </div>
-          </div>
-
-          <div className={styles.orderItem}>
-            <div className={styles.orderInfo}>
               <div className={styles.orderNumber}>{statusCounts.shipping}</div>
               <div className={styles.orderLabel}>Đang giao</div>
             </div>
             <div className={styles.orderIcon}>
               <Truck />
+            </div>
+          </div>
+
+
+          <div className={styles.orderItem}>
+            <div className={styles.orderInfo}>
+              <div className={styles.orderNumber}>{statusCounts.delivered.toLocaleString("vi-VN")}</div>
+              <div className={styles.orderLabel}>Đã hoàn thành</div>
+            </div>
+            <div className={styles.orderIcon}>
+              <Check />
             </div>
           </div>
 
