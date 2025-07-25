@@ -79,6 +79,8 @@ interface Voucher {
 
 
 export default function Order() {
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredStatus, setFilteredStatus] = useState<string>("pending");
   const [statusCounts, setStatusCounts] = useState({
@@ -127,8 +129,16 @@ export default function Order() {
     const fetchFilteredOrders = async () => {
       try {
         let url = "http://localhost:3000/orders/filter";
+        const params = new URLSearchParams();
+
         if (filteredStatus !== "all") {
-          url += `?status_order=${filteredStatus}`;
+          params.append("status_order", filteredStatus);
+        }
+        if (fromDate) params.append("fromDate", fromDate);
+        if (toDate) params.append("toDate", toDate);
+
+        if (params.toString()) {
+          url += `?${params.toString()}`;
         }
 
         const res = await fetch(url);
@@ -137,7 +147,7 @@ export default function Order() {
         if (data.status && Array.isArray(data.result)) {
           setOrders(data.result);
         } else {
-          setOrders([]); // clear nếu không có dữ liệu
+          setOrders([]);
         }
       } catch (error) {
         console.error("Lỗi khi lọc đơn hàng:", error);
@@ -145,7 +155,8 @@ export default function Order() {
     };
 
     fetchFilteredOrders();
-  }, [filteredStatus]);
+  }, [filteredStatus, fromDate, toDate]); // ✅ phải có đủ 3 biến
+
 
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
@@ -231,14 +242,38 @@ export default function Order() {
         </div>
 
         <div className={styles.searchProduct}>
-          <div className={styles.searchAddBar}>
-            <input
-              type="text"
-              placeholder="Tìm kiếm ..."
-              className={styles.searchInput}
-            />
+          <div className={styles.searchBarWrapper}>
+            <div className={styles.searchAddBar}>
+              <input
+                type="text"
+                placeholder="Tìm kiếm ..."
+                className={styles.searchInput}
+              />
+            </div>
+
+            <div className={styles.dateFilterBar}>
+              <label>
+                Từ:
+                <input
+                  type="date"
+                  className={styles.dateInput}
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                />
+              </label>
+              <label>
+                Đến:
+                <input
+                  type="date"
+                  className={styles.dateInput}
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                />
+              </label>
+            </div>
           </div>
         </div>
+
         <Tabs onFilter={(status) => setFilteredStatus(status)} />
         <div className={styles.usertList}>
           <table className={styles.userTable}>

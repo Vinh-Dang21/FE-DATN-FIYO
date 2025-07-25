@@ -215,7 +215,6 @@
 
 /* cac chuc nang */
 .searchProduct {
-
   padding: 20px;
   background-color: #fff;
   border: 1px solid #e4e4e7;
@@ -238,6 +237,32 @@
   outline: none;
   transition: border 0.2s;
 }
+
+.searchBarWrapper {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap; /* Cho responsive nếu bị nhỏ */
+}
+
+.dateFilterBar {
+ color: #444;
+  margin-top: 0;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dateInput {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #444;
+  margin-left: 5px;
+}
+
 
 .searchAddBar .searchInput:focus {
   border-color: #d90429;
@@ -508,3 +533,5 @@
   align-items: center;
   justify-content: center;
 }
+
+/* Ví dụ trong order.module.css */

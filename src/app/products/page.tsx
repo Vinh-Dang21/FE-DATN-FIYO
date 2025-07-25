@@ -883,10 +883,7 @@ export default function Product() {
                       ))}
                     </ul>
 
-                    <div className={styles.actionGroup}>
-                      <button onClick={() => handleEditVariant(index)}>Sửa</button>
-                      <button onClick={() => handleDeleteVariant(index)}>Xoá</button>
-                    </div>
+                    
                   </div>
                 ))}
               </div>

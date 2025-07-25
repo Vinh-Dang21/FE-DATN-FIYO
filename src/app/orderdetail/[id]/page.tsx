@@ -99,6 +99,31 @@ export default function Order() {
         return total + item.product.price * item.quantity;
     }, 0);
 
+    const handleUpdateStatus = async (newStatus: string) => {
+        try {
+            const res = await fetch(`http://localhost:3000/orders/${orderId}/status`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.status) {
+                alert("Cập nhật trạng thái thành công!");
+                setOrder((prev: any) => ({ ...prev, status_order: newStatus }));
+            } else {
+                alert(data.message || "Cập nhật thất bại");
+            }
+        } catch (error) {
+            console.error("Lỗi cập nhật trạng thái:", error);
+            alert("Lỗi kết nối máy chủ");
+        }
+    };
+
+
 
     return (
         <main className={styles.main}>
@@ -225,6 +250,46 @@ export default function Order() {
                                 </p>
 
                             </div>
+                            {/* Nút chuyển trạng thái đơn hàng */}
+                            <div className={styles.actionButtons}>
+                                {order?.status_order === "pending" && (
+                                    <button
+                                        className={styles.statusBtn}
+                                        onClick={() => handleUpdateStatus("preparing")}
+                                    >
+                                        Xác nhận đơn
+                                    </button>
+                                )}
+
+                                {order?.status_order === "preparing" && (
+                                    <button
+                                        className={styles.statusBtn}
+                                        onClick={() => handleUpdateStatus("awaiting_shipment")}
+                                    >
+                                        Chờ gửi hàng
+                                    </button>
+                                )}
+
+                                {order?.status_order === "awaiting_shipment" && (
+                                    <button
+                                        className={styles.statusBtn}
+                                        onClick={() => handleUpdateStatus("shipping")}
+                                    >
+                                        Đang giao hàng
+                                    </button>
+                                )}
+
+                                {order?.status_order === "shipping" && (
+                                    <button
+                                        className={styles.statusBtn}
+                                        onClick={() => handleUpdateStatus("delivered")}
+                                    >
+                                        Đã giao hàng
+                                    </button>
+                                )}
+                            </div>
+
+
                             {/* <div className={styles.shipping}>
                                 <h3 className={styles.heading}>Theo dõi kiện hàng</h3>
                                 <div className={styles.timeline}>
@@ -262,11 +327,7 @@ export default function Order() {
                             <div className={styles.box}>
                                 <h3>Chi tiết khách hàng</h3>
                                 <div className={styles.userInfo}>
-                                    <img
-                                        src="https://randomuser.me/api/portraits/men/32.jpg"
-                                        alt="Avatar"
-                                        className={styles.userImage}
-                                    />
+                                    
                                     <div className={styles.productDetails}>
                                         <div className={styles.userName}>{user?.name}</div>
                                         <div className={styles.userDesc}>
