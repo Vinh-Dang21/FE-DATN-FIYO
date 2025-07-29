@@ -24,7 +24,8 @@ interface CategoryForm {
 }
 
 
-export default function Categories() {111
+export default function Categories() {
+  111
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -62,32 +63,32 @@ export default function Categories() {111
     return parent ? parent.name : "Không có";
   };
 
-const [formData, setFormData] = useState<CategoryForm>({
-  name: "",
-  slug: "",
-  parentId: "",
-  type: "cloth", // default để đảm bảo luôn có
-});
+  const [formData, setFormData] = useState<CategoryForm>({
+    name: "",
+    slug: "",
+    parentId: "",
+    type: "cloth", // default để đảm bảo luôn có
+  });
 
 
 
 
   const resetForm = () => {
-  setShowAdd(false);
-  setShowEdit(false);
-  setEditingId(null);
-  setFormData({ name: "", slug: "", parentId: ""});
-};
+    setShowAdd(false);
+    setShowEdit(false);
+    setEditingId(null);
+    setFormData({ name: "", slug: "", parentId: "" });
+  };
 
-const refreshCategories = async () => {
-  const url = selectedParentId
-    ? `http://localhost:3000/category/children/${selectedParentId}`
-    : `http://localhost:3000/category/`;
+  const refreshCategories = async () => {
+    const url = selectedParentId
+      ? `http://localhost:3000/category/children/${selectedParentId}`
+      : `http://localhost:3000/category/`;
 
-  const res = await fetch(url);
-  const data: Category[] = await res.json();
-  setCategories(data);
-};
+    const res = await fetch(url);
+    const data: Category[] = await res.json();
+    setCategories(data);
+  };
 
 
 
@@ -100,63 +101,76 @@ const refreshCategories = async () => {
     }));
   };
 
-const handleSubmit = async () => {
-  if (!formData.name || !formData.slug) {
-    alert("Vui lòng nhập tên và slug!");
-    return;
-  }
-
-const payload = {
-  ...formData,
-  type: formData.type || "cloth", // 👈 dòng này giúp backend không lỗi
-  parentId: formData.parentId || null,
-};
-
-
-  const method = editingId ? "PUT" : "POST";
-  const url = editingId
-    ? `http://localhost:3000/category/${editingId}`
-    : `http://localhost:3000/category/create`;
-
-  console.log("🚀 Gửi yêu cầu:", { method, url, payload });
-
-  try {
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await res.json();
-    console.log("📦 Phản hồi từ server:", result);
-
-    if (res.ok) {
-      alert(editingId ? "✅ Cập nhật thành công!" : "✅ Thêm thành công!");
-
-      // Reset lại form
-      setEditingId(null);
-      setShowAdd(false);
-      setShowEdit(false);
-      setFormData({ name: "", slug: "", parentId: "" });
-
-
-      // Refresh lại danh sách
-      const refreshUrl = selectedParentId
-        ? `http://localhost:3000/category/children/${selectedParentId}`
-        : `http://localhost:3000/category/`;
-
-      const refreshed = await fetch(refreshUrl);
-      const newData: Category[] = await refreshed.json();
-      setCategories(newData);
-    } else {
-      console.warn("❌ Lỗi cập nhật:", result);
-      alert(result.message || "Có lỗi khi xử lý danh mục.");
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.slug) {
+      alert("Vui lòng nhập tên và slug!");
+      return;
     }
-  } catch (err) {
-    console.error("🚨 Lỗi khi gửi request:", err);
-    alert("Lỗi mạng hoặc server.");
-  }
-};
+
+    const isDuplicate = categories.some(
+      (cate) =>
+        cate.name.trim().toLowerCase() === formData.name.trim().toLowerCase() &&
+        cate._id !== editingId &&
+        (cate.parentId || "") === (formData.parentId || "")
+    );
+
+
+    if (isDuplicate) {
+      alert("Tên danh mục đã tồn tại!");
+      return;
+    }
+
+    const payload = {
+      ...formData,
+      type: formData.type || "cloth",
+      parentId: formData.parentId || null,
+    };
+
+
+    const method = editingId ? "PUT" : "POST";
+    const url = editingId
+      ? `http://localhost:3000/category/${editingId}`
+      : `http://localhost:3000/category/create`;
+
+    console.log("xGửi yêu cầu:", { method, url, payload });
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      console.log("hản hồi từ server:", result);
+
+      if (res.ok) {
+        alert(editingId ? "Cập nhật danh mục thành công!" : "Thêm danh mục thành công!");
+
+        // Reset lại form
+        setEditingId(null);
+        setShowAdd(false);
+        setShowEdit(false);
+        setFormData({ name: "", slug: "", parentId: "" });
+
+
+        // Refresh lại danh sách
+        const refreshUrl = selectedParentId
+          ? `http://localhost:3000/category/children/${selectedParentId}`
+          : `http://localhost:3000/category/`;
+
+        const refreshed = await fetch(refreshUrl);
+        const newData: Category[] = await refreshed.json();
+        setCategories(newData);
+      } else {
+        console.warn("Lỗi cập nhật danh mục:", result);
+        alert(result.message || "Có lỗi khi xử lý danh mục.");
+      }
+    } catch (err) {
+      console.error("Lỗi khi gửi request:", err);
+      alert("Lỗi mạng hoặc server.");
+    }
+  };
 
 
 
@@ -193,43 +207,43 @@ const payload = {
   };
 
   const handleEdit = async (id: string) => {
-  try {
-    console.log("👉 Bắt đầu handleEdit với ID:", id);
+    try {
+      console.log("👉 Bắt đầu handleEdit với ID:", id);
 
-    const res = await fetch(`http://localhost:3000/category/${id}`);
-    console.log("🔄 Trạng thái HTTP:", res.status);
+      const res = await fetch(`http://localhost:3000/category/${id}`);
+      console.log("🔄 Trạng thái HTTP:", res.status);
 
-    const data = await res.json();
-    console.log("📦 Dữ liệu trả về từ API:", data);
+      const data = await res.json();
+      console.log("📦 Dữ liệu trả về từ API:", data);
 
-    const result = data.result;
+      const result = data.result;
 
-    if (res.ok && result) {
-      console.log("✅ Dữ liệu hợp lệ, đang set formData...");
+      if (res.ok && result) {
+        console.log("✅ Dữ liệu hợp lệ, đang set formData...");
 
-      setEditingId(id);
-      setFormData({
-  name: result.name || "",
-  slug: result.slug || "",
-  parentId: result.parentId || "",
-});
+        setEditingId(id);
+        setFormData({
+          name: result.name || "",
+          slug: result.slug || "",
+          parentId: result.parentId || "",
+        });
 
 
-      setShowEdit(true);
-      console.log("✅ Đã mở form sửa, formData:", {
-        name: result.name || "",
-        slug: result.slug || "",
-        parentId: result.parentId || "",
-        type: result.type || "cloth",
-      });
-    } else {
-      alert("Không tìm thấy danh mục.");
-      console.warn("❌ Server trả về lỗi:", data.message || data);
+        setShowEdit(true);
+        console.log("✅ Đã mở form sửa, formData:", {
+          name: result.name || "",
+          slug: result.slug || "",
+          parentId: result.parentId || "",
+          type: result.type || "cloth",
+        });
+      } else {
+        alert("Không tìm thấy danh mục.");
+        console.warn("❌ Server trả về lỗi:", data.message || data);
+      }
+    } catch (err) {
+      console.error("🚨 Lỗi khi lấy dữ liệu danh mục:", err);
     }
-  } catch (err) {
-    console.error("🚨 Lỗi khi lấy dữ liệu danh mục:", err);
-  }
-};
+  };
 
   useEffect(() => {
     if (showEdit) {
@@ -259,13 +273,14 @@ const payload = {
                 onChange={(e) => setSelectedParentId(e.target.value)}
               >
                 <option value="">Tất cả danh mục cha</option>
-                {parentCategories.map((cate) => (
-                  <option key={cate._id} value={cate._id}>
-                    {cate.name}
-                  </option>
-                ))}
+                {parentCategories
+                  .filter((cate) => cate.parentId === null) // 👈 Bỏ dm cha
+                  .map((cate) => (
+                    <option key={`filter-${cate._id}`} value={cate._id}>
+                      {cate.name}
+                    </option>
+                  ))}
               </select>
-
 
             </div>
             <button
@@ -289,14 +304,14 @@ const payload = {
               onChange={handleChange}
             >
               <option value="">Chọn danh mục cha</option>
-              {parentCategories.map((cate) => (
-                <option key={cate._id} value={cate._id}>
-                  {cate.name}
-                </option>
-              ))}
+              {parentCategories
+                .filter((cate) => cate.parentId === null) // 👈 Bỏ dm cha
+                .map((cate) => (
+                  <option key={`form-${cate._id}`} value={cate._id}>
+                    {cate.name}
+                  </option>
+                ))}
             </select>
-
-
 
             {/* Tên danh mục */}
             <input
@@ -327,7 +342,7 @@ const payload = {
                 setShowAdd(false);
                 setShowEdit(false);
                 setEditingId(null);
-                setFormData({ name: "", slug: "", parentId: ""});
+                setFormData({ name: "", slug: "", parentId: "" });
               }}
               style={{ marginTop: 10 }}
             >
@@ -350,32 +365,34 @@ const payload = {
               </tr>
             </thead>
             <tbody>
-              {categories.map((cate) => (
-                <tr key={cate._id}>
-                  <td>{cate._id}</td>
-                  <td>{cate.name}</td>
-                  <td>{cate.slug}</td>
-                  <td>{getParentName(cate.parentId)}</td>
-                  <td>
-                    <button
-                      className={styles.actionBtn}
-                      title="Sửa"
-                      onClick={() => handleEdit(cate._id)}
-                    >
-                      <Pencil size={18} />
-                    </button>
+              {categories
+                .filter((cate) => cate.parentId !== null) // 👈 Chỉ lấy danh mục con
+                .map((cate) => (
+                  <tr key={cate._id}>
+                    <td>{cate._id}</td>
+                    <td>{cate.name}</td>
+                    <td>{cate.slug}</td>
+                    <td>{getParentName(cate.parentId)}</td>
+                    <td>
+                      <button
+                        className={styles.actionBtn}
+                        title="Sửa"
+                        onClick={() => handleEdit(cate._id)}
+                      >
+                        <Pencil size={18} />
+                      </button>
 
-                    <button
-                      className={styles.actionBtn}
-                      title="Xóa"
-                      onClick={() => handleDelete(cate._id)}
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                      <button
+                        className={styles.actionBtn}
+                        title="Xóa"
+                        onClick={() => handleDelete(cate._id)}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
 
-                  </td>
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>
