@@ -30,6 +30,14 @@ interface Order {
   createdAt: string;
   user_id: User | null;
   address_id: Address | null;
+  address_guess?: {
+    name: string;
+    phone: string;
+    province: string;
+    district: string;
+    ward: string;
+    detail: string;
+  };
   voucher_id?: Voucher;
   payment_method: string;
   transaction_code: string | null;
@@ -323,7 +331,6 @@ export default function Order() {
                     </div>
                   </td>
 
-
                   <td>
                     <span
                       className={`${styles.methodDelivered} ${order.status_order === "pending"
@@ -363,17 +370,28 @@ export default function Order() {
 
                   </td>
                   <td className={styles.shippingInfo}>
-                    <div className={styles.userDesc}>
-                      <strong>SĐT:</strong> {order.address_id?.phone || order.user_id?.phone || "Chưa có"}
-
-                    </div>
-                    <div className={styles.userDesc}>
-                      <strong>Địa chỉ:</strong>{" "}
-                      {order.address_id?.detail && order.address_id?.address
-                        ? `${order.address_id.detail}, ${order.address_id.address}`
-                        : "Chưa có"}
-                    </div>
-
+                    {order.address_id ? (
+                      <>
+                        <div className={styles.userDesc}>
+                          <strong>SĐT:</strong> {order.address_id.phone}
+                        </div>
+                        <div className={styles.userDesc}>
+                          <strong>Địa chỉ:</strong> {order.address_id.detail}, {order.address_id.address}
+                        </div>
+                      </>
+                    ) : order.address_guess ? (
+                      <>
+                        <div className={styles.userDesc}>
+                          <strong>SĐT:</strong> {order.address_guess.phone}
+                        </div>
+                        <div className={styles.userDesc}>
+                          <strong>Địa chỉ:</strong>{" "}
+                          {`${order.address_guess.detail}, ${order.address_guess.ward}, ${order.address_guess.district}, ${order.address_guess.province}`}
+                        </div>
+                      </>
+                    ) : (
+                      <div className={styles.userDesc}>Không có địa chỉ</div>
+                    )}
                   </td>
 
                   <td>
