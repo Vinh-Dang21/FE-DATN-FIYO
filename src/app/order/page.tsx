@@ -18,6 +18,10 @@ import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
 import Tabs from "../component/filterorder";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import dayjs from "dayjs";
+
+
 
 interface Order {
   _id: string;
@@ -79,6 +83,7 @@ interface Voucher {
 
 
 export default function Order() {
+  const router = useRouter();
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
   const [orders, setOrders] = useState<Order[]>([]);
@@ -159,7 +164,7 @@ export default function Order() {
 
 
 
-  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+  const handleUpdateStatus = async (orderId: string, newStatus: string, showAlert = true) => {
     try {
       const res = await fetch(`http://localhost:3000/orders/${orderId}/status`, {
         method: "PATCH",
@@ -172,22 +177,28 @@ export default function Order() {
       const data = await res.json();
 
       if (res.ok && data.status) {
-        alert("Cập nhật trạng thái thành công!");
+        if (showAlert) alert("Cập nhật trạng thái thành công!");
 
         setOrders((prev) =>
           prev.map((order) =>
-            order._id === orderId
-              ? { ...order, status_order: newStatus }
-              : order
+            order._id === orderId ? { ...order, status_order: newStatus } : order
           )
         );
       } else {
-        alert(data.message || "Cập nhật thất bại");
+        if (showAlert) alert(data.message || "Cập nhật thất bại");
       }
     } catch (error) {
       console.error("Lỗi cập nhật trạng thái:", error);
-      alert("Lỗi kết nối máy chủ");
+      if (showAlert) alert("Lỗi kết nối máy chủ");
     }
+  };
+
+
+  const handleViewOrder = async (order: Order) => {
+    if (order.status_order === "pending") {
+      await handleUpdateStatus(order._id, "preparing", false);
+    }
+    router.push(`/orderdetail/${order._id}`);
   };
 
 
@@ -291,9 +302,16 @@ export default function Order() {
               {orders.map((order) => (
                 <tr key={order._id}>
                   <td>
-                    <Link href={`/orderdetail/${order._id}`}>{order._id}</Link>
+                    <Link href="#" onClick={(e) => {
+                      e.preventDefault();
+                      handleViewOrder(order);
+                    }}>
+                      {order._id}
+                    </Link>
                   </td>
-                  <td>{order.createdAt}</td>
+
+                  <td>{dayjs(order.createdAt).format("DD/MM/YYYY")}</td>
+
                   <td>
                     <div className={styles.userInfo}>
                       <div className={styles.userName}>
@@ -360,11 +378,10 @@ export default function Order() {
 
                   <td>
                     <div className={styles.actionGroup}>
-                      <Link href={`/orderdetail/${order._id}`}>
-                        <button className={styles.actionBtn} title="Xem">
-                          <Eye size={20} />
-                        </button>
-                      </Link>
+                      <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
+                        <Eye size={25} />
+                      </button>
+
 
                       {order.status_order === "pending" && (
                         <button
