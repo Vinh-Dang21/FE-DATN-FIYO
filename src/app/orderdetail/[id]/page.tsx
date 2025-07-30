@@ -44,6 +44,8 @@ export default function Order() {
     const [order, setOrder] = useState<any>(null);
     const [orderProducts, setOrderProducts] = useState<any[]>([]);
     const [user, setUser] = useState<any>(null);
+    const shippingAddress = order?.address_id || order?.address_guess;
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -327,7 +329,7 @@ export default function Order() {
                             <div className={styles.box}>
                                 <h3>Chi tiết khách hàng</h3>
                                 <div className={styles.userInfo}>
-                                    
+
                                     <div className={styles.productDetails}>
                                         <div className={styles.userName}>{user?.name}</div>
                                         <div className={styles.userDesc}>
@@ -353,20 +355,21 @@ export default function Order() {
                             <div className={styles.box}>
                                 <h3>Địa chỉ giao hàng</h3>
                                 <p>
-                                    <strong>Tên người nhận</strong>: {order?.address_id?.name || "Chưa có"}
+                                    <strong>Tên người nhận</strong>: {shippingAddress?.name || "Chưa có"}
                                 </p>
                                 <p>
-                                    <strong>SĐT</strong>: {order?.address_id?.phone || "Chưa có"}
+                                    <strong>SĐT</strong>: {shippingAddress?.phone || "Chưa có"}
                                 </p>
                                 <p>
-                                    <strong>Địa chỉ</strong>: {(order?.address_id?.detail || order?.address_id?.address)
-                                        ? `${order?.address_id?.detail || ""}, ${order?.address_id?.address || ""}`
+                                    <strong>Địa chỉ</strong>: {(shippingAddress?.detail || shippingAddress?.address)
+                                        ? `${shippingAddress?.detail || ""}, ${shippingAddress?.address || ""}`
                                         : "Chưa có"}
                                 </p>
                                 <p>
-                                    <strong>Loại địa chỉ</strong>: {order?.address_id?.type || "Không rõ"}
+                                    <strong>Loại địa chỉ</strong>: {shippingAddress?.type || "Không rõ"}
                                 </p>
                             </div>
+
 
 
                             {order && (

@@ -31,11 +31,13 @@ interface Order {
   address_guess?: {
     name: string;
     phone: string;
+    email?: string;
     province: string;
     district: string;
     ward: string;
     detail: string;
   };
+
   voucher_id?: Voucher;
   payment_method: string;
   transaction_code: string | null;
@@ -89,6 +91,7 @@ interface Voucher {
 
 
 export default function Order() {
+
   const router = useRouter();
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
@@ -99,7 +102,7 @@ export default function Order() {
     delivered: 0,
     refunded: 0,
     failed: 0,
-    shipping: 0, // 🆕 thêm dòng này
+    shipping: 0,
   });
 
   useEffect(() => {
@@ -207,6 +210,26 @@ export default function Order() {
     router.push(`/orderdetail/${order._id}`);
   };
 
+  const getCustomerInfo = (order: Order) => {
+    if (order.user_id) {
+      return {
+        name: order.user_id.name,
+        email: order.user_id.email,
+      };
+    } else if (order.address_guess) {
+      return {
+        name: order.address_guess.name,
+        email: order.address_guess.email || "Không có email",
+      };
+    } else {
+      return {
+        name: "Khách lạ",
+        email: "Không có email",
+      };
+    }
+  };
+
+
 
   return (
     <main className={styles.main}>
@@ -305,144 +328,141 @@ export default function Order() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order._id}>
-                  <td>
-                    <Link href="#" onClick={(e) => {
-                      e.preventDefault();
-                      handleViewOrder(order);
-                    }}>
-                      {order._id}
-                    </Link>
-                  </td>
+              {orders.map((order) => {
+                const customer = getCustomerInfo(order);
 
-                  <td>{dayjs(order.createdAt).format("DD/MM/YYYY")}</td>
+                return (
+                  <tr key={order._id}>
+                    <td>
+                      <Link href="#" onClick={(e) => {
+                        e.preventDefault();
+                        handleViewOrder(order);
+                      }}>
+                        {order._id}
+                      </Link>
+                    </td>
 
-                  <td>
-                    <div className={styles.userInfo}>
-                      <div className={styles.userName}>
-                        {order.user_id?.name || "Khách lạ"}
+                    <td>{dayjs(order.createdAt).format("HH:mm:ss - DD/MM/YYYY")}</td>
+
+                    <td>
+                      <div className={styles.userInfo}>
+                        <div className={styles.userName}>{customer.name}</div>
+                        <div className={styles.userDesc}>{customer.email}</div>
                       </div>
-                      <div className={styles.userDesc}>
-                        {order.user_id?.email || "Không có email"}
+                    </td>
+
+                    <td>
+                      <span
+                        className={`${styles.methodDelivered} ${order.status_order === "pending"
+                          ? styles["status-choxacnhan"]
+                          : order.status_order === "preparing"
+                            ? styles["status-dangsoan"]
+                            : order.status_order === "awaiting_shipment"
+                              ? styles["status-chogui"]
+                              : order.status_order === "shipping"
+                                ? styles["status-danggiao"]
+                                : order.status_order === "delivered"
+                                  ? styles["status-dagiao"]
+                                  : order.status_order === "cancelled"
+                                    ? styles["status-dahuy"]
+                                    : order.status_order === "refund"
+                                      ? styles["status-trahang"]
+                                      : ""
+                          }`}
+                      >
+                        {order.status_order === "pending"
+                          ? "Chờ xác nhận"
+                          : order.status_order === "preparing"
+                            ? "Đang soạn hàng"
+                            : order.status_order === "awaiting_shipment"
+                              ? "Chờ gửi hàng"
+                              : order.status_order === "shipping"
+                                ? "Đang giao hàng"
+                                : order.status_order === "delivered"
+                                  ? "Đã giao hàng"
+                                  : order.status_order === "cancelled"
+                                    ? "Đã hủy"
+                                    : order.status_order === "refund"
+                                      ? "Trả hàng / Hoàn tiền"
+                                      : order.status_order}
+                      </span>
+
+
+                    </td>
+                    <td className={styles.shippingInfo}>
+                      {order.address_id ? (
+                        <>
+                          <div className={styles.userDesc}>
+                            <strong>SĐT:</strong> {order.address_id.phone}
+                          </div>
+                          <div className={styles.userDesc}>
+                            <strong>Địa chỉ:</strong> {order.address_id.detail}, {order.address_id.address}
+                          </div>
+                        </>
+                      ) : order.address_guess ? (
+                        <>
+                          <div className={styles.userDesc}>
+                            <strong>SĐT:</strong> {order.address_guess.phone}
+                          </div>
+                          <div className={styles.userDesc}>
+                            <strong>Địa chỉ:</strong>{" "}
+                            {`${order.address_guess.detail}, ${order.address_guess.ward}, ${order.address_guess.district}, ${order.address_guess.province}`}
+                          </div>
+                        </>
+                      ) : (
+                        <div className={styles.userDesc}>Không có địa chỉ</div>
+                      )}
+                    </td>
+
+                    <td>
+                      <div className={styles.actionGroup}>
+                        <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
+                          <Eye size={25} />
+                        </button>
+
+
+                        {order.status_order === "pending" && (
+                          <button
+                            className={styles.statusBtn}
+                            onClick={() => handleUpdateStatus(order._id, "preparing")}
+                          >
+                            Xác nhận
+                          </button>
+                        )}
+
+                        {order.status_order === "preparing" && (
+                          <button
+                            className={styles.statusBtn}
+                            onClick={() => handleUpdateStatus(order._id, "awaiting_shipment")}
+                          >
+                            Chờ gửi
+                          </button>
+                        )}
+
+                        {order.status_order === "awaiting_shipment" && (
+                          <button
+                            className={styles.statusBtn}
+                            onClick={() => handleUpdateStatus(order._id, "shipping")}
+                          >
+                            Đang giao
+                          </button>
+                        )}
+
+                        {order.status_order === "shipping" && (
+                          <button
+                            className={styles.statusBtn}
+                            onClick={() => handleUpdateStatus(order._id, "delivered")}
+                          >
+                            Đã giao
+                          </button>
+                        )}
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  <td>
-                    <span
-                      className={`${styles.methodDelivered} ${order.status_order === "pending"
-                        ? styles["status-choxacnhan"]
-                        : order.status_order === "preparing"
-                          ? styles["status-dangsoan"]
-                          : order.status_order === "awaiting_shipment"
-                            ? styles["status-chogui"]
-                            : order.status_order === "shipping"
-                              ? styles["status-danggiao"]
-                              : order.status_order === "delivered"
-                                ? styles["status-dagiao"]
-                                : order.status_order === "cancelled"
-                                  ? styles["status-dahuy"]
-                                  : order.status_order === "refund"
-                                    ? styles["status-trahang"]
-                                    : ""
-                        }`}
-                    >
-                      {order.status_order === "pending"
-                        ? "Chờ xác nhận"
-                        : order.status_order === "preparing"
-                          ? "Đang soạn hàng"
-                          : order.status_order === "awaiting_shipment"
-                            ? "Chờ gửi hàng"
-                            : order.status_order === "shipping"
-                              ? "Đang giao hàng"
-                              : order.status_order === "delivered"
-                                ? "Đã giao hàng"
-                                : order.status_order === "cancelled"
-                                  ? "Đã hủy"
-                                  : order.status_order === "refund"
-                                    ? "Trả hàng / Hoàn tiền"
-                                    : order.status_order}
-                    </span>
-
-
-                  </td>
-                  <td className={styles.shippingInfo}>
-                    {order.address_id ? (
-                      <>
-                        <div className={styles.userDesc}>
-                          <strong>SĐT:</strong> {order.address_id.phone}
-                        </div>
-                        <div className={styles.userDesc}>
-                          <strong>Địa chỉ:</strong> {order.address_id.detail}, {order.address_id.address}
-                        </div>
-                      </>
-                    ) : order.address_guess ? (
-                      <>
-                        <div className={styles.userDesc}>
-                          <strong>SĐT:</strong> {order.address_guess.phone}
-                        </div>
-                        <div className={styles.userDesc}>
-                          <strong>Địa chỉ:</strong>{" "}
-                          {`${order.address_guess.detail}, ${order.address_guess.ward}, ${order.address_guess.district}, ${order.address_guess.province}`}
-                        </div>
-                      </>
-                    ) : (
-                      <div className={styles.userDesc}>Không có địa chỉ</div>
-                    )}
-                  </td>
-
-                  <td>
-                    <div className={styles.actionGroup}>
-                      <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
-                        <Eye size={25} />
-                      </button>
-
-
-                      {order.status_order === "pending" && (
-                        <button
-                          className={styles.statusBtn}
-                          onClick={() => handleUpdateStatus(order._id, "preparing")}
-                        >
-                          Xác nhận
-                        </button>
-                      )}
-
-                      {order.status_order === "preparing" && (
-                        <button
-                          className={styles.statusBtn}
-                          onClick={() => handleUpdateStatus(order._id, "awaiting_shipment")}
-                        >
-                          Chờ gửi
-                        </button>
-                      )}
-
-                      {order.status_order === "awaiting_shipment" && (
-                        <button
-                          className={styles.statusBtn}
-                          onClick={() => handleUpdateStatus(order._id, "shipping")}
-                        >
-                          Đang giao
-                        </button>
-                      )}
-
-                      {order.status_order === "shipping" && (
-                        <button
-                          className={styles.statusBtn}
-                          onClick={() => handleUpdateStatus(order._id, "delivered")}
-                        >
-                          Đã giao
-                        </button>
-                      )}
-                    </div>
-                  </td>
-
-
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
-
-
           </table>
         </div>
       </section>
