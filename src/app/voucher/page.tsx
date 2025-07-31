@@ -19,7 +19,9 @@ export default function Voucher() {
     max_total: "",
     quantity: "",
     expired_at: "",
+    target_rank: "", // ✅ thêm dòng này
   });
+
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -209,6 +211,17 @@ export default function Voucher() {
                 onChange={(e) => setForm({ ...form, expired_at: e.target.value })}
               />
             </div>
+            <div className={styles.dateRow}>
+              <label className={styles.label}>Rank áp dụng</label>
+              <input
+                className={styles.input}
+                type="text"
+                placeholder="Nhập target rank (VD: silver)"
+                value={form.target_rank}
+                onChange={(e) => setForm({ ...form, target_rank: e.target.value })}
+              />
+            </div>
+
             <button
               className={styles.addButton}
               onClick={editVoucher ? handleUpdateVoucher : handleAddVoucher}>
@@ -247,6 +260,7 @@ export default function Voucher() {
                 <th>Chức năng</th>
               </tr>
             </thead>
+
             <tbody>
               {Array.isArray(vouchers) && vouchers.map((v, index) => (
                 <tr key={v._id}>
@@ -279,7 +293,9 @@ export default function Voucher() {
                           max_total: v.max_total,
                           quantity: v.quantity,
                           expired_at: v.expired_at?.split("T")[0],
+                          target_rank: v.target_rank || "", // ✅ thêm dòng này
                         });
+
                       }}>
                       <Pencil size={18} />
                     </button>
@@ -293,6 +309,7 @@ export default function Voucher() {
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
       </section>

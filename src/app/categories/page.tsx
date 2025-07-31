@@ -319,6 +319,7 @@ export default function Categories() {
               type="text"
               name="name"
               value={formData.name}
+              placeholder="Nhập tên danh mục"
               onChange={handleChange}
             />
 
@@ -327,6 +328,7 @@ export default function Categories() {
               className={styles.input}
               type="text"
               name="slug"
+              placeholder="Nhập slug"
               value={formData.slug}
               onChange={handleChange}
             />
