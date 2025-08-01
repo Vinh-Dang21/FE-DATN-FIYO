@@ -238,6 +238,38 @@ export default function Product() {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      let url = "http://localhost:3000/products";
+
+      if (filterChild) {
+        url = `http://localhost:3000/products/category/${filterChild}`;
+      } else if (selectedChild) {
+        url = `http://localhost:3000/products/category/${selectedChild}`;
+      }
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (Array.isArray(data) && data.length > 1 && data[0].status === true) {
+        const products = data.slice(1);
+        setProducts(products);
+        setNoProduct(false);
+      } else if (data.products) {
+        setProducts(data.products);
+        setNoProduct(false);
+      } else {
+        setProducts([]);
+        setNoProduct(true);
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy sản phẩm:", error);
+      setProducts([]);
+      setNoProduct(true);
+    }
+  };
+
+
 
 
 
@@ -381,32 +413,29 @@ export default function Product() {
     fetchProducts();
   }, [selectedChild]);
 
-  const handleToggleVisibility = async (id: string, currentHidden: boolean) => {
+  const handleChangeVisibility = async (id: string, currentStatus: boolean) => {
     try {
-      const response = await fetch(`http://localhost:3000/products/update/${id}`, {
-        method: "PUT", // hoặc PATCH, tuỳ theo backend bạn đang dùng
+      const res = await fetch(`http://localhost:3000/products/${id}/visibility`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ isHidden: !currentHidden }),
+        body: JSON.stringify({ isHidden: !currentStatus }),
       });
 
-      const result = await response.json();
+      if (!res.ok) throw new Error("Không thể cập nhật trạng thái hiển thị");
 
-      if (result.status) {
-        // Cập nhật UI ngay sau khi thay đổi
-        setProducts((prev) =>
-          prev.map((product) =>
-            product._id === id ? { ...product, isHidden: !currentHidden } : product
-          )
-        );
-      } else {
-        console.error("Cập nhật thất bại:", result.message || result);
-      }
+      const updated = await res.json();
+      alert(updated.message || "Cập nhật thành công");
+
+      fetchProducts(); // Reload lại danh sách
     } catch (error) {
-      console.error("Lỗi cập nhật trạng thái sản phẩm:", error);
+      console.error("Lỗi:", error);
+      alert("Đã xảy ra lỗi khi cập nhật hiển thị");
     }
   };
+
+
   const handlePickColor = async () => {
     if (!("EyeDropper" in window)) {
       alert("Trình duyệt không hỗ trợ EyeDropper");
@@ -581,6 +610,8 @@ export default function Product() {
       setNoProduct(true);
     }
   };
+
+
 
   return (
     <main className={styles.main}>
@@ -883,7 +914,7 @@ export default function Product() {
                       ))}
                     </ul>
 
-                    
+
                   </div>
                 ))}
               </div>
@@ -1006,9 +1037,8 @@ export default function Product() {
                           <input
                             type="checkbox"
                             checked={!product.isHidden}
-                            onChange={() => handleToggleVisibility(product._id, product.isHidden)}
+                            onChange={() => handleChangeVisibility(product._id, product.isHidden)}
                           />
-
                           <span className={styles.slider}></span>
                         </label>
                       </td>
