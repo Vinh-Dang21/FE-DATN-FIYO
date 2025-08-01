@@ -46,7 +46,6 @@ export default function Order() {
     const [user, setUser] = useState<any>(null);
     const shippingAddress = order?.address_id || order?.address_guess;
 
-
     useEffect(() => {
         const fetchData = async () => {
             if (!orderId) return;
@@ -60,13 +59,16 @@ export default function Order() {
                 const orderDetailData = await orderDetailRes.json();
                 const orderInfoData = await orderInfoRes.json();
 
+                console.log("📦 orderDetailData:", orderDetailData);
+                console.log("🧾 orderInfoData:", orderInfoData);
+
                 if (orderDetailData.status) {
-                    setOrderProducts(orderDetailData.result);
+                    setOrderProducts(orderDetailData.result);  // lấy danh sách sản phẩm
+                    setUser(orderDetailData.user);              // lấy user nếu cần
                 }
 
                 if (orderInfoData.status) {
-                    setOrder(orderInfoData.result); // 🟢 đây mới có các field như total_price, status_order, v.v.
-                    setUser(orderDetailData.user); // ✅ đúng source user // 🟢 user nằm trong order.result.user_id
+                    setOrder(orderInfoData.order); // ✅ Lấy đúng `order`, KHÔNG dùng `.result`
                 }
 
             } catch (error) {
@@ -76,6 +78,7 @@ export default function Order() {
 
         fetchData();
     }, [orderId]);
+
     const getStatusLabel = (status: string) => {
         switch (status) {
             case "pending":
