@@ -124,28 +124,23 @@ export default function Product() {
       prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
     );
   };
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleMultipleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
 
-    const newImages = [...images];
-    newImages[index] = file;
-    setImages(newImages);
+    const selectedFiles = Array.from(files).slice(0, 4); // lấy tối đa 4 ảnh
+    setImages(selectedFiles);
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const newPreviews = [...previews];
-      newPreviews[index] = reader.result as string;
-      setPreviews(newPreviews);
-    };
-    reader.readAsDataURL(file);
+    const previewList = selectedFiles.map((file) => URL.createObjectURL(file));
+    setPreviews(previewList);
   };
+
   const resetForm = () => {
     setShowAdd(false);
-    setEditProduct(null); // reset về trạng thái thêm mới
+    setEditProduct(null);
     setVariants([]);
-    setImages([null, null, null, null]);
-    setPreviews(["", "", "", ""]);
+    setImages([]);
+    setPreviews([]);
     setSizes([]);
     setCurrentColor("");
     setProductName("");
@@ -167,17 +162,10 @@ export default function Product() {
     if (editProduct && validImages.length === 0) {
       // Gửi lại ảnh cũ
       previews.forEach((link) => {
-        if (link) formData.append("images", link); // ⚠️ Gửi link thay vì file
+        if (link) formData.append("images", link);
       });
     } else {
       // Gửi file mới
-      validImages.forEach((img) => {
-        if (img) formData.append("images", img);
-      });
-    }
-
-    // Ảnh chỉ cần gửi khi thêm mới hoặc người dùng đổi ảnh
-    if (validImages.length > 0) {
       validImages.forEach((img) => {
         if (img) formData.append("images", img);
       });
@@ -803,22 +791,25 @@ export default function Product() {
 
             {/* Hàng 3: Ảnh */}
             <div className={styles.rowColumn}>
-              <label>Chọn 4 ảnh sản phẩm:</label>
+              <label>Chọn tối đa 4 ảnh sản phẩm:</label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleMultipleImages}
+              />
               <div className={styles.imageGrid}>
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className={styles.imageSlot}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageChange(e, i)}
-                    />
-                    {previews[i] && (
-                      <img src={previews[i]} alt={`Preview ${i + 1}`} className={styles.imagePreview} />
-                    )}
+                {previews.map((preview, index) => (
+                  <div key={index} className={styles.imageSlot}>
+                    {preview ? (
+                      <img src={preview} alt={`Preview ${index + 1}`} className={styles.imagePreview} />
+                    ) : null}
                   </div>
                 ))}
+
               </div>
             </div>
+
 
             {/* Hàng 4: Variants */}
             <div className={styles.variantSection}>

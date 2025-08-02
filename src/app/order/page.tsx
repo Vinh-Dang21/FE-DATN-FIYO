@@ -137,6 +137,9 @@ export default function Order() {
     };
 
     fetchAllOrders();
+    const interval = setInterval(fetchAllOrders, 5000);
+
+    return () => clearInterval(interval); 
   }, []);
 
   useEffect(() => {
