@@ -16,41 +16,6 @@ import { useEffect, useState } from "react";
 import Sidebar from "./component/Sidebar";
 import Topbar from "./component/Topbar";
 
-// ...existing imports...
-
-const topUsers = [
-  {
-    name: "Nguyễn Văn A",
-    email: "vana@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/1.jpg",
-    total: "12,000,000đ",
-  },
-  {
-    name: "Trần Thị B",
-    email: "tranb@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/2.jpg",
-    total: "10,500,000đ",
-  },
-  {
-    name: "Lê Văn C",
-    email: "levanc@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/3.jpg",
-    total: "9,800,000đ",
-  },
-  {
-    name: "Nguyễn Văn A",
-    email: "vana@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/men/1.jpg",
-    total: "12,000,000đ",
-  },
-  {
-    name: "Trần Thị B",
-    email: "tranb@gmail.com",
-    avatar: "https://randomuser.me/api/portraits/women/2.jpg",
-    total: "10,500,000đ",
-  },
-];
-// ...existing code...
 
 interface MonthlyRevenueItem {
   name: string;
