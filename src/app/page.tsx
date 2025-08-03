@@ -18,7 +18,6 @@ import Topbar from "./component/Topbar";
 
 // ...existing imports...
 
-
 const topUsers = [
   {
     name: "Nguyễn Văn A",
@@ -50,24 +49,13 @@ const topUsers = [
     avatar: "https://randomuser.me/api/portraits/women/2.jpg",
     total: "10,500,000đ",
   },
-
 ];
 // ...existing code...
 
-const data = [
-  { name: "Tháng 1", orders: 30 },
-  { name: "Tháng 2", orders: 50 },
-  { name: "Tháng 3", orders: 70 },
-  { name: "Tháng 4", orders: 45 },
-  { name: "Tháng 5", orders: 57 },
-  { name: "Tháng 6", orders: 34 },
-  { name: "Tháng 7", orders: 24 },
-  { name: "Tháng 8", orders: 11 },
-  { name: "Tháng 9", orders: 15 },
-  { name: "Tháng 10", orders: 17 },
-  { name: "Tháng 11", orders: 32 },
-  { name: "Tháng 12", orders: 45 },
-];
+interface MonthlyRevenueItem {
+  name: string;
+  revenue: number;
+}
 
 export default function Dashboard() {
   const [weeklyRevenue, setWeeklyRevenue] = useState(0);
@@ -78,6 +66,13 @@ export default function Dashboard() {
   const [lastMonthOrders, setLastMonthOrders] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
   const [pendingOrders, setPendingOrders] = useState([]);
+  const [topUsers, setTopUsers] = useState<any[]>([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenueItem[]>(
+    []
+  );
+  const [customerPieData, setCustomerPieData] = useState<
+    { name: string; value: number }[]
+  >([]);
 
 
   const getStartAndEndOfCurrentWeek = () => {
@@ -142,17 +137,19 @@ export default function Dashboard() {
     };
   };
 
-
   const fetchWeeklyRevenue = async () => {
     const { fromDate, toDate } = getStartAndEndOfCurrentWeek();
 
     try {
-      const res = await fetch(`http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`);
+      const res = await fetch(
+        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+      );
       const data = await res.json();
 
       const totalRevenue = data.result.reduce((sum: number, order: any) => {
         const orderDate = new Date(order.createdAt);
-        const isInRange = orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
+        const isInRange =
+          orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
         const isDelivered = order.status_order === "delivered";
         return isInRange && isDelivered ? sum + order.total_price : sum;
       }, 0);
@@ -168,12 +165,15 @@ export default function Dashboard() {
     const { fromDate, toDate } = getStartAndEndOfLastWeek();
 
     try {
-      const res = await fetch(`http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`);
+      const res = await fetch(
+        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+      );
       const data = await res.json();
 
       const total = data.result.reduce((sum: number, order: any) => {
         const orderDate = new Date(order.createdAt);
-        const isInRange = orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
+        const isInRange =
+          orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
         const isDelivered = order.status_order === "delivered";
         return isInRange && isDelivered ? sum + order.total_price : sum;
       }, 0);
@@ -189,7 +189,9 @@ export default function Dashboard() {
     const { fromDate, toDate } = getStartAndEndOfCurrentMonth();
 
     try {
-      const res = await fetch(`http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`);
+      const res = await fetch(
+        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+      );
       const data = await res.json();
 
       let total = 0;
@@ -197,7 +199,8 @@ export default function Dashboard() {
 
       data.result.forEach((order: any) => {
         const orderDate = new Date(order.createdAt);
-        const isInRange = orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
+        const isInRange =
+          orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
 
         if (isInRange) {
           total += order.total_price;
@@ -215,12 +218,13 @@ export default function Dashboard() {
     }
   };
 
-
   const fetchLastMonthRevenue = async () => {
     const { fromDate, toDate } = getStartAndEndOfLastMonth();
 
     try {
-      const res = await fetch(`http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`);
+      const res = await fetch(
+        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+      );
       const data = await res.json();
 
       let total = 0;
@@ -228,7 +232,8 @@ export default function Dashboard() {
 
       data.result.forEach((order: any) => {
         const orderDate = new Date(order.createdAt);
-        const isInRange = orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
+        const isInRange =
+          orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
 
         if (isInRange) {
           total += order.total_price;
@@ -284,8 +289,6 @@ export default function Dashboard() {
     }
   };
 
-
-
   useEffect(() => {
     const loadPendingOrders = async () => {
       const orders = await fetchPendingOrders();
@@ -294,14 +297,128 @@ export default function Dashboard() {
     loadPendingOrders();
   }, []);
 
+  const fetchTopUsers = async () => {
+    try {
+      const resUser = await fetch("http://localhost:3000/user/");
+      const dataUser = await resUser.json();
+      const users = dataUser.result;
+
+      const spendingList = await Promise.all(
+        users.map(async (user: any) => {
+          const resOrder = await fetch(
+            `http://localhost:3000/orders/user/${user._id}`
+          );
+          const orders = await resOrder.json();
+
+          const totalSpent = orders.reduce(
+            (sum: number, order: any) =>
+              order.status_order === "delivered"
+                ? sum + (order.total_price || 0)
+                : sum,
+            0
+          );
+
+          return {
+            name: user.name,
+            email: user.email,
+            avatar:
+              user.avatar && user.avatar.trim() !== ""
+                ? user.avatar
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  user.name
+                )}&background=random`,
+            total: totalSpent,
+          };
+        })
+      );
+
+      const top10 = spendingList
+        .filter((u) => u.total > 0)
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
+
+      setTopUsers(top10);
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy top người dùng:", error);
+    }
+  };
+
+  const fetchMonthlyRevenue = async () => {
+    try {
+      const res = await fetch("http://localhost:3000/orders");
+      const data = await res.json(); // ✅ cần khai báo dòng này
+
+      const orders = data.result || [];
+
+      if (!Array.isArray(orders)) {
+        console.error("orders không phải là mảng:", orders);
+        return;
+      }
+
+      const monthlyTotals: { [key: number]: number } = {};
+
+      orders.forEach((order) => {
+        if (order.status_order !== "delivered") return;
+
+        const createdAt = new Date(order.createdAt);
+        const month = createdAt.getMonth(); // tháng từ 0 đến 11
+
+        const total = order.total_price || 0;
+        monthlyTotals[month] = (monthlyTotals[month] || 0) + total;
+      });
+
+      const result = Array.from({ length: 12 }, (_, i) => ({
+        name: `Tháng ${i + 1}`,
+        revenue: monthlyTotals[i] || 0,
+      }));
+
+      setMonthlyRevenue(result);
+    } catch (error) {
+      console.error("Lỗi khi fetch đơn hàng:", error);
+    }
+  };
+
+  const fetchCustomerTypeStats = async () => {
+    try {
+      const res = await fetch("http://localhost:3000/orders");
+      const data = await res.json();
+      const orders = data.result || [];
+
+      let guestCount = 0;
+      let memberCount = 0;
+
+      orders.forEach((order: any) => {
+        // Không cần lọc theo trạng thái nữa
+
+        if (order.user_id) {
+          memberCount += 1;
+        } else if (order.address_guess) {
+          guestCount += 1;
+        }
+      });
+
+      return [
+        { name: "Hội viên", value: memberCount },
+        { name: "Khách vãng lai", value: guestCount },
+      ];
+    } catch (error) {
+      console.error("❌ Lỗi khi thống kê hội viên vs khách:", error);
+      return [];
+    }
+  };
+
+
+
   useEffect(() => {
     fetchWeeklyRevenue();
     fetchLastWeekRevenue();
     fetchCurrentMonthRevenue();
     fetchLastMonthRevenue();
     fetchTotalUsers();
+    fetchMonthlyRevenue();
+    fetchTopUsers();
+    fetchCustomerTypeStats().then(setCustomerPieData);
   }, []);
-
 
   return (
     <main className={styles.main}>
@@ -318,15 +435,21 @@ export default function Dashboard() {
           <div className={styles.summaryCard}>
             <h4 className={styles.cardTitle}>DOANH THU TUẦN NÀY</h4>
             <div className={styles.cardContent}>
-              <span className={styles.cardValue}>{weeklyRevenue.toLocaleString()} đ</span>
-              <span className={
-                weeklyRevenue >= lastWeekRevenue
-                  ? styles.cardStatusUp
-                  : styles.cardStatusDown
-              }>
+              <span className={styles.cardValue}>
+                {weeklyRevenue.toLocaleString()} đ
+              </span>
+              <span
+                className={
+                  weeklyRevenue >= lastWeekRevenue
+                    ? styles.cardStatusUp
+                    : styles.cardStatusDown
+                }
+              >
                 {Math.abs(
-                  ((weeklyRevenue - lastWeekRevenue) / (lastWeekRevenue || 1)) * 100
-                ).toFixed(1)}% {weeklyRevenue >= lastWeekRevenue ? '↑' : '↓'}
+                  ((weeklyRevenue - lastWeekRevenue) / (lastWeekRevenue || 1)) *
+                  100
+                ).toFixed(1)}
+                % {weeklyRevenue >= lastWeekRevenue ? "↑" : "↓"}
               </span>
             </div>
           </div>
@@ -337,13 +460,20 @@ export default function Dashboard() {
               <span className={styles.cardValue}>
                 {Math.round(currentMonthRevenue / 1000)} tr
               </span>
-              <span className={
-                weeklyRevenue >= lastWeekRevenue
-                  ? styles.cardStatusUp
-                  : styles.cardStatusDown
-              }>
-                Tháng trước: {Math.round(((currentMonthRevenue - lastMonthRevenue) / (lastMonthRevenue || 1)) * 100)}%
-                {currentMonthRevenue >= lastMonthRevenue ? " ↑" : " ↓"}
+              <span
+                className={
+                  weeklyRevenue >= lastWeekRevenue
+                    ? styles.cardStatusUp
+                    : styles.cardStatusDown
+                }
+              >
+                Tháng trước:{" "}
+                {Math.round(
+                  ((currentMonthRevenue - lastMonthRevenue) /
+                    (lastMonthRevenue || 1)) *
+                  100
+                )}
+                %{currentMonthRevenue >= lastMonthRevenue ? " ↑" : " ↓"}
               </span>
             </div>
           </div>
@@ -371,19 +501,15 @@ export default function Dashboard() {
                 )}
                 % {currentMonthOrders >= lastMonthOrders ? "↑" : "↓"}
               </span>
-
             </div>
           </div>
-
 
           <div className={styles.summaryCard}>
             <h4 className={styles.cardTitle}>TỔNG NGƯỜI DÙNG</h4>
             <div className={styles.cardContent}>
               <span className={styles.cardValue}>{totalUsers}</span>
-
             </div>
           </div>
-
         </div>
 
         <div className={styles.splitSection}>
@@ -394,11 +520,13 @@ export default function Dashboard() {
                 Biểu đồ thống kê doanh thu theo từng tháng
               </p>
               <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={data} barCategoryGap={10}>
+                <BarChart data={monthlyRevenue} barCategoryGap={10}>
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="orders" fill="#7367F0" radius={[5, 5, 0, 0]} />
+                  <Tooltip
+                    formatter={(value: number) => `${value.toLocaleString()} đ`}
+                  />
+                  <Bar dataKey="revenue" fill="#7367F0" radius={[5, 5, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -407,17 +535,13 @@ export default function Dashboard() {
             <div style={{ width: "100%", height: 350 }}>
               <h2 className={styles.sectionTitle}>Thống kê bán hàng</h2>
               <p className={styles.sectionSubTitle}>
-                Tỉ lệ doanh số theo kênh bán hàng
+                Tỷ lệ đơn hàng: Đăng nhập vs Mua nhanh
               </p>
+
               <ResponsiveContainer width="100%" height="80%">
                 <PieChart>
                   <Pie
-                    data={[
-                      { name: "Cửa hàng", value: 80 },
-                      { name: "TikTok Shop", value: 60 },
-                      { name: "Shopee", value: 100 },
-                      { name: "Fanpage", value: 40 },
-                    ]}
+                    data={customerPieData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -425,15 +549,16 @@ export default function Dashboard() {
                     outerRadius={90}
                     label
                   >
-                    <Cell fill="#007BFF" />
-                    <Cell fill="#FF69B4" />
-                    <Cell fill="#FFA500" />
-                    <Cell fill="#00C49F" />
+                    <Cell fill="#7367F0" /> {/* Hội viên */}
+                    <Cell fill="#FF9F43" /> {/* Khách vãng lai */}
                   </Pie>
                   <Legend />
-                  <Tooltip />
+                  <Tooltip
+                    formatter={(value: number) => `${value.toLocaleString()} đơn`}
+                  />
                 </PieChart>
               </ResponsiveContainer>
+
             </div>
           </div>
         </div>
@@ -472,7 +597,8 @@ export default function Dashboard() {
                     : order.address_id?.address || "—";
                   const status =
                     order.status_order ||
-                    order.status_history?.[order.status_history.length - 1]?.status ||
+                    order.status_history?.[order.status_history.length - 1]
+                      ?.status ||
                     "unknown";
 
                   return (
@@ -488,7 +614,11 @@ export default function Dashboard() {
                       <td>{phone}</td>
                       <td>{address}</td>
                       <td>
-                        <span className={`${styles.methodDelivered} ${styles["status-choxacnhan"]}`}>Chờ xác nhận</span>
+                        <span
+                          className={`${styles.methodDelivered} ${styles["status-choxacnhan"]}`}
+                        >
+                          Chờ xác nhận
+                        </span>
                       </td>
                       <td>{order.payment_method?.toUpperCase()}</td>
                     </tr>
@@ -496,7 +626,6 @@ export default function Dashboard() {
                 })}
               </tbody>
             </table>
-
           </div>
 
           {/* TOP NGƯỜI DÙNG */}
@@ -515,7 +644,9 @@ export default function Dashboard() {
                       <div className={styles.email}>{user.email}</div>
                     </div>
                   </div>
-                  <div className={styles.money}>{user.total}</div>
+                  <div className={styles.money}>
+                    {user.total.toLocaleString("vi-VN")} đ
+                  </div>
                 </div>
               ))}
             </div>
