@@ -112,36 +112,20 @@ export default function Categories() {
       alert("Tên danh mục đã tồn tại trong cùng danh mục cha!");
       return;
     }
-if (newImages.length > 0) {
-    newImages.forEach((image) => {
-      formData.append("images", image);
-    });
-  } else {
-    // Nếu không có ảnh mới, thêm lại ảnh cũ (đã tồn tại)
-    oldImages.forEach((img) => {
-      formData.append("existingImages", img); // custom field
-    });
-  }
 
     const method = editingId ? "PUT" : "POST";
     const url = editingId
       ? `http://localhost:3000/category/${editingId}`
       : `http://localhost:3000/category/create`;
 
-    const form = new FormData();
-form.append("name", formData.name);
-form.append("slug", formData.slug);
-form.append("parentId", formData.parentId || "");
-form.append("type", formData.type || "cloth");
-
-if (selectedImage) {
-  form.append("images", selectedImage); // gửi ảnh mới
-} else if (formData.images && formData.images.length > 0) {
-  formData.images.forEach((img) => {
-    form.append("existingImages", img); // gửi ảnh cũ
-  });
-}
-
+    const data = new FormData();
+    data.append("name", formData.name);
+    data.append("slug", formData.slug);
+    data.append("type", formData.type || "cloth");
+    data.append("parentId", formData.parentId || "");
+    formData.images?.forEach((file) => {
+      data.append("images", file);
+    });
 
     try {
       const res = await fetch(url, {
