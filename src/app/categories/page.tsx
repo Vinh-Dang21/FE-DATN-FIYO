@@ -33,7 +33,15 @@ export default function Categories() {
   const [selectedParentId, setSelectedParentId] = useState<string>("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
-
+  const generateSlug = (str: string) => {
+    return str
+      .toLowerCase()
+      .normalize("NFD") // Bỏ dấu tiếng Việt
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s-]/g, "") // Bỏ ký tự đặc biệt
+      .trim()
+      .replace(/\s+/g, "-"); // Đổi khoảng trắng thành dấu gạch ngang
+  };
 
   useEffect(() => {
     fetch("http://localhost:3000/category/parents")
@@ -93,13 +101,28 @@ export default function Categories() {
 
 
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    setFormData((prev) => {
+      // Nếu đang gõ tên, tự generate slug luôn
+      if (name === "name") {
+        return {
+          ...prev,
+          name: value,
+          slug: generateSlug(value),
+        };
+      }
+
+      return {
+        ...prev,
+        [name]: value,
+      };
+    });
   };
+
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.slug) {
@@ -322,17 +345,6 @@ export default function Categories() {
               placeholder="Nhập tên danh mục"
               onChange={handleChange}
             />
-
-
-            <input
-              className={styles.input}
-              type="text"
-              name="slug"
-              placeholder="Nhập slug"
-              value={formData.slug}
-              onChange={handleChange}
-            />
-
 
             <button className={styles.addButton} onClick={handleSubmit}>
               {showEdit ? "Cập nhật danh mục" : "Thêm danh mục"}
