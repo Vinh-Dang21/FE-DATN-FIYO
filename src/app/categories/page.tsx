@@ -30,6 +30,8 @@ export default function Categories() {
   const [parentCategories, setParentCategories] = useState<Category[]>([]);
   const [selectedParentId, setSelectedParentId] = useState<string>("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+
 
   const [formData, setFormData] = useState<CategoryForm>({
     name: "",
@@ -56,12 +58,14 @@ export default function Categories() {
       .catch((err) => console.error("Lỗi fetch danh mục:", err));
   }, [selectedParentId]);
 
-  const resetForm = () => {
-    setShowAdd(false);
-    setShowEdit(false);
-    setEditingId(null);
-    setFormData({ name: "", slug: "", parentId: "", type: "cloth", images: [] });
-  };
+const resetForm = () => {
+  setShowAdd(false);
+  setShowEdit(false);
+  setEditingId(null);
+  setFormData({ name: "", slug: "", parentId: "", type: "cloth", images: [] });
+  setExistingImages([]); // reset ảnh cũ
+};
+
 
   const refreshCategories = async () => {
     const url = selectedParentId
@@ -92,84 +96,95 @@ export default function Categories() {
     }));
   };
 
-  const handleSubmit = async () => {
-    if (!formData.name?.trim() || !formData.slug?.trim()) {
-      alert("Vui lòng nhập tên và slug hợp lệ!");
-      return;
-    }
+ const handleSubmit = async () => {
+  if (!formData.name?.trim() || !formData.slug?.trim()) {
+    alert("Vui lòng nhập tên và slug hợp lệ!");
+    return;
+  }
 
-    const isDuplicate = categories.some((cate) => {
-      const cateName = typeof cate?.name === "string" ? cate.name.trim().toLowerCase() : "";
-      const formName = typeof formData?.name === "string" ? formData.name.trim().toLowerCase() : "";
-      return (
-        cateName === formName &&
-        cate._id !== editingId &&
-        (cate.parentId || "") === (formData.parentId || "")
-      );
-    });
+  const isDuplicate = categories.some((cate) => {
+    const cateName = cate.name?.trim().toLowerCase() || "";
+    const formName = formData.name?.trim().toLowerCase() || "";
+    return (
+      cateName === formName &&
+      cate._id !== editingId &&
+      (cate.parentId || "") === (formData.parentId || "")
+    );
+  });
 
-    if (isDuplicate) {
-      alert("Tên danh mục đã tồn tại trong cùng danh mục cha!");
-      return;
-    }
+  if (isDuplicate) {
+    alert("Tên danh mục đã tồn tại trong cùng danh mục cha!");
+    return;
+  }
 
-    const method = editingId ? "PUT" : "POST";
-    const url = editingId
-      ? `http://localhost:3000/category/${editingId}`
-      : `http://localhost:3000/category/create`;
+  const method = editingId ? "PUT" : "POST";
+  const url = editingId
+    ? `http://localhost:3000/category/${editingId}`
+    : `http://localhost:3000/category/create`;
 
-    const data = new FormData();
-    data.append("name", formData.name);
-    data.append("slug", formData.slug);
-    data.append("type", formData.type || "cloth");
-    data.append("parentId", formData.parentId || "");
-    formData.images?.forEach((file) => {
+  const data = new FormData();
+  data.append("name", formData.name);
+  data.append("slug", formData.slug);
+  data.append("type", formData.type || "cloth");
+  data.append("parentId", formData.parentId || "");
+
+  if (formData.images && formData.images.length > 0) {
+    formData.images.forEach((file) => {
       data.append("images", file);
     });
+  } else {
+    // 👉 Gửi lại ảnh cũ nếu không có ảnh mới
+    existingImages.forEach((img) => {
+      data.append("existingImages", img);
+    });
+  }
 
-    try {
-      const res = await fetch(url, {
-        method,
-        body: data,
-      });
+  try {
+    const res = await fetch(url, {
+      method,
+      body: data,
+    });
 
-      const result = await res.json();
-      if (res.ok) {
-        alert(editingId ? "Cập nhật thành công!" : "Thêm thành công!");
-        resetForm();
-        refreshCategories();
-      } else {
-        alert(result.message || "Có lỗi khi xử lý.");
-      }
-    } catch (err) {
-      console.error("Lỗi khi gửi request:", err);
-      alert("Lỗi mạng hoặc server.");
+    const result = await res.json();
+    if (res.ok) {
+      alert(editingId ? "Cập nhật thành công!" : "Thêm thành công!");
+      resetForm();
+      refreshCategories();
+    } else {
+      alert(result.message || "Có lỗi khi xử lý.");
     }
-  };
+  } catch (err) {
+    console.error("Lỗi khi gửi request:", err);
+    alert("Lỗi mạng hoặc server.");
+  }
+};
+
 
   const handleEdit = async (id: string) => {
-    try {
-      const res = await fetch(`http://localhost:3000/category/${id}`);
-      const data = await res.json();
-      const result = data.result;
+  try {
+    const res = await fetch(`http://localhost:3000/category/${id}`);
+    const data = await res.json();
+    const result = data.result;
 
-      if (res.ok && result) {
-        setEditingId(id);
-        setFormData({
-          name: result.name || "",
-          slug: result.slug || "",
-          parentId: result.parentId || "",
-          type: result.type || "cloth",
-          images: [],
-        });
-        setShowEdit(true);
-      } else {
-        alert("Không tìm thấy danh mục.");
-      }
-    } catch (err) {
-      console.error("Lỗi khi lấy dữ liệu danh mục:", err);
+    if (res.ok && result) {
+      setEditingId(id);
+      setFormData({
+        name: result.name || "",
+        slug: result.slug || "",
+        parentId: result.parentId || "",
+        type: result.type || "cloth",
+        images: [], // ảnh mới chưa có
+      });
+      setExistingImages(result.images || []); // ⬅️ lưu ảnh cũ
+      setShowEdit(true);
+    } else {
+      alert("Không tìm thấy danh mục.");
     }
-  };
+  } catch (err) {
+    console.error("Lỗi khi lấy dữ liệu danh mục:", err);
+  }
+};
+
 
   const handleDelete = async (id: string | undefined) => {
     if (!id) {
@@ -275,27 +290,41 @@ export default function Categories() {
               value={formData.slug}
               onChange={handleChange}
             />
+<input
+  className={styles.input}
+  type="file"
+  accept="image/*"
+  multiple
+  onChange={handleImageChange}
+/>
 
-            <input
-              className={styles.input}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageChange}
-            />
+{/* Ảnh mới (nếu có chọn) */}
+{formData.images && formData.images.length > 0 && (
+  <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+    {formData.images.map((file, index) => (
+      <img
+        key={index}
+        src={URL.createObjectURL(file)}
+        alt={`preview-${index}`}
+        style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6 }}
+      />
+    ))}
+  </div>
+)}
 
-            {formData.images && formData.images.length > 0 && (
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                {formData.images.map((file, index) => (
-                  <img
-                    key={index}
-                    src={URL.createObjectURL(file)}
-                    alt={`preview-${index}`}
-                    style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6 }}
-                  />
-                ))}
-              </div>
-            )}
+{/* Ảnh cũ (chỉ hiển thị khi chỉnh sửa và chưa chọn ảnh mới) */}
+{showEdit && (!formData.images || formData.images.length === 0) && existingImages.length > 0 && (
+  <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+    {existingImages.map((img, index) => (
+      <img
+        key={index}
+        src={img}
+        alt={`old-${index}`}
+        style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6 }}
+      />
+    ))}
+  </div>
+)}
 
             <button className={styles.addButton} onClick={handleSubmit}>
               {showEdit ? "Cập nhật danh mục" : "Thêm danh mục"}
@@ -325,41 +354,44 @@ export default function Categories() {
               </tr>
             </thead>
             <tbody>
-              {categories
-                .filter((cate) => cate.parentId !== null)
-                .map((cate) => (
-                  <tr key={cate._id}>
-                    <td>{cate._id}</td>
-                    <td>
-                      {cate.images?.map((imgUrl, i) => (
-                        <img
-                          key={i}
-                          src={imgUrl}
-                          alt={cate.name}
-                          style={{ width: 50, height: 50, objectFit: "cover", marginRight: 5 }}
-                        />
-                      ))}
-                    </td>
-                    <td>{cate.name}</td>
-                    <td>{cate.slug}</td>
-                    <td>{getParentName(cate.parentId)}</td>
-                    <td>
-                      <button
-                        className={styles.actionBtn}
-                        onClick={() => handleEdit(cate._id)}
-                      >
-                        <Pencil size={18} />
-                      </button>
-                      <button
-                        className={styles.actionBtn}
-                        onClick={() => handleDelete(cate._id)}
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
+  {categories.map((cate, index) => (
+    <tr key={cate._id}>
+      <td>{index + 1}</td>
+      <td>
+        {cate.images?.length ? (
+          cate.images.map((imgUrl, i) => (
+            <img
+              key={i}
+              src={imgUrl}
+              alt={cate.name}
+              style={{ width: 50, height: 50, objectFit: "cover", marginRight: 5 }}
+            />
+          ))
+        ) : (
+          <span>Không có ảnh</span>
+        )}
+      </td>
+      <td>{cate.name}</td>
+      <td>{cate.slug}</td>
+      <td>{getParentName(cate.parentId)}</td>
+      <td>
+        <button
+          className={styles.actionBtn}
+          onClick={() => handleEdit(cate._id)}
+        >
+          <Pencil size={18} />
+        </button>
+        <button
+          className={styles.actionBtn}
+          onClick={() => handleDelete(cate._id)}
+        >
+          <Trash2 size={18} />
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
           </table>
         </div>
       </section>
