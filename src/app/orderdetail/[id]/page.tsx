@@ -207,7 +207,7 @@ export default function Order() {
                                                     })}
                                                 </td>
                                                 <td>
-                                                    {product.variant?.color || "Không rõ"} / {product.size || "Không rõ"}
+                                                    {item.variant?.color || "Không rõ"} / {item.variant?.size?.size || "Không rõ"}
                                                 </td>
 
                                                 <td>{item.quantity}</td>

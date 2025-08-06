@@ -166,8 +166,9 @@ export default function Dashboard() {
         const orderDate = new Date(order.createdAt);
         const isInRange =
           orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
+        const isDelivered = order.status_order === "delivered";
 
-        if (isInRange) {
+        if (isInRange && isDelivered) {
           total += order.total_price;
           count += 1;
         }
@@ -199,8 +200,9 @@ export default function Dashboard() {
         const orderDate = new Date(order.createdAt);
         const isInRange =
           orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
+        const isDelivered = order.status_order === "delivered";
 
-        if (isInRange) {
+        if (isInRange && isDelivered) {
           total += order.total_price;
           count += 1;
         }
@@ -401,21 +403,23 @@ export default function Dashboard() {
             <h4 className={styles.cardTitle}>DOANH THU TUẦN NÀY</h4>
             <div className={styles.cardContent}>
               <span className={styles.cardValue}>
-                {weeklyRevenue.toLocaleString()} đ
+                {weeklyRevenue.toLocaleString("vi-VN")} ₫
               </span>
               <span
                 className={
-                  weeklyRevenue >= lastWeekRevenue
+                  weeklyRevenue > lastWeekRevenue
                     ? styles.cardStatusUp
-                    : styles.cardStatusDown
+                    : weeklyRevenue < lastWeekRevenue
+                      ? styles.cardStatusDown
+                      : styles.cardStatusNeutral // nếu muốn xử lý thêm cho bằng nhau
                 }
               >
                 {Math.abs(
-                  ((weeklyRevenue - lastWeekRevenue) / (lastWeekRevenue || 1)) *
-                  100
+                  ((weeklyRevenue - lastWeekRevenue) / (lastWeekRevenue || 1)) * 100
                 ).toFixed(1)}
-                % {weeklyRevenue >= lastWeekRevenue ? "↑" : "↓"}
+                % {weeklyRevenue > lastWeekRevenue ? "↑" : weeklyRevenue < lastWeekRevenue ? "↓" : ""}
               </span>
+
             </div>
           </div>
 
@@ -423,8 +427,9 @@ export default function Dashboard() {
             <h4 className={styles.cardTitle}>DOANH THU THÁNG</h4>
             <div className={styles.cardContent}>
               <span className={styles.cardValue}>
-                {Math.round(currentMonthRevenue / 1000)} tr
+                {currentMonthRevenue.toLocaleString("vi-VN")} ₫
               </span>
+
               <span
                 className={
                   weeklyRevenue >= lastWeekRevenue

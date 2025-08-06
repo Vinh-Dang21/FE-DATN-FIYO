@@ -139,7 +139,7 @@ export default function Order() {
     fetchAllOrders();
     const interval = setInterval(fetchAllOrders, 5000);
 
-    return () => clearInterval(interval); 
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -229,6 +229,23 @@ export default function Order() {
         name: "Khách lạ",
         email: "Không có email",
       };
+    }
+  };
+
+  const handleConfirmOrder = async (orderId: string) => {
+    try {
+      const res = await fetch(`http://localhost:3000/orders/${orderId}/confirm`, {
+        method: "PATCH",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Lỗi xác nhận");
+
+      alert(data.message);
+      // TODO: reload lại đơn hàng
+    } catch (error: any) {
+      alert(error.message);
     }
   };
 
@@ -422,12 +439,10 @@ export default function Order() {
                         <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
                           <Eye size={25} />
                         </button>
-
-
                         {order.status_order === "pending" && (
                           <button
                             className={styles.statusBtn}
-                            onClick={() => handleUpdateStatus(order._id, "preparing")}
+                            onClick={() => handleConfirmOrder(order._id)}
                           >
                             Xác nhận
                           </button>
