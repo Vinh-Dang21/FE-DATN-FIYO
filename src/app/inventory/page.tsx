@@ -5,77 +5,116 @@ import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
 
 interface Product {
-    product_id: string;
-    name: string;
-    images?: string[]; // nếu là mảng
-    image?: string; // fallback nếu backend chỉ có 1 ảnh
-    sale_count: number;
+  name: string;
+  images?: string[];
+  image?: string;
+  sale_count: number;
+  price?: number;
+  create_at?: string;
+  total_quantity?: number;
 }
 
 export default function InventoryPage() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [timePeriod, setTimePeriod] = useState("week");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [timePeriod, setTimePeriod] = useState("week");
 
-    useEffect(() => {
-        async function fetchProducts() {
-            try {
-                const response = await fetch(`http://localhost:3000/products/reports/least-sold?timePeriod=${timePeriod}`, {
-                    method: "GET",
-                });
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
-                }
-                const data = await response.json();
-
-                if (data && Array.isArray(data.result)) {
-                    setProducts(data.result);
-                } else {
-                    console.error("Unexpected API format:", data);
-                    setProducts([]);
-                }
-
-            } catch (error) {
-                console.error("Error fetching products:", error);
-            } finally {
-                setLoading(false);
-            }
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/products/reports/least-sold?timePeriod=${timePeriod}`,
+          { method: "GET" }
+        );
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
         }
+        const data = await response.json();
 
-        fetchProducts();
-    }, [timePeriod]);
+        if (data && Array.isArray(data.result)) {
+          setProducts(data.result);
+        } else {
+          console.error("Unexpected API format:", data);
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-    return (
-        <div className={styles.container}>
-            <Sidebar />
-            <div className={styles.content}>
-                <Topbar />
-                <h1 className={styles.title}>Tồn kho - Top bán ít</h1>
+    fetchProducts();
+  }, [timePeriod]);
 
-                <div className={styles.filterButtons}>
-                    <button onClick={() => setTimePeriod("week")} className={timePeriod === "week" ? styles.active : ""}>Tuần</button>
-                    <button onClick={() => setTimePeriod("month")} className={timePeriod === "month" ? styles.active : ""}>Tháng</button>
-                    <button onClick={() => setTimePeriod("year")} className={timePeriod === "year" ? styles.active : ""}>Năm</button>
-                </div>
+  return (
+    <div className={styles.container}>
+      <Sidebar />
+      <div className={styles.content}>
+        <Topbar />
+        <h1 className={styles.title}>Tồn kho - Top bán ít</h1>
 
-                {loading ? (
-                    <p>Loading...</p>
-                ) : (
-                    <div className={styles.productList}>
-                        {products.map((product) => (
-                            <div key={product.product_id} className={styles.productCard}>
-                                <img
-                                    src={Array.isArray(product.images) ? product.images[0] : product.image}
-                                    alt={product.name}
-                                    className={styles.productImage}
-                                />
-                                <h2 className={styles.productName}>{product.name}</h2>
-                                <p className={styles.productSaleCount}>Số lượng bán: {product.sale_count}</p>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+        <div className={styles.filterButtons}>
+          <button
+            onClick={() => setTimePeriod("week")}
+            className={timePeriod === "week" ? styles.active : ""}
+          >
+            Tuần
+          </button>
+          <button
+            onClick={() => setTimePeriod("month")}
+            className={timePeriod === "month" ? styles.active : ""}
+          >
+            Tháng
+          </button>
+          <button
+            onClick={() => setTimePeriod("year")}
+            className={timePeriod === "year" ? styles.active : ""}
+          >
+            Năm
+          </button>
         </div>
-    );
+
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <div className={styles.productList}>
+            {products.map((product, index) => (
+              <div key={index} className={styles.productCard}>
+                <img
+                  src={
+                    Array.isArray(product.images)
+                      ? product.images[0]
+                      : product.image
+                  }
+                  alt={product.name}
+                  className={styles.productImage}
+                />
+                <h2 className={styles.productName}>{product.name}</h2>
+                <p className={styles.productSaleCount}>
+                  Số lượng bán: {product.sale_count}
+                </p>
+
+                {product.price && (
+                  <p className={styles.productPrice}>
+                    Giá: {product.price.toLocaleString()}₫
+                  </p>
+                )}
+
+                {product.create_at && (
+                  <p className={styles.productDate}>
+                    Ngày tạo: {new Date(product.create_at).toLocaleDateString()}
+                  </p>
+                )}
+
+                <p className={styles.productQuantity}>
+                  Số lượng tồn kho: {product.total_quantity ?? 1}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
