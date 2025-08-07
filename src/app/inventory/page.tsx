@@ -56,7 +56,7 @@ export default function InventoryPage() {
         {/* Khu vực tìm kiếm và lọc - đồng bộ với trang danh mục */}
         <div className={styles.searchProduct}>
           <div className={styles.spaceBetween}>
-            <h2 className={styles.userListTitle}>Tồn kho - Top bán ít</h2>
+            <h2 className={styles.userListTitle}> Hàng Tồn kho </h2>
             <div className={styles.filterButtons}>
               <button
                 onClick={() => setTimePeriod("week")}
