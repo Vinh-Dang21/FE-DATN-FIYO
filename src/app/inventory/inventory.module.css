@@ -1,60 +1,142 @@
-.container {
-  display: flex;
-}
-
 .main {
-  flex-grow: 1;
-  padding: 20px;
-}
-
-.title {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-.filters {
   display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
+}
+
+/* Khu vực điều khiển chính (filter và title) */
+.searchProduct {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px 8px 0 0;
+}
+
+.spaceBetween {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.userListTitle {
+  color: #444;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: left;
+  line-height: 1.2;
+  margin: 0;
+}
+
+/* Các styles cho nút lọc Tuần/Tháng/Năm */
+.filterButtons {
+  display: flex;
+  /* Dùng flexbox để các nút nằm trên một hàng */
   gap: 10px;
-  margin-bottom: 20px;
+  /* Khoảng cách 10px giữa các nút */
 }
 
-.filters button {
-  padding: 8px 16px;
-  border: 1px solid #ccc;
-  background: white;
+.filterButtons button {
+  background-color: #f1f1f1;
+  color: #333;
+  border: 1px solid #e4e4e7;
+  padding: 8px 18px;
+  border-radius: 6px;
   cursor: pointer;
-  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
-.filters button.active {
-  background-color: #007bff;
-  color: white;
-  border-color: #007bff;
+.filterButtons button:hover {
+  background-color: #e4e4e7;
 }
 
-.productList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+.filterButtons button.active {
+  background-color: #ff0a0a;
+  color: #fff;
+  border-color: #ff0a0a;
+  box-shadow: 0 4px 12px rgba(255, 10, 10, 0.2);
 }
 
-.productCard {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+/* Khu vực danh sách sản phẩm (Bảng) */
+.usertList {
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 0 0 8px 8px;
+}
+
+.cateTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 10px;
+}
+
+.cateTable th,
+.cateTable td {
   padding: 12px;
   text-align: center;
-  background: white;
-  transition: box-shadow 0.2s ease;
+  max-width: 250px;
+  white-space: pre-line;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
-.productCard:hover {
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+.cateTable th {
+  font-size: 16px;
+  border-bottom: 1px solid #e4e4e7;
+  border-top: 1px solid #e4e4e7;
+  background-color: #fff;
+  color: #444;
+  font-weight: 600;
 }
 
-.productCard img {
-  width: 100%;
-  height: 180px;
+.cateTable td {
+  background: #fff;
+  color: #444;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.productInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  /* Chỉnh lại cho tên sản phẩm căn trái */
+}
+
+.productImage {
+  width: 60px;
+  height: 60px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.productName {
+  font-weight: 600;
+  font-size: 16px;
+  color: #111827;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  /* Giới hạn 2 dòng */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

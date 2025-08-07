@@ -48,73 +48,90 @@ export default function InventoryPage() {
   }, [timePeriod]);
 
   return (
-    <div className={styles.container}>
+    <main className={styles.main}>
       <Sidebar />
-      <div className={styles.content}>
+      <section className={styles.content}>
         <Topbar />
-        <h1 className={styles.title}>Tồn kho - Top bán ít</h1>
 
-        <div className={styles.filterButtons}>
-          <button
-            onClick={() => setTimePeriod("week")}
-            className={timePeriod === "week" ? styles.active : ""}
-          >
-            Tuần
-          </button>
-          <button
-            onClick={() => setTimePeriod("month")}
-            className={timePeriod === "month" ? styles.active : ""}
-          >
-            Tháng
-          </button>
-          <button
-            onClick={() => setTimePeriod("year")}
-            className={timePeriod === "year" ? styles.active : ""}
-          >
-            Năm
-          </button>
+        {/* Khu vực tìm kiếm và lọc - đồng bộ với trang danh mục */}
+        <div className={styles.searchProduct}>
+          <div className={styles.spaceBetween}>
+            <h2 className={styles.userListTitle}>Tồn kho - Top bán ít</h2>
+            <div className={styles.filterButtons}>
+              <button
+                onClick={() => setTimePeriod("week")}
+                className={timePeriod === "week" ? styles.active : ""}
+              >
+                Tuần
+              </button>
+              <button
+                onClick={() => setTimePeriod("month")}
+                className={timePeriod === "month" ? styles.active : ""}
+              >
+                Tháng
+              </button>
+              <button
+                onClick={() => setTimePeriod("year")}
+                className={timePeriod === "year" ? styles.active : ""}
+              >
+                Năm
+              </button>
+            </div>
+          </div>
         </div>
 
         {loading ? (
           <p>Loading...</p>
         ) : (
-          <div className={styles.productList}>
-            {products.map((product, index) => (
-              <div key={index} className={styles.productCard}>
-                <img
-                  src={
-                    Array.isArray(product.images)
-                      ? product.images[0]
-                      : product.image
-                  }
-                  alt={product.name}
-                  className={styles.productImage}
-                />
-                <h2 className={styles.productName}>{product.name}</h2>
-                <p className={styles.productSaleCount}>
-                  Số lượng bán: {product.sale_count}
-                </p>
-
-                {product.price && (
-                  <p className={styles.productPrice}>
-                    Giá: {product.price.toLocaleString()}₫
-                  </p>
-                )}
-
-                {product.create_at && (
-                  <p className={styles.productDate}>
-                    Ngày tạo: {new Date(product.create_at).toLocaleDateString()}
-                  </p>
-                )}
-
-                <p className={styles.productQuantity}>
-                  Số lượng tồn kho: {product.total_quantity ?? 1}
-                </p>
-              </div>
-            ))}
+          <div className={styles.usertList}>
+            <table className={styles.cateTable}>
+              <thead>
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th>Giá</th>
+                  <th>Số lượng đã bán</th>
+                  <th>Số lượng tồn kho</th>
+                  <th>Ngày tạo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product, index) => (
+                  <tr key={index}>
+                    <td>
+                      <div className={styles.productInfo}>
+                        <img
+                          src={
+                            Array.isArray(product.images)
+                              ? product.images[0]
+                              : product.image
+                          }
+                          alt={product.name}
+                          className={styles.productImage}
+                        />
+                        <span className={styles.productName}>
+                          {product.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      {product.price
+                        ? `${product.price.toLocaleString()}₫`
+                        : "N/A"}
+                    </td>
+                    <td>{product.sale_count}</td>
+                    <td>{product.total_quantity ?? 1}</td>
+                    <td>
+                      {product.create_at
+                        ? new Date(product.create_at).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
