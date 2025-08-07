@@ -6,6 +6,16 @@
 
 .content {
   flex: 1;
+  padding: 20px 30px;
+  background-color: whitesmoke;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* Các styles cho Sidebar và Topbar (giả định) */
+/* Bạn cần có các styles này trong file tương ứng của Sidebar và Topbar */
+.topbar {
+  height: 45px;
   display: flex;
   justify-content: space-between;
   align-items: center;
