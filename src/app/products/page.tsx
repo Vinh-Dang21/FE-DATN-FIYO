@@ -323,10 +323,6 @@ export default function Product() {
     }
   };
 
-
-
-
-
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -698,22 +694,7 @@ export default function Product() {
                     setSelectedChild("");
                     setChildCategories([]);
                     setFilterChild("");
-                    fetch("http://localhost:3000/products")
-                      .then(res => res.json())
-                      .then(data => {
-                        if (data.products) {
-                          setProducts(data.products);
-                          setNoProduct(false);
-                        } else {
-                          setProducts([]);
-                          setNoProduct(true);
-                        }
-                      })
-                      .catch(err => {
-                        console.error("Lỗi khi lấy sản phẩm:", err);
-                        setProducts([]);
-                        setNoProduct(true);
-                      });
+                    fetchProducts(); // <-- Gọi lại hàm fetchProducts để lấy toàn bộ sản phẩm
                   }
                 }}
               >
