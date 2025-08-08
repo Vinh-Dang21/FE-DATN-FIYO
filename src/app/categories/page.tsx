@@ -50,25 +50,25 @@ export default function Categories() {
   }, []);
 
   useEffect(() => {
-  const fetchCategories = async () => {
-    try {
-      let url = "http://localhost:3000/category";
+    const fetchCategories = async () => {
+      try {
+        let url = "http://localhost:3000/category";
 
-      const res = await fetch(url);
-      const allCategories = await res.json();
+        const res = await fetch(url);
+        const allCategories = await res.json();
 
-      const filtered = selectedParentId
-        ? allCategories.filter((cate) => cate.parentId === selectedParentId)
-        : allCategories.filter((cate) => cate.parentId); // Lấy tất cả danh mục con
+        const filtered = selectedParentId
+          ? allCategories.filter((cate) => cate.parentId === selectedParentId)
+          : allCategories.filter((cate) => cate.parentId); // Lấy tất cả danh mục con
 
-      setCategories(filtered);
-    } catch (err) {
-      console.error("Lỗi fetch danh mục:", err);
-    }
-  };
+        setCategories(filtered);
+      } catch (err) {
+        console.error("Lỗi fetch danh mục:", err);
+      }
+    };
 
-  fetchCategories();
-}, [selectedParentId]);
+    fetchCategories();
+  }, [selectedParentId]);
 
   const resetForm = () => {
     setShowAdd(false);
@@ -253,12 +253,12 @@ export default function Categories() {
           <div className={styles.spaceBetween}>
             <div className={styles.searchAndFillterBar}>
               <input
-              type="text"
-              placeholder="Tìm kiếm ..."
-              className={styles.searchInput}
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-/>
+                type="text"
+                placeholder="Tìm kiếm ..."
+                className={styles.searchInput}
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+              />
 
               <select
                 className={styles.select}
@@ -388,36 +388,39 @@ export default function Categories() {
                 <th>Chức năng</th>
               </tr>
             </thead>
-            {categories
-  .filter((cate) =>
-    cate.name.toLowerCase().includes(searchKeyword.toLowerCase())
-  )
-  .map((cate, index) => (
-    <tr key={cate._id}>
-      <td>{index + 1}</td>
-      <td>
-        {cate.images?.length ? cate.images.map((img, i) => (
-          <img
-            key={i}
-            src={img}
-            alt={cate.name}
-            style={{ width: 50, height: 50, objectFit: "cover", marginRight: 5 }}
-          />
-        )) : "Không có ảnh"}
-      </td>
-      <td>{cate.name}</td>
-      <td>{cate.slug}</td>
-      <td>{getParentName(cate.parentId)}</td>
-      <td>
-        <button className={styles.actionBtn} onClick={() => handleEdit(cate._id)}>
-          <Pencil size={18} />
-        </button>
-        <button className={styles.actionBtn} onClick={() => handleDelete(cate._id)}>
-          <Trash2 size={18} />
-        </button>
-      </td>
-    </tr>
-))}
+            <tbody>
+              {categories
+                .filter((cate) =>
+                  cate.name.toLowerCase().includes(searchKeyword.toLowerCase())
+                )
+                .map((cate, index) => (
+                  <tr key={cate._id}>
+                    <td>{index + 1}</td>
+                    <td>
+                      {cate.images?.length ? cate.images.map((img, i) => (
+                        <img
+                          key={i}
+                          src={img}
+                          alt={cate.name}
+                          style={{ width: 50, height: 50, objectFit: "cover", marginRight: 5 }}
+                        />
+                      )) : "Không có ảnh"}
+                    </td>
+                    <td>{cate.name}</td>
+                    <td>{cate.slug}</td>
+                    <td>{getParentName(cate.parentId)}</td>
+                    <td>
+                      <button className={styles.actionBtn} onClick={() => handleEdit(cate._id)}>
+                        <Pencil size={18} />
+                      </button>
+                      <button className={styles.actionBtn} onClick={() => handleDelete(cate._id)}>
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+
 
           </table>
         </div>
