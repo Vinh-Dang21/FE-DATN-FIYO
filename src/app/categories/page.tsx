@@ -80,10 +80,22 @@ const resetForm = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    setFormData((prev) => {
+      // Nếu đang gõ tên, tự generate slug luôn
+      if (name === "name") {
+        return {
+          ...prev,
+          name: value,
+          slug: generateSlug(value),
+        };
+      }
+
+      return {
+        ...prev,
+        [name]: value,
+      };
+    });
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

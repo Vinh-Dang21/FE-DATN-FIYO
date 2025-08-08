@@ -11,6 +11,7 @@ import {
   Pie,
   Cell,
   Legend,
+  LabelList
 } from "recharts";
 import { useEffect, useState } from "react";
 import Sidebar from "./component/Sidebar";
@@ -166,8 +167,9 @@ export default function Dashboard() {
         const orderDate = new Date(order.createdAt);
         const isInRange =
           orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
+        const isDelivered = order.status_order === "delivered";
 
-        if (isInRange) {
+        if (isInRange && isDelivered) {
           total += order.total_price;
           count += 1;
         }
@@ -199,8 +201,9 @@ export default function Dashboard() {
         const orderDate = new Date(order.createdAt);
         const isInRange =
           orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
+        const isDelivered = order.status_order === "delivered";
 
-        if (isInRange) {
+        if (isInRange && isDelivered) {
           total += order.total_price;
           count += 1;
         }
@@ -401,21 +404,23 @@ export default function Dashboard() {
             <h4 className={styles.cardTitle}>DOANH THU TUẦN NÀY</h4>
             <div className={styles.cardContent}>
               <span className={styles.cardValue}>
-                {weeklyRevenue.toLocaleString()} đ
+                {weeklyRevenue.toLocaleString("vi-VN")} ₫
               </span>
               <span
                 className={
-                  weeklyRevenue >= lastWeekRevenue
+                  weeklyRevenue > lastWeekRevenue
                     ? styles.cardStatusUp
-                    : styles.cardStatusDown
+                    : weeklyRevenue < lastWeekRevenue
+                      ? styles.cardStatusDown
+                      : styles.cardStatusNeutral // nếu muốn xử lý thêm cho bằng nhau
                 }
               >
                 {Math.abs(
-                  ((weeklyRevenue - lastWeekRevenue) / (lastWeekRevenue || 1)) *
-                  100
+                  ((weeklyRevenue - lastWeekRevenue) / (lastWeekRevenue || 1)) * 100
                 ).toFixed(1)}
-                % {weeklyRevenue >= lastWeekRevenue ? "↑" : "↓"}
+                % {weeklyRevenue > lastWeekRevenue ? "↑" : weeklyRevenue < lastWeekRevenue ? "↓" : ""}
               </span>
+
             </div>
           </div>
 
@@ -423,8 +428,9 @@ export default function Dashboard() {
             <h4 className={styles.cardTitle}>DOANH THU THÁNG</h4>
             <div className={styles.cardContent}>
               <span className={styles.cardValue}>
-                {Math.round(currentMonthRevenue / 1000)} tr
+                {currentMonthRevenue.toLocaleString("vi-VN")} ₫
               </span>
+
               <span
                 className={
                   weeklyRevenue >= lastWeekRevenue
@@ -485,13 +491,18 @@ export default function Dashboard() {
                 Biểu đồ thống kê doanh thu theo từng tháng
               </p>
               <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={monthlyRevenue} barCategoryGap={10}>
+                <BarChart data={monthlyRevenue} margin={{ left: 10, }} barCategoryGap={10}>
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip
                     formatter={(value: number) => `${value.toLocaleString()} đ`}
+                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc", color: "#444" }}
+                    labelStyle={{ color: "#888" }}
                   />
-                  <Bar dataKey="revenue" fill="#7367F0" radius={[5, 5, 0, 0]} />
+
+                  <Bar dataKey="revenue" fill="#7367F0" radius={[5, 5, 0, 0]}>
+
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>

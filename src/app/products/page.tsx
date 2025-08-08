@@ -67,16 +67,17 @@ export default function Product() {
   const [images, setImages] = useState<(File | null)[]>([null, null, null, null]);
   const [previews, setPreviews] = useState<string[]>(["", "", "", ""]);
   const [productName, setProductName] = useState("");
-  const [sale, setSale] = useState(0);
-  const [saleCount, setSaleCount] = useState(0);
+  const [sale, setSale] = useState<string>("");
+  const [saleCount, setSaleCount] = useState<string>("");
+  const [price, setPrice] = useState<string>("");
   const [material, setMaterial] = useState("");
-  const [price, setPrice] = useState(0);
   const [description, setDescription] = useState("");
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [filterChild, setFilterChild] = useState(""); // cho bộ lọc
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
   const [editingSizeIndex, setEditingSizeIndex] = useState<number | null>(null);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
 
   const handleEditProduct = async (product: Product) => {
@@ -97,7 +98,7 @@ export default function Product() {
           break;
         }
       } catch (error) {
-        console.error("❌ Lỗi khi fetch danh mục con:", error);
+        console.error("Lỗi khi fetch danh mục con:", error);
       }
     }
 
@@ -110,12 +111,17 @@ export default function Product() {
 
     // Gán các giá trị khác vào form
     setEditProduct(product);
+    setEditingProductId(product._id);
     setShowAdd(true);
     setProductName(product.name);
-    setPrice(product.price);
+    setPrice(product.price?.toString() || "");
+    setSale(product.sale?.toString() || "");
+    setSaleCount(product.sale_count?.toString() || "");
+    setMaterial(product.material || "");
     setDescription(product.description);
     setVariants(product.variants || []);
     setPreviews(product.images || []);
+
   };
 
 
@@ -144,43 +150,103 @@ export default function Product() {
     setSizes([]);
     setCurrentColor("");
     setProductName("");
-    setPrice(0);
+    setSale("");
+    setSaleCount("");
+    setPrice("");
+    setMaterial("");
     setDescription("");
     setSelectedParent("");
     setSelectedChild("");
   };
 
   const handleSubmit = async () => {
-    if (!productName || !selectedChild) {
-      alert("Vui lòng nhập đầy đủ thông tin sản phẩm và chọn danh mục con!");
+    const hasNewImages = images.filter(Boolean).length > 0;
+    const hasOldImages = previews && previews.length > 0;
+    const totalImageCount = (images.filter(Boolean).length || 0) + (previews?.length || 0);
+    const filteredImages = images.filter((img) => img !== null);
+    if (!productName.trim()) {
+      alert("Tên sản phẩm không được để trống!");
+      return;
+    }
+
+    const isDuplicateName = products.some(
+      (product) =>
+        product.name.trim().toLowerCase() === productName.trim().toLowerCase() &&
+        product._id !== editProduct?._id
+    );
+
+
+    if (isDuplicateName) {
+      alert("Tên sản phẩm đã tồn tại. Vui lòng chọn tên khác.");
+      return;
+    }
+
+
+    if (!price.trim()) {
+      alert("Vui lòng nhập giá sản phẩm!");
+      return;
+    }
+
+
+    if (!selectedChild) {
+      alert("Vui lòng chọn danh mục!");
+      return;
+    }
+
+    if (!hasNewImages && !hasOldImages) {
+      alert("Vui lòng thêm ảnh cho sản phẩm");
+      return;
+    }
+
+    const parsedPrice = parseInt(price || "0");
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      alert("Giá không hợp lệ! Vui lòng nhập số và không âm.");
+      return;
+    }
+
+    const parsedSale = parseInt(sale || "0");
+    if (isNaN(parsedSale) || parsedSale < 0) {
+      alert("Giá khuyến mãi không hợp lệ! Vui lòng nhập số và không âm.");
+      return;
+    }
+
+    const parsedSaleCount = parseInt(saleCount || "0");
+    if (isNaN(parsedSaleCount) || parsedSaleCount < 0) {
+      alert("Số lượng đã bán không hợp lệ! Vui lòng nhập số và không âm.");
+      return;
+    }
+
+    if (totalImageCount < 4) {
+      alert("Vui lòng thêm đủ 4 ảnh cho sản phẩm");
       return;
     }
 
     const formData = new FormData();
 
     const validImages = images.filter(Boolean);
+    // Nếu có ảnh mới => gửi cả ảnh mới và giữ lại ảnh cũ
     if (editProduct && validImages.length === 0) {
       // Gửi lại ảnh cũ
       previews.forEach((link) => {
         if (link) formData.append("images", link);
       });
     } else {
-      // Gửi file mới
+      // Thêm mới thì chỉ gửi ảnh file
       validImages.forEach((img) => {
         if (img) formData.append("images", img);
       });
     }
 
+
     formData.append("name", productName);
-    formData.append("price", price.toString());
+    formData.append("price", parsedPrice.toString());
+    formData.append("sale", parsedSale.toString());
+    formData.append("sale_count", parsedSaleCount.toString());
     formData.append("description", description);
     formData.append("category_id", selectedChild);
     formData.append("shop_id", "1");
     formData.append("variants", JSON.stringify(variants));
-    formData.append("sale", sale.toString());
-    formData.append("sale_count", saleCount.toString());
     formData.append("material", material);
-
 
     // Tính tổng quantity từ tất cả variants
     const totalQuantity = variants.reduce((total, variant) => {
@@ -205,10 +271,10 @@ export default function Product() {
       });
 
       const result = await response.json();
-      console.log("📥 Kết quả phản hồi:", result);
+      console.log("Kết quả phản hồi:", result);
 
       if (result.status) {
-        alert(editProduct ? "✅ Cập nhật thành công!" : "✅ Thêm thành công!");
+        alert(editProduct ? "Sửa sản phẩm thành công!" : "Thêm sản phẩm thành công!");
 
         // Reset form
         resetForm();
@@ -218,10 +284,10 @@ export default function Product() {
         const reload = await fetchAgain.json();
         setProducts(reload.products || []);
       } else {
-        alert("❌ " + (editProduct ? "Cập nhật thất bại" : "Thêm thất bại"));
+        alert((editProduct ? "Cập nhật sản phẩm thất bại" : "Thêm sản phẩm thất bại"));
       }
     } catch (error) {
-      console.error("❌ Lỗi gửi dữ liệu:", error);
+      console.error("Lỗi gửi dữ liệu:", error);
       alert("Lỗi khi gửi dữ liệu");
     }
   };
@@ -356,7 +422,7 @@ export default function Product() {
         const data = await res.json();
 
         if (Array.isArray(data)) {
-          setChildCategories(data); // ✅ OK
+          setChildCategories(data);
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh mục con:", error);
@@ -492,11 +558,11 @@ export default function Product() {
       sizes: updatedSizes,
     };
 
-    console.log("✅ Biến thể mới được thêm:", newVariant);
+    console.log("Biến thể mới được thêm:", newVariant);
 
     setVariants((prev) => {
       const updated = [...prev, newVariant];
-      console.log("📦 Danh sách biến thể hiện tại:", updated);
+      console.log("Danh sách biến thể hiện tại:", updated);
       return updated;
     });
 
@@ -546,12 +612,12 @@ export default function Product() {
   };
   const handleSearch = async () => {
     if (!searchKeyword.trim()) {
-      console.log("🔄 Không có từ khóa. Đang load lại tất cả sản phẩm...");
+      console.log("Không có từ khóa. Đang load lại tất cả sản phẩm...");
 
       const res = await fetch("http://localhost:3000/products");
       const data = await res.json();
 
-      console.log("✅ Danh sách sản phẩm đầy đủ:", data.products);
+      console.log("Danh sách sản phẩm đầy đủ:", data.products);
 
       // Đảm bảo mỗi sản phẩm có mảng variants
       const updatedData = (data.products || []).map((product: any) => ({
@@ -567,18 +633,18 @@ export default function Product() {
     try {
       const encodedKeyword = encodeURIComponent(searchKeyword.trim());
       const url = `http://localhost:3000/products/search?name=${encodedKeyword}`;
-      console.log("🔍 Gửi request tìm sản phẩm với keyword:", searchKeyword);
-      console.log("📤 URL gửi đi:", url);
+      console.log("Gửi request tìm sản phẩm với keyword:", searchKeyword);
+      console.log("URL gửi đi:", url);
 
       const res = await fetch(url);
       const data = await res.json();
 
-      console.log("📥 Phản hồi từ server:", data);
+      console.log("Phản hồi từ server:", data);
 
       if (data && data.length > 0) {
-        console.log(`✅ Tìm thấy ${data.length} sản phẩm`);
+        console.log(`Tìm thấy ${data.length} sản phẩm`);
         const updatedData = data.map((product: any, i: number) => {
-          console.log(`📦 Sản phẩm ${i + 1}:`, product);
+          console.log(`Sản phẩm ${i + 1}:`, product);
           return {
             ...product,
             variants: product.variants ?? [],
@@ -593,7 +659,7 @@ export default function Product() {
       }
 
     } catch (error) {
-      console.error("❌ Lỗi khi tìm kiếm sản phẩm:", error);
+      console.error("Lỗi khi tìm kiếm sản phẩm:", error);
       setProducts([]);
       setNoProduct(true);
     }
@@ -721,7 +787,7 @@ export default function Product() {
                 placeholder="Giá (price)"
                 name="price"
                 value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
+                onChange={(e) => setPrice(e.target.value)}
               />
             </div>
             {/* Hàng mới: Sale, Sale Count, Material */}
@@ -744,7 +810,7 @@ export default function Product() {
                   placeholder="Giảm giá (%) - sale"
                   name="sale"
                   value={sale}
-                  onChange={(e) => setSale(Number(e.target.value))}
+                  onChange={(e) => setSale(e.target.value)}
                 />
                 <input
                   className={styles.inputHalf}
@@ -752,7 +818,7 @@ export default function Product() {
                   placeholder="Đã bán (sale_count)"
                   name="sale_count"
                   value={saleCount}
-                  onChange={(e) => setSaleCount(Number(e.target.value))}
+                  onChange={(e) => setSaleCount(e.target.value)}
                 />
               </div>
             </div>
