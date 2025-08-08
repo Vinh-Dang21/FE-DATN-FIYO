@@ -10,7 +10,6 @@ interface Product {
   image?: string;
   sale_count: number;
   price?: number;
-  create_at?: string;
   total_quantity?: number;
 }
 
@@ -91,7 +90,6 @@ export default function InventoryPage() {
                   <th>Giá</th>
                   <th>Số lượng đã bán</th>
                   <th>Số lượng tồn kho</th>
-                  <th>Ngày tạo</th>
                 </tr>
               </thead>
               <tbody>
@@ -120,14 +118,10 @@ export default function InventoryPage() {
                     </td>
                     <td>{product.sale_count}</td>
                     <td>{product.total_quantity ?? 1}</td>
-                    <td>
-                      {product.create_at
-                        ? new Date(product.create_at).toLocaleDateString()
-                        : "N/A"}
-                    </td>
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         )}

@@ -8,6 +8,7 @@ import {
     Layers,
     LogOut,
     Shirt,
+    Box,
 } from "lucide-react";
 import styles from "../dashboard.module.css";
 import { usePathname } from "next/navigation";
@@ -19,7 +20,7 @@ const menuItems = [
     { label: "Người dùng", href: "/users", icon: Users },
     { label: "Khuyến mãi", href: "/voucher", icon: GraduationCap },
     { label: "Đánh giá", href: "/comments", icon: MessageCircle },
-    {label:"Tồn kho", href: "/inventory", icon: Layers },
+{ label: "Tồn kho", href: "/inventory", icon: Box },
     { label: "Đăng xuất", href: "/logout", icon: LogOut },
 ];
 
