@@ -65,11 +65,13 @@ export default function UserDetailPage() {
         <div className={styles.orderSummary}>
           <div className={styles.orderInfoLeft}>
             <h2 className={styles.usertitle}>
-              Mã người dùng: {user.code || `#${user._id.slice(-4).toUpperCase()}`}
+Mã người dùng: {user._id ? `#${user._id}` : ""}
             </h2>
-           <p className={styles.createdAt}>
-              Ngày tạo: {user.createdAt ? user.createdAt.slice(0, 10) : "Không xác định"}
-          </p>
+          <p className={styles.createdAt}>
+  Ngày tạo: {user.createdAt ? new Date(user.createdAt).toLocaleDateString("vi-VN") : "Không xác định"}
+</p>
+
+
 
           </div>
 
@@ -86,7 +88,8 @@ export default function UserDetailPage() {
               </div>
             )}
             <h3 className={styles.name}>{user.name}</h3>
-            <p className={styles.userId}>Mã khách hàng: {user.code}</p>
+           
+Mã khách hàng: {user._id ? `US${user._id.slice(-4).toUpperCase()}` : ""}
 
             <div className={styles.stats}>
               <div className={styles.statItem}>

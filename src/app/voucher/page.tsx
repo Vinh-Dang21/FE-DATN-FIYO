@@ -211,16 +211,21 @@ export default function Voucher() {
                 onChange={(e) => setForm({ ...form, expired_at: e.target.value })}
               />
             </div>
-            <div className={styles.dateRow}>
-              <label className={styles.label}>Rank áp dụng</label>
-              <input
-                className={styles.input}
-                type="text"
-                placeholder="Nhập target rank (VD: silver)"
-                value={form.target_rank}
-                onChange={(e) => setForm({ ...form, target_rank: e.target.value })}
-              />
-            </div>
+           <div className={styles.dateRow}>
+  <label className={styles.label}>Rank áp dụng</label>
+  <select
+    className={styles.input}
+    value={form.target_rank}
+    onChange={(e) => setForm({ ...form, target_rank: e.target.value })}
+  >
+    <option value="">-- Chọn rank --</option>
+    <option value="bronze">Bronze</option>
+    <option value="silver">Silver</option>
+    <option value="gold">Gold</option>
+    <option value="platinum">Platinum</option>
+  </select>
+</div>
+
 
             <button
               className={styles.addButton}
