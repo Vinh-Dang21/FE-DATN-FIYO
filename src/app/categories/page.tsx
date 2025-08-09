@@ -53,17 +53,21 @@ export default function Categories() {
     const fetchCategories = async () => {
       try {
         let url = "http://localhost:3000/category";
-
         const res = await fetch(url);
-        const allCategories = await res.json();
+        const allCategories: Category[] = await res.json();
 
+        // Đảm bảo allCategories là mảng
         const filtered = selectedParentId
-          ? allCategories.filter((cate) => cate.parentId === selectedParentId)
-          : allCategories.filter((cate) => cate.parentId); // Lấy tất cả danh mục con
-
+          ? Array.isArray(allCategories)
+            ? allCategories.filter((cate) => cate.parentId === selectedParentId)
+            : []
+          : Array.isArray(allCategories)
+            ? allCategories.filter((cate) => cate.parentId)
+            : [];
         setCategories(filtered);
       } catch (err) {
         console.error("Lỗi fetch danh mục:", err);
+        setCategories([]); // Đảm bảo không bị lỗi filter
       }
     };
 
@@ -82,7 +86,7 @@ export default function Categories() {
     const url = `http://localhost:3000/category/children/${selectedParentId}`;
     const res = await fetch(url);
     const data = await res.json();
-    setCategories(data);
+    setCategories(Array.isArray(data) ? data : []);
   };
 
   const handleChange = (
@@ -178,7 +182,19 @@ export default function Categories() {
       if (res.ok) {
         alert(editingId ? "Cập nhật thành công!" : "Thêm thành công!");
         resetForm();
-        refreshCategories();
+        // Nếu không chọn danh mục cha, load lại tất cả danh mục
+        if (!selectedParentId) {
+          // Lấy lại toàn bộ danh mục
+          const resAll = await fetch("http://localhost:3000/category");
+          const allCategories = await resAll.json();
+          const filtered = Array.isArray(allCategories)
+            ? allCategories.filter((cate) => cate.parentId)
+            : [];
+          setCategories(filtered);
+        } else {
+          // Nếu có chọn danh mục cha, chỉ load children
+          refreshCategories();
+        }
       } else {
         alert(result.message || "Có lỗi khi xử lý.");
       }
