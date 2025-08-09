@@ -236,18 +236,29 @@ export default function Order() {
     try {
       const res = await fetch(`http://localhost:3000/orders/${orderId}/confirm`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
       });
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message || "Lỗi xác nhận");
+      if (!res.ok) throw new Error(data.message || "Lỗi xác nhận đơn hàng");
 
-      alert(data.message);
-      // TODO: reload lại đơn hàng
+      alert(data.message || "Xác nhận đơn hàng thành công!");
+
+      // Cập nhật lại trạng thái đơn trong local state
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === orderId ? { ...order, status_order: "preparing" } : order
+        )
+      );
+
+      // Hoặc gọi lại hàm fetchOrders() để load lại danh sách đơn
+
     } catch (error: any) {
-      alert(error.message);
+      alert(error.message || "Lỗi khi xác nhận đơn hàng");
     }
   };
+
 
 
 

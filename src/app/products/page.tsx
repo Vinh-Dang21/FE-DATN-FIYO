@@ -64,8 +64,8 @@ export default function Product() {
   const [sizeInput, setSizeInput] = useState<string>("");
   const [quantityInput, setQuantityInput] = useState<number>(1);
   const [sizes, setSizes] = useState<{ size: string; quantity: number }[]>([]);
-  const [images, setImages] = useState<(File | null)[]>([null, null, null, null]);
-  const [previews, setPreviews] = useState<string[]>(["", "", "", ""]);
+  const [images, setImages] = useState<File[]>([]); // Mảng linh hoạt, không cố định 4 phần tử
+  const [previews, setPreviews] = useState<string[]>([]);
   const [productName, setProductName] = useState("");
   const [sale, setSale] = useState<string>("");
   const [saleCount, setSaleCount] = useState<string>("");
@@ -78,6 +78,8 @@ export default function Product() {
   const [editingSizeIndex, setEditingSizeIndex] = useState<number | null>(null);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [imageWarning, setImageWarning] = useState("");
+
 
 
   const handleEditProduct = async (product: Product) => {
@@ -134,12 +136,23 @@ export default function Product() {
     const files = e.target.files;
     if (!files) return;
 
-    const selectedFiles = Array.from(files).slice(0, 4); // lấy tối đa 4 ảnh
-    setImages(selectedFiles);
+    const newFiles = Array.from(files);
+    const updatedImages = [...images, ...newFiles];
+    setImages(updatedImages);
 
-    const previewList = selectedFiles.map((file) => URL.createObjectURL(file));
-    setPreviews(previewList);
+    const updatedPreviews = updatedImages.map((file) =>
+      file instanceof File ? URL.createObjectURL(file) : file
+    );
+    setPreviews(updatedPreviews);
+
+    if (updatedImages.length > 4) {
+      setImageWarning("Bạn đã chọn hơn 4 ảnh. Vui lòng xóa bớt.");
+    } else {
+      setImageWarning("");
+    }
   };
+
+
 
   const resetForm = () => {
     setShowAdd(false);
@@ -216,10 +229,6 @@ export default function Product() {
       return;
     }
 
-    if (totalImageCount < 4) {
-      alert("Vui lòng thêm đủ 4 ảnh cho sản phẩm");
-      return;
-    }
 
     const formData = new FormData();
 
@@ -660,6 +669,17 @@ export default function Product() {
       setNoProduct(true);
     }
   };
+  const handleRemoveImage = (indexToRemove: number) => {
+    const filteredImages = images.filter((_, idx) => idx !== indexToRemove);
+    setImages(filteredImages);
+
+    const filteredPreviews = previews.filter((_, idx) => idx !== indexToRemove);
+    setPreviews(filteredPreviews);
+
+    if (filteredImages.length <= 4) {
+      setImageWarning(""); // Xóa cảnh báo khi còn 4 ảnh trở xuống
+    }
+  };
 
 
 
@@ -765,7 +785,7 @@ export default function Product() {
               <input
                 className={styles.input}
                 type="number"
-                placeholder="Giá (price)"
+                placeholder="Giá bán"
                 name="price"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
@@ -788,7 +808,7 @@ export default function Product() {
                 <input
                   className={styles.inputHalf}
                   type="number"
-                  placeholder="Giảm giá (%) - sale"
+                  placeholder="Giảm giá - sale (VND)"
                   name="sale"
                   value={sale}
                   onChange={(e) => setSale(e.target.value)}
@@ -796,7 +816,7 @@ export default function Product() {
                 <input
                   className={styles.inputHalf}
                   type="number"
-                  placeholder="Đã bán (sale_count)"
+                  placeholder="Đã bán (mặc định là 0)"
                   name="sale_count"
                   value={saleCount}
                   onChange={(e) => setSaleCount(e.target.value)}
@@ -838,22 +858,46 @@ export default function Product() {
 
             {/* Hàng 3: Ảnh */}
             <div className={styles.rowColumn}>
-              <label>Chọn tối đa 4 ảnh sản phẩm:</label>
+              <label>Chọn ảnh sản phẩm:</label>
               <input
                 type="file"
                 accept="image/*"
                 multiple
                 onChange={handleMultipleImages}
               />
+              {imageWarning && <p className={styles.imageWarning}>{imageWarning}</p>}
+
               <div className={styles.imageGrid}>
                 {previews.map((preview, index) => (
-                  <div key={index} className={styles.imageSlot}>
-                    {preview ? (
-                      <img src={preview} alt={`Preview ${index + 1}`} className={styles.imagePreview} />
-                    ) : null}
+                  <div key={index} className={styles.imageSlot} style={{ position: "relative" }}>
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className={styles.imagePreview}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      style={{
+                        position: "absolute",
+                        top: 2,
+                        right: 2,
+                        background: "rgba(0,0,0,0.6)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: 24,
+                        height: 24,
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                        lineHeight: "20px",
+                        textAlign: "center",
+                      }}
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
-
               </div>
             </div>
 
