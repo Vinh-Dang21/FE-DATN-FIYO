@@ -207,11 +207,19 @@ export default function Order() {
 
 
   const handleViewOrder = async (order: Order) => {
-    if (order.status_order === "pending") {
-      await handleUpdateStatus(order._id, "preparing", false);
+    try {
+      // Nếu trạng thái là "pending" thì gọi hàm xác nhận đơn luôn
+      if (order.status_order === "pending") {
+        await handleConfirmOrder(order._id, false); // false để không hiện alert
+      }
+      // Sau đó chuyển sang trang chi tiết đơn hàng
+      router.push(`/orderdetail/${order._id}`);
+    } catch (error) {
+      console.error("Lỗi khi xử lý đơn hàng:", error);
+      alert("Có lỗi xảy ra khi xử lý đơn hàng");
     }
-    router.push(`/orderdetail/${order._id}`);
   };
+
 
   const getCustomerInfo = (order: Order) => {
     if (order.user_id) {
@@ -232,7 +240,7 @@ export default function Order() {
     }
   };
 
-  const handleConfirmOrder = async (orderId: string) => {
+  const handleConfirmOrder = async (orderId: string, showAlert = true) => {
     try {
       const res = await fetch(`http://localhost:3000/orders/${orderId}/confirm`, {
         method: "PATCH",
@@ -243,7 +251,7 @@ export default function Order() {
 
       if (!res.ok) throw new Error(data.message || "Lỗi xác nhận đơn hàng");
 
-      alert(data.message || "Xác nhận đơn hàng thành công!");
+      if (showAlert) alert(data.message || "Xác nhận đơn hàng thành công!");
 
       // Cập nhật lại trạng thái đơn trong local state
       setOrders((prev) =>
@@ -251,13 +259,11 @@ export default function Order() {
           order._id === orderId ? { ...order, status_order: "preparing" } : order
         )
       );
-
-      // Hoặc gọi lại hàm fetchOrders() để load lại danh sách đơn
-
     } catch (error: any) {
-      alert(error.message || "Lỗi khi xác nhận đơn hàng");
+      if (showAlert) alert(error.message || "Lỗi khi xác nhận đơn hàng");
     }
   };
+
 
 
 

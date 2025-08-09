@@ -15,13 +15,13 @@ interface Category {
 }
 
 interface CategoryForm {
-  _id?: string;
   name: string;
   slug: string;
   parentId: string;
-  type?: string;
-  images?: File[];
+  type: string;
+  images: File[]; // luôn là mảng, không undefined
 }
+
 
 export default function Categories() {
   const [showAdd, setShowAdd] = useState(false);
@@ -37,9 +37,10 @@ export default function Categories() {
     name: "",
     slug: "",
     parentId: "",
-    type: "cloth",
-    images: [],
+    type: "",
+    images: [], // luôn là mảng rỗng ban đầu
   });
+
 
   // Fetch parent categories
   useEffect(() => {
@@ -49,10 +50,10 @@ export default function Categories() {
         const list = Array.isArray(data)
           ? data
           : Array.isArray(data.result)
-          ? data.result
-          : Array.isArray(data.data)
-          ? data.data
-          : [];
+            ? data.result
+            : Array.isArray(data.data)
+              ? data.data
+              : [];
         setParentCategories(list);
       })
       .catch((err) => console.error("Lỗi fetch parents:", err));
@@ -359,7 +360,7 @@ export default function Categories() {
               onChange={handleImageChange}
             />
 
-            {formData.images?.length > 0 && (
+            {formData.images.length > 0 && (
               <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
                 {formData.images.map((file, i) => (
                   <img
@@ -376,6 +377,7 @@ export default function Categories() {
                 ))}
               </div>
             )}
+
 
             {showEdit &&
               !formData.images?.length &&
@@ -440,18 +442,18 @@ export default function Categories() {
                       <td>
                         {cate.images?.length
                           ? cate.images.map((img, i) => (
-                              <img
-                                key={i}
-                                src={img}
-                                alt={cate.name}
-                                style={{
-                                  width: 50,
-                                  height: 50,
-                                  objectFit: "cover",
-                                  marginRight: 5,
-                                }}
-                              />
-                            ))
+                            <img
+                              key={i}
+                              src={img}
+                              alt={cate.name}
+                              style={{
+                                width: 50,
+                                height: 50,
+                                objectFit: "cover",
+                                marginRight: 5,
+                              }}
+                            />
+                          ))
                           : "Không có ảnh"}
                       </td>
                       <td>{cate.name}</td>

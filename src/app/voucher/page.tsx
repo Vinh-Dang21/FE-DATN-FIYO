@@ -9,18 +9,40 @@ import Topbar from "../component/Topbar";
 
 import { useState, useEffect } from "react";
 
+interface Voucher {
+  _id: string;
+  voucher_code: string;
+  min_total: number;
+  max_total: number;
+  quantity: number;
+  expired_at: string;
+  target_rank?: string;
+  is_active: boolean;
+}
+
+interface VoucherForm {
+  voucher_code: string;
+  min_total: string;  // nếu để input number thì vẫn trả ra string
+  max_total: string;
+  quantity: string;
+  expired_at: string;
+  target_rank: string;
+}
+
+
 export default function Voucher() {
-  const [vouchers, setVouchers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [editVoucher, setEditVoucher] = useState(null);
-  const [form, setForm] = useState({
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [editVoucher, setEditVoucher] = useState<Voucher | null>(null);
+  const [form, setForm] = useState<VoucherForm>({
     voucher_code: "",
     min_total: "",
     max_total: "",
     quantity: "",
     expired_at: "",
-    target_rank: "", // ✅ thêm dòng này
+    target_rank: "",
   });
+
 
   const [search, setSearch] = useState("");
 
@@ -68,14 +90,25 @@ export default function Voucher() {
         max_total: "",
         quantity: "",
         expired_at: "",
+        target_rank: "",
       });
       fetchVouchers();
     } catch (error) {
-      alert("Lỗi: " + error.message);
+      if (error instanceof Error) {
+        alert("Lỗi: " + error.message);
+      } else {
+        alert("Lỗi không xác định");
+      }
     }
+
   };
 
   const handleUpdateVoucher = async () => {
+    if (!editVoucher) {
+      alert("Không có voucher để cập nhật");
+      return;
+    }
+
     try {
       const res = await fetch(`http://localhost:3000/voucher/${editVoucher._id}`, {
         method: "PUT",
@@ -95,14 +128,20 @@ export default function Voucher() {
         max_total: "",
         quantity: "",
         expired_at: "",
+        target_rank: "",
       });
       fetchVouchers();
     } catch (error) {
-      alert("Lỗi: " + error.message);
+      if (error instanceof Error) {
+        alert("Lỗi: " + error.message);
+      } else {
+        alert("Lỗi không xác định");
+      }
     }
   };
 
-  const handleDelete = async (id) => {
+
+  const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xoá voucher này không?")) return;
     try {
       const res = await fetch(`http://localhost:3000/voucher/${id}`, {
@@ -112,11 +151,16 @@ export default function Voucher() {
       if (!res.ok) throw new Error(data.message);
       fetchVouchers();
     } catch (error) {
-      alert("Lỗi: " + error.message);
+      if (error instanceof Error) {
+        alert("Lỗi: " + error.message);
+      } else {
+        alert("Lỗi không xác định");
+      }
     }
+
   };
 
-  const handleToggleStatus = async (id, currentStatus) => {
+  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     try {
       const res = await fetch(`http://localhost:3000/voucher/status/${id}`, {
         method: "PATCH",
@@ -129,7 +173,11 @@ export default function Voucher() {
       if (!res.ok) throw new Error(data.message);
       fetchVouchers();
     } catch (error) {
-      alert("Lỗi: " + error.message);
+      if (error instanceof Error) {
+        alert("Lỗi: " + error.message);
+      } else {
+        alert("Lỗi không xác định");
+      }
     }
   };
 
@@ -164,6 +212,7 @@ export default function Voucher() {
                     max_total: "",
                     quantity: "",
                     expired_at: "",
+                    target_rank: "",
                   });
                 }}>
                 + Thêm mã giảm giá
@@ -211,20 +260,20 @@ export default function Voucher() {
                 onChange={(e) => setForm({ ...form, expired_at: e.target.value })}
               />
             </div>
-           <div className={styles.dateRow}>
-  <label className={styles.label}>Rank áp dụng</label>
-  <select
-    className={styles.input}
-    value={form.target_rank}
-    onChange={(e) => setForm({ ...form, target_rank: e.target.value })}
-  >
-    <option value="">-- Chọn rank --</option>
-    <option value="bronze">Bronze</option>
-    <option value="silver">Silver</option>
-    <option value="gold">Gold</option>
-    <option value="platinum">Platinum</option>
-  </select>
-</div>
+            <div className={styles.dateRow}>
+              <label className={styles.label}>Rank áp dụng</label>
+              <select
+                className={styles.input}
+                value={form.target_rank}
+                onChange={(e) => setForm({ ...form, target_rank: e.target.value })}
+              >
+                <option value="">-- Chọn rank --</option>
+                <option value="bronze">Bronze</option>
+                <option value="silver">Silver</option>
+                <option value="gold">Gold</option>
+                <option value="platinum">Platinum</option>
+              </select>
+            </div>
 
 
             <button
@@ -243,6 +292,7 @@ export default function Voucher() {
                   max_total: "",
                   quantity: "",
                   expired_at: "",
+                  target_rank: "",
                 });
               }}
               style={{ marginTop: 10 }}>
@@ -294,12 +344,13 @@ export default function Voucher() {
                         setEditVoucher(v);
                         setForm({
                           voucher_code: v.voucher_code,
-                          min_total: v.min_total,
-                          max_total: v.max_total,
-                          quantity: v.quantity,
+                          min_total: String(v.min_total),
+                          max_total: String(v.max_total),
+                          quantity: String(v.quantity),
                           expired_at: v.expired_at?.split("T")[0],
-                          target_rank: v.target_rank || "", // ✅ thêm dòng này
+                          target_rank: v.target_rank || "",
                         });
+
 
                       }}>
                       <Pencil size={18} />

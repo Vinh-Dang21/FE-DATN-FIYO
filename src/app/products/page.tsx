@@ -206,6 +206,12 @@ export default function Product() {
       return;
     }
 
+    if (!description.trim()) {
+      alert("Mô tả sản phẩm không được để trống!");
+      return;
+    }
+
+
     if (!hasNewImages && !hasOldImages) {
       alert("Vui lòng thêm ảnh cho sản phẩm");
       return;
@@ -220,6 +226,12 @@ export default function Product() {
     const parsedSale = parseInt(sale || "0");
     if (isNaN(parsedSale) || parsedSale < 0) {
       alert("Giá khuyến mãi không hợp lệ! Vui lòng nhập số và không âm.");
+      return;
+    }
+
+    // Kiểm tra giá khuyến mãi không được cao hơn giá gốc
+    if (parsedSale > parsedPrice) {
+      alert("Giá khuyến mãi không được cao hơn giá sản phẩm!");
       return;
     }
 
@@ -770,7 +782,10 @@ export default function Product() {
         </div>
         {showAdd && (
           <div className={styles.addProductForm}>
-            <h2 className={styles.addProductTitle}>Thêm sản phẩm mới</h2>
+            <h2 className={styles.addProductTitle}>
+              {editProduct ? "Cập nhật sản phẩm" : "Thêm sản phẩm mới"}
+            </h2>
+
 
             {/* Hàng 1: Tên sản phẩm & Giá */}
             <div className={styles.row}>
