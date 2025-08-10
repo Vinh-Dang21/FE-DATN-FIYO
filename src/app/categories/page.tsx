@@ -11,7 +11,7 @@ interface Category {
   slug: string;
   parentId: string | null;
   type?: string;
-  images?: string[];
+  images?: string[]; // có thể undefined hoặc null
 }
 
 interface CategoryForm {
@@ -21,7 +21,6 @@ interface CategoryForm {
   type: string;
   images: File[]; // luôn là mảng, không undefined
 }
-
 
 export default function Categories() {
   const [showAdd, setShowAdd] = useState(false);
@@ -41,7 +40,6 @@ export default function Categories() {
     images: [], // luôn là mảng rỗng ban đầu
   });
 
-
   // Fetch parent categories
   useEffect(() => {
     fetch("https://fiyo.click/api/category/parents")
@@ -50,10 +48,10 @@ export default function Categories() {
         const list = Array.isArray(data)
           ? data
           : Array.isArray(data.result)
-            ? data.result
-            : Array.isArray(data.data)
-              ? data.data
-              : [];
+          ? data.result
+          : Array.isArray(data.data)
+          ? data.data
+          : [];
         setParentCategories(list);
       })
       .catch((err) => console.error("Lỗi fetch parents:", err));
@@ -73,8 +71,8 @@ export default function Categories() {
             ? allCategories.filter((cate) => cate.parentId === selectedParentId)
             : []
           : Array.isArray(allCategories)
-            ? allCategories.filter((cate) => cate.parentId)
-            : [];
+          ? allCategories.filter((cate) => cate.parentId !== null && cate.parentId !== undefined)
+          : [];
         setCategories(filtered);
       } catch (err) {
         console.error("Lỗi fetch danh mục:", err);
@@ -140,7 +138,8 @@ export default function Categories() {
       return;
     }
 
-    const isDuplicate = Array.isArray(categories) &&
+    const isDuplicate =
+      Array.isArray(categories) &&
       categories.some((cate) => {
         const cateName = cate.name?.trim().toLowerCase() || "";
         const formName = formData.name?.trim().toLowerCase() || "";
@@ -183,17 +182,14 @@ export default function Categories() {
       if (res.ok) {
         alert(editingId ? "Cập nhật thành công!" : "Thêm thành công!");
         resetForm();
-        // Nếu không chọn danh mục cha, load lại tất cả danh mục
         if (!selectedParentId) {
-          // Lấy lại toàn bộ danh mục
           const resAll = await fetch("https://fiyo.click/api/category");
           const allCategories = await resAll.json();
           const filtered = Array.isArray(allCategories)
-            ? allCategories.filter((cate) => cate.parentId)
+            ? allCategories.filter((cate) => cate.parentId !== null && cate.parentId !== undefined)
             : [];
           setCategories(filtered);
         } else {
-          // Nếu có chọn danh mục cha, chỉ load children
           refreshCategories();
         }
       } else {
@@ -300,7 +296,6 @@ export default function Categories() {
           </div>
         </div>
 
-        {/* Form thêm/sửa */}
         {(showAdd || showEdit) && (
           <div className={styles.addAside}>
             <h2 className={styles.addAsideTitle}>
@@ -378,7 +373,6 @@ export default function Categories() {
               </div>
             )}
 
-
             {showEdit &&
               !formData.images?.length &&
               existingImages.length > 0 && (
@@ -414,7 +408,6 @@ export default function Categories() {
           </div>
         )}
 
-        {/* Danh sách */}
         <div className={styles.usertList}>
           <h2 className={styles.userListTitle}>Danh Sách Danh Mục</h2>
           <table className={styles.cateTable}>
@@ -440,21 +433,25 @@ export default function Categories() {
                     <tr key={cate._id}>
                       <td>{index + 1}</td>
                       <td>
-                        {cate.images?.length
-                          ? cate.images.map((img, i) => (
-                            <img
-                              key={i}
-                              src={img}
-                              alt={cate.name}
-                              style={{
-                                width: 50,
-                                height: 50,
-                                objectFit: "cover",
-                                marginRight: 5,
-                              }}
-                            />
-                          ))
-                          : "Không có ảnh"}
+                        {Array.isArray(cate.images) && cate.images.length > 0 ? (
+                          cate.images.map((img, i) =>
+                            img ? (
+                              <img
+                                key={i}
+                                src={img}
+                                alt={cate.name}
+                                style={{
+                                  width: 50,
+                                  height: 50,
+                                  objectFit: "cover",
+                                  marginRight: 5,
+                                }}
+                              />
+                            ) : null
+                          )
+                        ) : (
+                          "Không có ảnh"
+                        )}
                       </td>
                       <td>{cate.name}</td>
                       <td>{cate.slug}</td>
