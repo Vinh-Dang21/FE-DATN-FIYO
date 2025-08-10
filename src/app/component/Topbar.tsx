@@ -3,7 +3,7 @@ import {
     Bell,
     Search,
 } from "lucide-react";
-import styles from "../dashboard.module.css";
+import styles from "../dashboard/dashboard.module.css";
 export default function Topbar() {
     return (
         <div className={styles.topbar}>
