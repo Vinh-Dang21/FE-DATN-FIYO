@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import styles from "../dashboard.module.css";
 
-const BASE_PATH = "/admin";
+
 
 const menuItems = [
     { label: "Tổng quan", href: "", icon: LayoutDashboard },
@@ -39,7 +39,7 @@ export default function Sidebar() {
             <ul className={styles.menuList}>
                 {menuItems.map(({ label, href, icon: Icon }) => {
                     // Tự động nối base path
-                    const fullHref = `${BASE_PATH}/${href}`;
+                    const fullHref = `${href}`;
                     return (
                         <li
                             key={href}
