@@ -19,6 +19,7 @@ import styles from "../dashboard/dashboard.module.css";
 
 
 const menuItems = [
+    { label: "Tổng quan", href: "", icon: LayoutDashboard },
     { label: "Tổng quan", href: "dashboard", icon: LayoutDashboard },
     { label: "Đơn hàng", href: "order", icon: ShoppingCart },
     { label: "Sản phẩm", href: "products", icon: Shirt },
