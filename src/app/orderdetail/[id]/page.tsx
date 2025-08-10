@@ -52,8 +52,8 @@ export default function Order() {
 
             try {
                 const [orderDetailRes, orderInfoRes] = await Promise.all([
-                    fetch(`http://localhost:3000/orderDetail/${orderId}`),
-                    fetch(`http://localhost:3000/orders/${orderId}`)
+                    fetch(`https://fiyo.click/api/orderDetail/${orderId}`),
+                    fetch(`https://fiyo.click/api/orders/${orderId}`)
                 ]);
 
                 const orderDetailData = await orderDetailRes.json();
@@ -106,7 +106,7 @@ export default function Order() {
 
     const handleUpdateStatus = async (newStatus: string) => {
         try {
-            const res = await fetch(`http://localhost:3000/orders/${orderId}/status`, {
+            const res = await fetch(`https://fiyo.click/api/orders/${orderId}/status`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",

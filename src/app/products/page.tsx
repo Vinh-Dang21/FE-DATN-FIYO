@@ -90,7 +90,7 @@ export default function Product() {
 
     for (const parent of parentCategories) {
       try {
-        const res = await fetch(`http://localhost:3000/category/children/${parent._id}`);
+        const res = await fetch(`https://fiyo.click/api/category/children/${parent._id}`);
         const children = await res.json();
 
         const match = children.find((child: Category) => child._id === categoryId);
@@ -281,8 +281,8 @@ export default function Product() {
 
     try {
       const url = editProduct
-        ? `http://localhost:3000/products/update/${editProduct._id}`
-        : `http://localhost:3000/products/create`;
+        ? `https://fiyo.click/api/products/update/${editProduct._id}`
+        : `https://fiyo.click/api/products/create`;
 
       const method = editProduct ? "PUT" : "POST";
 
@@ -301,7 +301,7 @@ export default function Product() {
         resetForm();
 
         // Gọi lại API danh sách
-        const fetchAgain = await fetch("http://localhost:3000/products");
+        const fetchAgain = await fetch("https://fiyo.click/api/products");
         const reload = await fetchAgain.json();
         setProducts(reload.products || []);
       } else {
@@ -315,12 +315,12 @@ export default function Product() {
 
   const fetchProducts = async () => {
     try {
-      let url = "http://localhost:3000/products";
+      let url = "https://fiyo.click/api/products";
 
       if (filterChild) {
-        url = `http://localhost:3000/products/category/${filterChild}`;
+        url = `https://fiyo.click/api/products/category/${filterChild}`;
       } else if (selectedChild) {
-        url = `http://localhost:3000/products/category/${selectedChild}`;
+        url = `https://fiyo.click/api/products/category/${selectedChild}`;
       }
 
       const res = await fetch(url);
@@ -347,10 +347,10 @@ export default function Product() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        let url = "http://localhost:3000/products";
+        let url = "https://fiyo.click/api/products";
 
         if (filterChild) {
-          url = `http://localhost:3000/products/category/${filterChild}`;
+          url = `https://fiyo.click/api/products/category/${filterChild}`;
         }
 
         const res = await fetch(url);
@@ -412,7 +412,7 @@ export default function Product() {
   useEffect(() => {
     const fetchParents = async () => {
       try {
-        const res = await fetch("http://localhost:3000/category/parents");
+        const res = await fetch("https://fiyo.click/api/category/parents");
         const data = await res.json();
 
         // Lọc bỏ phần tử có status (nếu là object không có _id)
@@ -435,7 +435,7 @@ export default function Product() {
       }
 
       try {
-        const res = await fetch(`http://localhost:3000/category/children/${selectedParent}`);
+        const res = await fetch(`https://fiyo.click/api/category/children/${selectedParent}`);
         const data = await res.json();
 
         if (Array.isArray(data)) {
@@ -452,11 +452,11 @@ export default function Product() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        let url = "http://localhost:3000/products";
+        let url = "https://fiyo.click/api/products";
 
         // Nếu chọn danh mục con thì lọc theo danh mục con
         if (selectedChild) {
-          url = `http://localhost:3000/products/category/${selectedChild}`;
+          url = `https://fiyo.click/api/products/category/${selectedChild}`;
         }
 
         const res = await fetch(url);
@@ -486,7 +486,7 @@ export default function Product() {
 
   const handleChangeVisibility = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`http://localhost:3000/products/${id}/visibility`, {
+      const res = await fetch(`https://fiyo.click/api/products/${id}/visibility`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -631,7 +631,7 @@ export default function Product() {
     if (!searchKeyword.trim()) {
       console.log("Không có từ khóa. Đang load lại tất cả sản phẩm...");
 
-      const res = await fetch("http://localhost:3000/products");
+      const res = await fetch("https://fiyo.click/api/products");
       const data = await res.json();
 
       console.log("Danh sách sản phẩm đầy đủ:", data.products);
@@ -649,7 +649,7 @@ export default function Product() {
 
     try {
       const encodedKeyword = encodeURIComponent(searchKeyword.trim());
-      const url = `http://localhost:3000/products/search?name=${encodedKeyword}`;
+      const url = `https://fiyo.click/api/products/search?name=${encodedKeyword}`;
       console.log("Gửi request tìm sản phẩm với keyword:", searchKeyword);
       console.log("URL gửi đi:", url);
 

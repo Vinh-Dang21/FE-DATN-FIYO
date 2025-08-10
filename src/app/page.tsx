@@ -108,7 +108,7 @@ export default function Dashboard() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
       );
       const data = await res.json();
 
@@ -132,7 +132,7 @@ export default function Dashboard() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
       );
       const data = await res.json();
 
@@ -156,7 +156,7 @@ export default function Dashboard() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
       );
       const data = await res.json();
 
@@ -190,7 +190,7 @@ export default function Dashboard() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
       );
       const data = await res.json();
 
@@ -221,7 +221,7 @@ export default function Dashboard() {
 
   const fetchTotalUsers = async () => {
     try {
-      const res = await fetch("http://localhost:3000/user/");
+      const res = await fetch("https://fiyo.click/api/user/");
       const data = await res.json();
 
       if (Array.isArray(data.result)) {
@@ -237,7 +237,7 @@ export default function Dashboard() {
 
   const fetchPendingOrders = async () => {
     try {
-      const res = await fetch("http://localhost:3000/orders");
+      const res = await fetch("https://fiyo.click/api/orders");
       const data = await res.json();
 
       if (data.status && Array.isArray(data.result)) {
@@ -267,14 +267,14 @@ export default function Dashboard() {
 
   const fetchTopUsers = async () => {
     try {
-      const resUser = await fetch("http://localhost:3000/user/");
+      const resUser = await fetch("https://fiyo.click/api/user/");
       const dataUser = await resUser.json();
       const users = dataUser.result;
 
       const spendingList = await Promise.all(
         users.map(async (user: any) => {
           const resOrder = await fetch(
-            `http://localhost:3000/orders/user/${user._id}`
+            `https://fiyo.click/api/orders/user/${user._id}`
           );
           const orders = await resOrder.json();
 
@@ -313,7 +313,7 @@ export default function Dashboard() {
 
   const fetchMonthlyRevenue = async () => {
     try {
-      const res = await fetch("http://localhost:3000/orders");
+      const res = await fetch("https://fiyo.click/api/orders");
       const data = await res.json(); // ✅ cần khai báo dòng này
 
       const orders = data.result || [];
@@ -348,7 +348,7 @@ export default function Dashboard() {
 
   const fetchCustomerTypeStats = async () => {
     try {
-      const res = await fetch("http://localhost:3000/orders");
+      const res = await fetch("https://fiyo.click/api/orders");
       const data = await res.json();
       const orders = data.result || [];
 

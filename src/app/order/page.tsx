@@ -108,7 +108,7 @@ export default function Order() {
   useEffect(() => {
     const fetchAllOrders = async () => {
       try {
-        const res = await fetch("http://localhost:3000/orders");
+        const res = await fetch("https://fiyo.click/api/orders");
         const data = await res.json();
 
         if (data.status && Array.isArray(data.result)) {
@@ -145,7 +145,7 @@ export default function Order() {
   useEffect(() => {
     const fetchFilteredOrders = async () => {
       try {
-        let url = "http://localhost:3000/orders/filter";
+        let url = "https://fiyo.click/api/orders/filter";
         const params = new URLSearchParams();
 
         if (filteredStatus !== "all") {
@@ -178,7 +178,7 @@ export default function Order() {
 
   const handleUpdateStatus = async (orderId: string, newStatus: string, showAlert = true) => {
     try {
-      const res = await fetch(`http://localhost:3000/orders/${orderId}/status`, {
+      const res = await fetch(`https://fiyo.click/api/orders/${orderId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -242,7 +242,7 @@ export default function Order() {
 
   const handleConfirmOrder = async (orderId: string, showAlert = true) => {
     try {
-      const res = await fetch(`http://localhost:3000/orders/${orderId}/confirm`, {
+      const res = await fetch(`https://fiyo.click/api/orders/${orderId}/confirm`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
       });
