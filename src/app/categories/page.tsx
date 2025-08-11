@@ -48,10 +48,10 @@ export default function Categories() {
         const list = Array.isArray(data)
           ? data
           : Array.isArray(data.result)
-          ? data.result
-          : Array.isArray(data.data)
-          ? data.data
-          : [];
+            ? data.result
+            : Array.isArray(data.data)
+              ? data.data
+              : [];
         setParentCategories(list);
       })
       .catch((err) => console.error("Lỗi fetch parents:", err));
@@ -71,8 +71,8 @@ export default function Categories() {
             ? allCategories.filter((cate) => cate.parentId === selectedParentId)
             : []
           : Array.isArray(allCategories)
-          ? allCategories.filter((cate) => cate.parentId !== null && cate.parentId !== undefined)
-          : [];
+            ? allCategories.filter((cate) => cate.parentId !== null && cate.parentId !== undefined)
+            : [];
         setCategories(filtered);
       } catch (err) {
         console.error("Lỗi fetch danh mục:", err);
@@ -92,11 +92,24 @@ export default function Categories() {
   };
 
   const refreshCategories = async () => {
-    const url = `https://fiyo.click/api/category/children/${selectedParentId}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    setCategories(Array.isArray(data) ? data : []);
+    try {
+      let url = "https://fiyo.click/api/category";
+      const res = await fetch(url);
+      const allCategories: Category[] = await res.json();
+
+      const filtered = selectedParentId
+        ? Array.isArray(allCategories)
+          ? allCategories.filter((cate) => cate.parentId === selectedParentId)
+          : []
+        : Array.isArray(allCategories)
+          ? allCategories.filter((cate) => cate.parentId !== null && cate.parentId !== undefined)
+          : [];
+      setCategories(filtered);
+    } catch (err) {
+      console.error("Lỗi khi load lại danh mục:", err);
+    }
   };
+
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -242,7 +255,8 @@ export default function Categories() {
 
       if (res.ok) {
         alert("Xóa thành công!");
-        refreshCategories();
+        setCategories(prev => prev.filter(cat => cat._id !== id)); // cập nhật ngay
+        await refreshCategories(); // đồng bộ lại từ server
       } else {
         alert(result.message || "Xóa thất bại!");
       }
