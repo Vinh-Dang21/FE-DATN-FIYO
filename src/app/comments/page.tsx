@@ -36,7 +36,7 @@ export default function CommentsPage() {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await fetch("http://localhost:3000/review"); 
+        const res = await fetch("https://fiyo.click/api/review"); 
         const data = await res.json();
         setReviews(data.reviews || []);
       } catch (err) {

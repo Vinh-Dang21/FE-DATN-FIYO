@@ -22,7 +22,7 @@ export default function InventoryPage() {
     async function fetchProducts() {
       try {
         const response = await fetch(
-          `http://localhost:3000/products/reports/least-sold?timePeriod=${timePeriod}`,
+          `https://fiyo.click/api/products/reports/least-sold?timePeriod=${timePeriod}`,
           { method: "GET" }
         );
         if (!response.ok) {
