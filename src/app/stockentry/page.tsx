@@ -334,8 +334,8 @@ export default function InventoryPage() {
                 <tr>
                   <th>Sản phẩm</th>
                   <th>Danh mục</th>
-                  <th>Số lượng</th>
                   <th>Tình trạng</th>
+                  <th>Số lượng</th>
                   <th>Chức năng</th>
                 </tr>
               </thead>
@@ -406,19 +406,17 @@ export default function InventoryPage() {
                         </td>
 
                         <td>{product.category_id?.categoryName}</td>
-                        <td>{getTotalQuantity(product.variants)}</td>
                         <td>
                           <span className={getProductStatusClass(product.variants)}>
                             {getProductStatus(product.variants)}
                           </span>
                         </td>
+                        <td>{getTotalQuantity(product.variants)}</td>
                         <td>
                           <button
                             className={styles.actionBtn}
-                            title="Sửa"
-
                           >
-                            asd
+                            Nhập hàng
                           </button>
 
                         </td>

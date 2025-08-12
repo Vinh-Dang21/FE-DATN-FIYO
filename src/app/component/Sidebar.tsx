@@ -12,7 +12,7 @@ import {
     Layers,
     LogOut,
     Shirt,
-    Box,
+    Box, Package, ArrowDown
 } from "lucide-react";
 import styles from "../dashboard/dashboard.module.css";
 
@@ -25,6 +25,7 @@ const menuItems = [
     { label: "Khuyến mãi", href: "/voucher", icon: GraduationCap },
     { label: "Đánh giá", href: "/comments", icon: MessageCircle },
     { label: "Tồn kho", href: "/inventory", icon: Box },
+    { label: "Nhập hàng", href: "/stockentry", icon: ArrowDown  },
 ];
 
 export default function Sidebar() {
