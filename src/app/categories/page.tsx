@@ -255,8 +255,8 @@ export default function Categories() {
 
       if (res.ok) {
         alert("Xóa thành công!");
-        setCategories(prev => prev.filter(cat => cat._id !== id)); // cập nhật ngay
-        await refreshCategories(); // đồng bộ lại từ server
+        setCategories(prev => prev.filter(cat => cat._id !== id)); 
+        await refreshCategories();
       } else {
         alert(result.message || "Xóa thất bại!");
       }
