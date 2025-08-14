@@ -235,7 +235,7 @@ export default function InventoryPage() {
 
   const handleOpenStockForm = async (productId: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/products/${productId}`);
+      const res = await fetch(`https://fiyo.click/api/products/${productId}`);
       if (!res.ok) throw new Error("Không lấy được chi tiết sản phẩm");
       const data = await res.json();
       setSelectedProduct(data);
@@ -270,7 +270,7 @@ export default function InventoryPage() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/products/variants/${selectedProduct._id}`,
+        `https://fiyo.click/api/products/variants/${selectedProduct._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -568,7 +568,7 @@ export default function InventoryPage() {
                   )}
                 </div>
               </div>
-              <button onClick={() => setShowStockForm(false)}>Đóng</button>
+              <button className={styles.actionBtnclose} onClick={() => setShowStockForm(false)}>Đóng</button>
               <button
                 className={styles.actionBtn}
                 onClick={handleSaveStockChange}
