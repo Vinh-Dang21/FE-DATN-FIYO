@@ -117,7 +117,7 @@
   background: #28a745;
   color: #fff;
   border-radius: 16px;
-  padding: 6px ;
+  padding: 6px;
   font-size: 13px;
   font-weight: 600;
   display: inline-block;
@@ -252,4 +252,205 @@
   border: 1px solid #ff0a0a !important;
   background-color: #fff;
   color: #ff0a0a;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5); /* Nền tối */
+  z-index: 9998;
+}
+
+
+.formWrapper {
+  position: fixed; /* Giữ form cố định */
+  top: 50%; /* Đặt ở giữa chiều cao */
+  left: 50%; /* Đặt ở giữa chiều ngang */
+  transform: translate(-50%, -50%); /* Căn giữa hoàn hảo */
+  z-index: 9999; /* Nổi lên trên cùng */
+  
+  background: #fff; /* Nền trắng */
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  
+  max-height: 100vh; /* Tránh tràn màn hình */
+  overflow-y: auto; /* Cuộn nếu nội dung quá dài */
+  width: 800px; /* Chiều rộng form */
+}
+.formWrapper h2{
+  font-size: 24px;
+  font-weight: 600;
+  color: #444;
+  
+  text-align: center;
+}
+
+/* Hình ảnh */
+.imageSection {
+  display: flex;
+  align-items: flex-start; /* canh trên */
+  gap: 5px;
+  padding: 20px;
+}
+
+.mainImage img {
+  height: 335px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.smallImages {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.smallImages img {
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+/* Thông tin sản phẩm */
+.infoSection {
+  margin-left: 30px;
+}
+
+.infoSection .productNameadd {
+  font-size: 20px;
+  font-weight: 600;
+  color: #444;
+  padding: 5px 0px;
+}
+
+.infoSection .productDescadd {
+  font-size: 14px;
+  color: #666;
+  padding: 5px 0px;
+}
+
+/* Biến thể */
+.imageSection .variantSection {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.imageSection .variantHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.imageSection .addVariantBtn {
+  background-color: #ff0a0a;
+  color: #fff;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.imageSection .addVariantBtn:hover {
+  opacity: 0.9;
+}
+.stocktitle{
+  padding: 0px 20px;
+  font-size: 22px;
+}
+
+.variantList {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 16px;
+  padding: 20px ;
+}
+
+.variantRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+  gap: 20px;
+  color: #444;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.colorBlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 250px;
+  padding: 10px;
+  /* để cố định độ rộng phần màu */
+}
+
+.colorCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #e4e4e7;
+}
+
+.sizeList {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+}
+
+.sizeItem {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  color: #444;
+  letter-spacing: 0.5px;
+  display: flex;
+  flex-wrap: nowrap;align-items: center;
+  
+}
+.sizeItemOld {
+  width: 160px;
+  border: 1px solid #ccc;
+  padding: 4px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+  letter-spacing: 0.5px;
+  margin-right: 10px;
+  word-spacing: 2px ;
+  border-radius: 5px;
+  
+}
+
+.sizeItem strong {
+  font-weight: 500;
+  color: #444;
+}
+.sizeInput {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.sizeInput:focus {
+  outline: none;
+  border-color: #ff0a0a; /* Màu chủ đạo */
+  box-shadow: 0 0 6px rgba(255, 10, 10, 0.3);
 }
