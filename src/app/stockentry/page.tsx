@@ -4,17 +4,16 @@ import styles from "./stockentry.module.css";
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
 
-interface SizeItem {
-  _id: string;
-  size: string;
-  quantity: number;
-}
 
 interface Variant {
   _id?: string;
   color: string;
-  sizes: SizeItem[];
   parentVariantId?: string; // Thêm dòng này
+  sizes: {
+    size: string;
+    quantity: number;
+    sku?: string; // nếu có dùng SKU
+  }[];
 }
 
 interface Category {
@@ -46,7 +45,11 @@ interface Product {
 interface VariantColor {
   _id: string;
   color: string;
-  sizes: SizeItem[];
+  sizes: {
+    size: string;
+    quantity: number;
+    sku?: string; // nếu có dùng SKU
+  }[];
 }
 
 interface VariantWrapper {
@@ -70,6 +73,13 @@ export default function InventoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showStockForm, setShowStockForm] = useState(false);
   const [addedQuantities, setAddedQuantities] = useState<{ [key: string]: number }>({});
+  const [currentColor, setCurrentColor] = useState<string>("");
+  const [sizeInput, setSizeInput] = useState<string>("");
+  const [quantityInput, setQuantityInput] = useState<number>(1);
+  const [sizes, setSizes] = useState<{ size: string; quantity: number }[]>([]);
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
+  const [editingSizeIndex, setEditingSizeIndex] = useState<number | null>(null);
 
   // Helper: kiểm tra ObjectId (24 hex chars)
   function isValidObjectId(id: string) {
@@ -78,11 +88,12 @@ export default function InventoryPage() {
 
   // --- HÀM HỖ TRỢ ---
   const getTotalQuantity = (variants: Variant[]) => {
-    return variants.reduce((total: number, variant: Variant) => {
+    return variants.reduce((total, variant) => {
       if (!variant || !Array.isArray(variant.sizes)) return total;
-      const variantQty = variant.sizes.reduce((sum: number, size: SizeItem) => {
-        return sum + (size?.quantity || 0);
-      }, 0);
+      const variantQty = variant.sizes.reduce(
+        (sum, size) => sum + (size?.quantity || 0),
+        0
+      );
       return total + variantQty;
     }, 0);
   };
@@ -245,32 +256,119 @@ export default function InventoryPage() {
     }
   };
 
+  const handlePickColor = async () => {
+    if (!("EyeDropper" in window)) {
+      alert("Trình duyệt không hỗ trợ EyeDropper");
+      return;
+    }
+    const eyeDropper = new (window as any).EyeDropper();
+    try {
+      const result = await eyeDropper.open();
+      setCurrentColor(result.sRGBHex);
+    } catch (err) {
+      console.error("Lỗi EyeDropper:", err);
+    }
+  };
+
+  const handleSaveSize = () => {
+    const trimmedSize = sizeInput.trim();
+    if (!trimmedSize || quantityInput <= 0) return;
+
+    const isDuplicate = sizes.some(
+      (s, i) =>
+        s.size.toLowerCase() === trimmedSize.toLowerCase() &&
+        i !== editingSizeIndex
+    );
+    if (isDuplicate) {
+      alert("Size này đã được thêm rồi!");
+      return;
+    }
+
+    let updatedSizes = [...sizes];
+
+    if (editingSizeIndex !== null) {
+      updatedSizes[editingSizeIndex] = { size: trimmedSize, quantity: quantityInput };
+    } else {
+      updatedSizes.push({ size: trimmedSize, quantity: quantityInput });
+    }
+
+    setSizes(updatedSizes);
+    setSizeInput("");
+    setQuantityInput(1);
+    setEditingSizeIndex(null); // reset mode sửa
+  };
+
+
+  const handleAddVariant = () => {
+    if (!currentColor) {
+      alert("Chưa chọn màu");
+      return;
+    }
+    if (sizes.length === 0) {
+      alert("Chưa thêm size");
+      return;
+    }
+
+    // Lấy mã màu từ chuỗi "TênMàu MãMàu" → ví dụ: "Trắng SW001"
+    const colorParts = currentColor.trim().split(" ");
+    const colorCode = colorParts[colorParts.length - 1]; // SW001
+
+    // Thêm sku cho từng size
+    const updatedSizes = sizes.map((s) => ({
+      ...s,
+      sku: `${colorCode}-${s.size}`, // ví dụ: SW001-104
+    }));
+
+    const newVariant: Variant = {
+      color: currentColor,
+      sizes: updatedSizes,
+    };
+
+    console.log("Biến thể mới được thêm:", newVariant);
+
+    setVariants((prev) => {
+      const updated = [...prev, newVariant];
+      console.log("Danh sách biến thể hiện tại:", updated);
+      return updated;
+    });
+
+    // Reset sau khi thêm
+    setCurrentColor("");
+    setSizes([]);
+  };
+
   // Hàm xử lý lưu thay đổi số lượng nhập hàng
   async function handleSaveStockChange() {
     if (!selectedProduct) return;
-    // Chuẩn bị payload
+
+    // Biến thể cũ (có thể đã nhập thêm số lượng)
     const updatedVariants = selectedProduct.variants?.flatMap((vw: any) =>
       vw.variants.map((v: any) => ({
-        ...v, // giữ lại toàn bộ thông tin variant (bao gồm color)
+        ...v,
         sizes: v.sizes.map((s: any) => {
           const key = `${v._id}-${s._id}`;
           const add = Number(addedQuantities[key]) || 0;
           return {
-            ...s, // giữ lại toàn bộ thông tin size (bao gồm sku)
+            ...s,
             quantity: s.quantity + add
           };
         })
       }))
-    );
+    ) || [];
 
-    const payload = { variants: updatedVariants };
+    // Biến thể mới (từ state variants)
+    const newVariants = variants;
 
-    // Log payload trước khi gửi API
+    // Gộp tất cả lại
+    const allVariants = [...updatedVariants, ...newVariants];
+
+    const payload = { variants: allVariants };
+
     console.log("Payload gửi API:", payload);
 
     try {
       const res = await fetch(
-        `https://fiyo.click/api/products/variants/${selectedProduct._id}`,
+        `http://localhost:3000/api/products/variants/${selectedProduct._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -281,6 +379,7 @@ export default function InventoryPage() {
       alert("Cập nhật thành công!");
       setShowStockForm(false);
       setAddedQuantities({});
+      setVariants([]); // reset biến thể mới
       loadProducts();
     } catch (err: any) {
       alert("Lỗi khi cập nhật: " + err.message);
@@ -498,7 +597,15 @@ export default function InventoryPage() {
             {/* Lớp nền tối */}
             <div
               className={styles.modalOverlay}
-              onClick={() => setShowStockForm(false)} // Click ra ngoài để đóng
+              onClick={() => {
+                setShowStockForm(false);
+                setCurrentColor("");
+                setSizes([]);
+                setVariants([]); // reset danh sách biến thể mới
+                setEditingSizeIndex(null);
+                setSizeInput("");
+                setQuantityInput(1);
+              }} // Click ra ngoài để đóng
             ></div>
             <div className={styles.formWrapper}>
               <h2>NHẬP SẢN PHẨM</h2>
@@ -520,11 +627,84 @@ export default function InventoryPage() {
                 </div>
               </div>
 
-
-
               <div className={styles.variantSection}>
                 <div className={styles.variantHeader}>
                   <h3 className={styles.stocktitle}>Danh sách biến thể</h3>
+                </div>
+                <div className={styles.variantSectionadd}>
+                  <h3>Thêm biến thể sản phẩm</h3>
+                  {/* Chọn màu */}
+                  <div className={styles.rowvarian}>
+                    <label>Màu sắc:</label>
+                    <input type="color" value={currentColor} onChange={(e) => setCurrentColor(e.target.value)} />
+                    <button type="button" onClick={handlePickColor}>Chọn màu</button>
+                  </div>
+
+                  {/* Nhập size và số lượng */}
+                  <div className={styles.rowvarian}>
+                    <input
+                      type="text"
+                      placeholder="Size (VD: M)"
+                      value={sizeInput}
+                      onChange={(e) => setSizeInput(e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Số lượng"
+                      value={quantityInput}
+                      onChange={(e) => setQuantityInput(Number(e.target.value))}
+                    />
+                    <button type="button" onClick={handleSaveSize}>
+                      {editingSizeIndex !== null ? "Lưu size" : "Thêm size"}
+                    </button>
+                  </div>
+                  <ul className={styles.sizePreviewList}>
+                    {sizes.map((s, idx) => (
+                      <li key={idx} className={styles.sizePreviewItem}>
+                        <span className={styles.sizeText}>
+                          Size: {s.size} - SL: {s.quantity}
+                        </span>
+                        <div className={styles.buttonGroup}>
+                          <button
+                            className={styles.editButton}
+                            type="button"
+                            onClick={() => {
+                              setEditingSizeIndex(idx);
+                              setSizeInput(s.size);
+                              setQuantityInput(s.quantity);
+                            }}
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            className={styles.deleteButton}
+                            type="button"
+                            onClick={() => {
+                              setSizes(prev => prev.filter((_, i) => i !== idx));
+                              if (editingSizeIndex === idx) {
+                                setEditingSizeIndex(null);
+                                setSizeInput("");
+                                setQuantityInput(1);
+                              }
+                            }}
+                          >
+                            Xóa
+                          </button>
+                        </div>
+
+                      </li>
+                    ))}
+                  </ul>
+                  <div className={styles.actionBtnadd}>
+                    <button
+                      className={styles.actionBtnaddvariant}
+                      type="button"
+                      onClick={handleAddVariant}
+                      disabled={!currentColor || sizes.length === 0}
+                    >
+                      Thêm biến thể mới
+                    </button>
+                  </div>
                 </div>
                 <div className={styles.variantList}>
                   {selectedProduct.variants?.flatMap((vw: any) =>
@@ -566,15 +746,46 @@ export default function InventoryPage() {
                       </div>
                     ))
                   )}
+                  {variants.map((v, idx) => (
+                    <div className={styles.variantRow} key={`new-${idx}`}>
+                      <div className={styles.colorBlock}>
+                        <span
+                          className={styles.colorCircle}
+                          style={{ backgroundColor: v.color }}
+                        ></span>
+                        <strong>Màu mới: {v.color}</strong>
+                      </div>
+                      <ul className={styles.sizeList}>
+                        {v.sizes.map((s, i) => (
+                          <li key={i} className={styles.sizeItem}>
+                            <div className={styles.sizeItemOld}>
+                              <strong>Size:</strong> {s.size} - <strong>SL:</strong> {s.quantity}
+                            </div>
+                            {/* Không cần nhập thêm vì đây là số lượng mới */}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <button className={styles.actionBtnclose} onClick={() => setShowStockForm(false)}>Đóng</button>
-              <button
-                className={styles.actionBtn}
-                onClick={handleSaveStockChange}
-              >
-                Lưu thay đổi
-              </button>
+              <div className={styles.buttonGroupend}>
+                <button className={styles.actionBtnclose} onClick={() => {
+                  setShowStockForm(false);
+                  setCurrentColor("");
+                  setSizes([]);
+                  setVariants([]);
+                  setEditingSizeIndex(null);
+                  setSizeInput("");
+                  setQuantityInput(1);
+                }}>Đóng</button>
+                <button
+                  className={styles.actionBtnend}
+                  onClick={handleSaveStockChange}
+                >
+                  Lưu thay đổi
+                </button>
+              </div>
             </div>
           </>
         )}

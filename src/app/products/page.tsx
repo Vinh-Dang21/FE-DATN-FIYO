@@ -1011,7 +1011,15 @@ export default function Product() {
                       ))}
                     </ul>
 
-
+                    {/* Nút thao tác cho biến thể */}
+                    <div className={styles.buttonGroup}>
+                      <button
+                        className={styles.editButton}
+                        onClick={() => handleEditVariant(index)}
+                      >
+                        Sửa
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
