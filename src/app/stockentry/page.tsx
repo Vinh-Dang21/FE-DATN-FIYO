@@ -368,7 +368,7 @@ export default function InventoryPage() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/api/products/variants/${selectedProduct._id}`,
+        `https://fiyo.click/api/products/variants/${selectedProduct._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
