@@ -14,8 +14,8 @@ import {
   LabelList
 } from "recharts";
 import { useEffect, useState } from "react";
-import Sidebar from "../component/Sidebar";
-import Topbar from "../component/Topbar";
+import Sidebar from "@/app/component/S-Sidebar";
+import Topbar from "@/app/component/Topbar";
 
 
 interface MonthlyRevenueItem {
@@ -39,24 +39,6 @@ export default function Dashboard() {
   const [customerPieData, setCustomerPieData] = useState<
     { name: string; value: number }[]
   >([]);
-
-  const [user, setUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
-  
-    useEffect(() => {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        try {
-          const parsed = JSON.parse(userStr);
-          setUser({
-            id: parsed._id,
-            name: parsed.name,
-            avatar: parsed.avatar,
-          });
-        } catch (err) {
-          console.error("Lỗi parse user:", err);
-        }
-      }
-    }, []);
 
 
   const getStartAndEndOfCurrentWeek = () => {
@@ -412,7 +394,7 @@ export default function Dashboard() {
       <section className={styles.content}>
         <Topbar />
         <div className={styles.greetingBox}>
-          Xin chào {user?.name} -{" "}
+          Xin chào Admin -{" "}
           <span style={{ fontWeight: 400, fontSize: 16 }}>
             Tình hình cửa hàng của bạn hôm nay như sau
           </span>

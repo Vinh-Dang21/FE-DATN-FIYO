@@ -155,7 +155,6 @@
 }
 
 .icon {
-  align-items: center;
   color: #444;
   cursor: pointer;
   width: 18px;
@@ -180,7 +179,6 @@
   position: relative;
   width: 32px;
   height: 32px;
-  color: #444;
 }
 
 .avatar {
@@ -188,7 +186,6 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  color: #444 ;
 }
 
 .onlineDot {

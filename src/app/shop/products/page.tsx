@@ -5,8 +5,8 @@ import {
 } from "lucide-react";
 import styles from "./products.module.css";
 import { useEffect, useState } from "react";
-import Sidebar from "../component/Sidebar";
-import Topbar from "../component/Topbar";
+import Sidebar from "@/app/component/S-Sidebar";
+import Topbar from "@/app/component/Topbar";
 
 interface Variant {
   color: string;

@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import styles from "./order.module.css";
 import { useEffect, useState } from "react";
-import Sidebar from "../component/Sidebar";
-import Topbar from "../component/Topbar";
-import Tabs from "../component/filterorder";
+import Sidebar from "@/app/component/S-Sidebar";
+import Topbar from "@/app/component/Topbar";
+import Tabs from "@/app/component/filterorder";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
@@ -213,7 +213,7 @@ export default function Order() {
         await handleConfirmOrder(order._id, false); // false để không hiện alert
       }
       // Sau đó chuyển sang trang chi tiết đơn hàng
-      router.push(`/orderdetail/${order._id}`);
+      router.push(`/shop/orderdetail/${order._id}`);
     } catch (error) {
       console.error("Lỗi khi xử lý đơn hàng:", error);
       alert("Có lỗi xảy ra khi xử lý đơn hàng");
