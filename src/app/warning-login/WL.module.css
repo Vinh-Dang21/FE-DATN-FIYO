@@ -1,0 +1,51 @@
+.main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+  background-color: #f9f9f9;
+}
+
+.box {
+  background: #fff;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 520px;
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+  color: #ff0a0a; /* màu chủ đạo của em */
+  margin-bottom: 25px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.desc {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 25px;
+}
+
+.button {
+  background-color: #ff0a0a;
+  color: #fff;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s ease;
+}
+
+.button:hover {
+  background-color: #e00909;
+}

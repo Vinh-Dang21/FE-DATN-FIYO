@@ -29,14 +29,8 @@ export default function Sidebar() {
     const router = useRouter();
 
     const handleLogout = () => {
-        // Xoá user và token
         localStorage.removeItem("user");
         localStorage.removeItem("token");
-
-        // Nếu bạn có context Auth thì setUser(null)
-        // Ví dụ: loginUser(null);
-
-        // Chuyển hướng sang login
         router.replace("https://fiyo.click/page/login");
     };
 
