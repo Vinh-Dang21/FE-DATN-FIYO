@@ -14,6 +14,7 @@ import {
   LabelList
 } from "recharts";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
 
@@ -24,6 +25,7 @@ interface MonthlyRevenueItem {
 }
 
 export default function Dashboard() {
+    const router = useRouter();
   const [weeklyRevenue, setWeeklyRevenue] = useState(0);
   const [lastWeekRevenue, setLastWeekRevenue] = useState(0);
   const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
@@ -39,6 +41,26 @@ export default function Dashboard() {
   const [customerPieData, setCustomerPieData] = useState<
     { name: string; value: number }[]
   >([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 2) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
 
   const getStartAndEndOfCurrentWeek = () => {

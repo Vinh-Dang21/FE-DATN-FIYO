@@ -91,7 +91,6 @@ interface Voucher {
 
 
 export default function Order() {
-
   const router = useRouter();
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
@@ -104,6 +103,26 @@ export default function Order() {
     failed: 0,
     shipping: 0,
   });
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 2) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
   useEffect(() => {
     const fetchAllOrders = async () => {

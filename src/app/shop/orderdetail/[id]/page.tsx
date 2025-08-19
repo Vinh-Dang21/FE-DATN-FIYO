@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import styles from "./orderdetail.module.css";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
+import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import dayjs from "dayjs";
 
@@ -39,12 +40,33 @@ interface Variant {
 
 
 export default function Order() {
+    const router = useRouter();
     const params = useParams();
     const orderId = params?.id;
     const [order, setOrder] = useState<any>(null);
     const [orderProducts, setOrderProducts] = useState<any[]>([]);
     const [user, setUser] = useState<any>(null);
     const shippingAddress = order?.address_id || order?.address_guess;
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        const userStr = localStorage.getItem("user");
+
+        if (!token || !userStr) {
+            router.push("/warning-login");
+            return;
+        }
+
+        try {
+            const user = JSON.parse(userStr);
+            if (user.role !== 2) {
+                router.push("/warning-login");
+                return;
+            }
+        } catch (err) {
+            router.push("/warning-login");
+        }
+    }, [router]);
 
     useEffect(() => {
         const fetchData = async () => {

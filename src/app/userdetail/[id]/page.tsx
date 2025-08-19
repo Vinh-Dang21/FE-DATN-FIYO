@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Sidebar from "../../component/Sidebar";
 import Topbar from "../../component/Topbar";
 import styles from "../userdetail.module.css";
+import { useRouter } from "next/navigation";
 
 interface User {
   _id: string;
@@ -31,9 +32,30 @@ interface Address {
 }
 
 export default function UserDetailPage() {
+  const router = useRouter();
   const { id } = useParams();
   const [user, setUser] = useState<User | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 0) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,11 +87,11 @@ export default function UserDetailPage() {
         <div className={styles.orderSummary}>
           <div className={styles.orderInfoLeft}>
             <h2 className={styles.usertitle}>
-Mã người dùng: {user._id ? `#${user._id}` : ""}
+              Mã người dùng: {user._id ? `#${user._id}` : ""}
             </h2>
-          <p className={styles.createdAt}>
-  Ngày tạo: {user.createdAt ? new Date(user.createdAt).toLocaleDateString("vi-VN") : "Không xác định"}
-</p>
+            <p className={styles.createdAt}>
+              Ngày tạo: {user.createdAt ? new Date(user.createdAt).toLocaleDateString("vi-VN") : "Không xác định"}
+            </p>
 
 
 
@@ -88,8 +110,8 @@ Mã người dùng: {user._id ? `#${user._id}` : ""}
               </div>
             )}
             <h3 className={styles.name}>{user.name}</h3>
-           
-Mã khách hàng: {user._id ? `US${user._id.slice(-4).toUpperCase()}` : ""}
+
+            Mã khách hàng: {user._id ? `US${user._id.slice(-4).toUpperCase()}` : ""}
 
             <div className={styles.stats}>
               <div className={styles.statItem}>

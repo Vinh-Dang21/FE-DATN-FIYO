@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import styles from "./stockentry.module.css";
 import Sidebar from "@/app/component/S-Sidebar";
+import { useRouter } from "next/navigation";
 import Topbar from "@/app/component/Topbar";
 
 
@@ -58,6 +59,7 @@ interface VariantWrapper {
 }
 
 export default function InventoryPage() {
+  const router = useRouter();
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [noProduct, setNoProduct] = useState(false);
@@ -80,6 +82,26 @@ export default function InventoryPage() {
   const [variants, setVariants] = useState<Variant[]>([]);
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
   const [editingSizeIndex, setEditingSizeIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 2) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
   // Helper: kiểm tra ObjectId (24 hex chars)
   function isValidObjectId(id: string) {

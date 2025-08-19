@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
+import { useRouter } from "next/navigation";
 import styles from "./users.module.css";
 
 interface Review {
@@ -24,8 +25,29 @@ interface Review {
 }
 
 export default function CommentsPage() {
+  const router = useRouter();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 0) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
   const handleToggleExpand = (id: string) => {
     setExpandedRows((prev) =>
@@ -36,7 +58,7 @@ export default function CommentsPage() {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await fetch("https://fiyo.click/api/review"); 
+        const res = await fetch("https://fiyo.click/api/review");
         const data = await res.json();
         setReviews(data.reviews || []);
       } catch (err) {

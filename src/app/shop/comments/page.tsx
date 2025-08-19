@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
 import styles from "./users.module.css";
+import { useRouter } from "next/navigation";
 
 interface Review {
   _id: string;
@@ -24,8 +25,29 @@ interface Review {
 }
 
 export default function CommentsPage() {
+   const router = useRouter();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+
+    useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 2) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
   const handleToggleExpand = (id: string) => {
     setExpandedRows((prev) =>

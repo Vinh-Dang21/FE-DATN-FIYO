@@ -1,19 +1,10 @@
 "use client";
 import styles from "./dashboard.module.css";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  LabelList
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList
 } from "recharts";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // <-- Thêm dòng này
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
 
@@ -24,6 +15,7 @@ interface MonthlyRevenueItem {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const [weeklyRevenue, setWeeklyRevenue] = useState(0);
   const [lastWeekRevenue, setLastWeekRevenue] = useState(0);
   const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
@@ -41,22 +33,41 @@ export default function Dashboard() {
   >([]);
 
   const [user, setUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
-  
-    useEffect(() => {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        try {
-          const parsed = JSON.parse(userStr);
-          setUser({
-            id: parsed._id,
-            name: parsed.name,
-            avatar: parsed.avatar,
-          });
-        } catch (err) {
-          console.error("Lỗi parse user:", err);
-        }
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 0) {
+        router.push("/warning-login");
+        return;
       }
-    }, []);
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const parsed = JSON.parse(userStr);
+        setUser({
+          id: parsed._id,
+          name: parsed.name,
+          avatar: parsed.avatar,
+        });
+      } catch (err) {
+        console.error("Lỗi parse user:", err);
+      }
+    }
+  }, []);
 
 
   const getStartAndEndOfCurrentWeek = () => {

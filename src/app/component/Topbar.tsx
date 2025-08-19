@@ -39,12 +39,18 @@ export default function Topbar() {
         </div>
         {user ? (
           <div className={styles.avatarWrapper}>
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className={styles.avatar}
-            />
-            <span className={styles.onlineDot}></span>
+            {user.avatar && user.avatar.trim() !== "" ? (
+              <>
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className={styles.avatar}
+                />
+                <span className={styles.onlineDot}></span>
+              </>
+            ) : (
+              <UserCircle className={styles.avatar} />
+            )}
           </div>
         ) : (
           <div className={styles.avatarWrapper}>
@@ -52,6 +58,7 @@ export default function Topbar() {
           </div>
         )}
       </div>
+
     </div>
   );
 }

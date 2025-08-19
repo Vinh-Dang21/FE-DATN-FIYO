@@ -25,9 +25,17 @@ export default function LoginTest() {
         localStorage.setItem("user", JSON.stringify(data.user));
 
         setMsg("✅ Đăng nhập thành công!");
-        // chuyển sang trang test (hoặc dashboard)
+
+        // lấy role từ user
+        const role = data.user.role;
+
+        let redirectUrl = "/login"; // mặc định quay lại login nếu ko match
+        if (role === 0) redirectUrl = "/dashboard"; // admin
+        if (role === 2) redirectUrl = "/shop/dashboard"; // shop
+        if (role === 1) redirectUrl = "/"; // user (hoặc trang client)
+
         setTimeout(() => {
-          window.location.href = "http://localhost:3000/dashboard";
+          window.location.href = redirectUrl;
         }, 1000);
       } else {
         setMsg("❌ " + (data.message || "Sai email hoặc mật khẩu"));

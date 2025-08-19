@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import styles from "./voucher.module.css";
 import Sidebar from "../component/Sidebar";
+import { useRouter } from "next/navigation";
 import Topbar from "../component/Topbar";
 
 import { useState, useEffect } from "react";
@@ -31,6 +32,7 @@ interface VoucherForm {
 
 
 export default function Voucher() {
+  const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [editVoucher, setEditVoucher] = useState<Voucher | null>(null);
@@ -45,6 +47,26 @@ export default function Voucher() {
 
 
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 0) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
   useEffect(() => {
     fetchVouchers();

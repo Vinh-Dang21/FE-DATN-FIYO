@@ -7,6 +7,7 @@ import Link from "next/link";
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Address {
   _id: string;
@@ -34,9 +35,30 @@ interface User {
 }
 
 export default function UsersPage() {
+   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+
+    useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 0) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
   useEffect(() => {
     const fetchUsers = async () => {

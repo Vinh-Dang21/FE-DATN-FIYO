@@ -2,6 +2,7 @@
 import { Pencil, Trash2 } from "lucide-react";
 import styles from "./categories.module.css";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
 
@@ -23,6 +24,7 @@ interface CategoryForm {
 }
 
 export default function Categories() {
+  const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -39,6 +41,26 @@ export default function Categories() {
     type: "",
     images: [], // luôn là mảng rỗng ban đầu
   });
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 0) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
   // Fetch parent categories
   useEffect(() => {
@@ -255,7 +277,7 @@ export default function Categories() {
 
       if (res.ok) {
         alert("Xóa thành công!");
-        setCategories(prev => prev.filter(cat => cat._id !== id)); 
+        setCategories(prev => prev.filter(cat => cat._id !== id));
         await refreshCategories();
       } else {
         alert(result.message || "Xóa thất bại!");

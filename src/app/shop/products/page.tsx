@@ -7,6 +7,7 @@ import styles from "./products.module.css";
 import { useEffect, useState } from "react";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
+import { useRouter } from "next/navigation";
 
 interface Variant {
   color: string;
@@ -48,6 +49,7 @@ interface Product {
 
 
 export default function Product() {
+  const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
@@ -79,6 +81,26 @@ export default function Product() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [imageWarning, setImageWarning] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 2) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
 
 

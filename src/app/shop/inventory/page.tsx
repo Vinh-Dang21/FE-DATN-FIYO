@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import styles from "./inventory.module.css";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
-
+import { useRouter } from "next/navigation";
 interface Product {
   name: string;
   images?: string[];
@@ -14,9 +14,30 @@ interface Product {
 }
 
 export default function InventoryPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [timePeriod, setTimePeriod] = useState("week");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/warning-login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== 2) {
+        router.push("/warning-login");
+        return;
+      }
+    } catch (err) {
+      router.push("/warning-login");
+    }
+  }, [router]);
 
   useEffect(() => {
     async function fetchProducts() {
