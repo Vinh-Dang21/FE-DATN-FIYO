@@ -1,8 +1,4 @@
-"use client";
-
 import React from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import {
     LayoutDashboard,
     Users,
@@ -12,72 +8,51 @@ import {
     Layers,
     LogOut,
     Shirt,
-    Box, Package, ArrowDown
+    Box,
 } from "lucide-react";
-import styles from "../dashboard/dashboard.module.css";
-
+import styles from "../dashboard.module.css";
+import { usePathname } from "next/navigation";
 const menuItems = [
-    { label: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Tổng quan", href: "/", icon: LayoutDashboard },
+    { label: "Đơn hàng", href: "/order", icon: ShoppingCart },
+    { label: "Sản phẩm", href: "/products", icon: Shirt },
     { label: "Danh mục", href: "/categories", icon: Layers },
     { label: "Người dùng", href: "/users", icon: Users },
     { label: "Khuyến mãi", href: "/voucher", icon: GraduationCap },
     { label: "Đánh giá", href: "/comments", icon: MessageCircle },
+{ label: "Tồn kho", href: "/inventory", icon: Box },
+    { label: "Đăng xuất", href: "/logout", icon: LogOut },
 ];
+
+
+
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const router = useRouter();
-
-    const handleLogout = () => {
-        // Xoá user và token
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-
-        // Nếu bạn có context Auth thì setUser(null)
-        // Ví dụ: loginUser(null);
-
-        // Chuyển hướng sang login
-        router.replace("https://fiyo.click/page/login");
-    };
-
-
     return (
         <aside className={styles.aside}>
             <div className={styles.logo}>FIYO</div>
+
             <ul className={styles.menuList}>
                 {menuItems.map(({ label, href, icon: Icon }) => (
                     <li
                         key={href}
                         className={
-                            pathname === href || pathname.startsWith(href)
+                            (href === "/"
+                                ? pathname === "/"
+                                : pathname.startsWith(href))
                                 ? styles.activeItem
                                 : ""
                         }
                     >
-                        <Link href={href} className={styles.menuItem}>
+                        <a href={href} className={styles.menuItem}>
                             <Icon className={styles.icon} />
                             <span className={styles.title}>{label}</span>
-                        </Link>
+                        </a>
                     </li>
                 ))}
-
-                <li>
-                    <button
-                        onClick={handleLogout}
-                        className={styles.menuItem}
-                        style={{
-                            background: "none",
-                            border: "none",
-                            width: "100%",
-                            textAlign: "left",
-                            cursor: "pointer",
-                        }}
-                    >
-                        <LogOut className={styles.icon} />
-                        <span className={styles.title}>Đăng xuất</span>
-                    </button>
-                </li>
             </ul>
         </aside>
     );
 }
+

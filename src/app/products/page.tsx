@@ -5,8 +5,8 @@ import {
 } from "lucide-react";
 import styles from "./products.module.css";
 import { useEffect, useState } from "react";
-import Sidebar from "@/app/component/S-Sidebar";
-import Topbar from "@/app/component/Topbar";
+import Sidebar from "../component/Sidebar";
+import Topbar from "../component/Topbar";
 
 interface Variant {
   color: string;
@@ -1011,15 +1011,7 @@ export default function Product() {
                       ))}
                     </ul>
 
-                    {/* Nút thao tác cho biến thể */}
-                    <div className={styles.buttonGroup}>
-                      <button
-                        className={styles.editButton}
-                        onClick={() => handleEditVariant(index)}
-                      >
-                        Sửa
-                      </button>
-                    </div>
+
                   </div>
                 ))}
               </div>

@@ -2,8 +2,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import styles from "./orderdetail.module.css";
-import Sidebar from "@/app/component/S-Sidebar";
-import Topbar from "@/app/component/Topbar";
+import Sidebar from "../../component/Sidebar";
+import Topbar from "../../component/Topbar";
 import { useParams } from "next/navigation";
 import dayjs from "dayjs";
 
