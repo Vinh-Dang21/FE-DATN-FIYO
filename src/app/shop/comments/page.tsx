@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
-import Sidebar from "../component/Sidebar";
-import Topbar from "../component/Topbar";
+import Sidebar from "@/app/component/S-Sidebar";
+import Topbar from "@/app/component/Topbar";
 import styles from "./users.module.css";
 
 interface Review {

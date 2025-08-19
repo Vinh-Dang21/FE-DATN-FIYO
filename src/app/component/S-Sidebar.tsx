@@ -17,11 +17,12 @@ import {
 import styles from "../dashboard/dashboard.module.css";
 
 const menuItems = [
-    { label: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Danh mục", href: "/categories", icon: Layers },
-    { label: "Người dùng", href: "/users", icon: Users },
-    { label: "Khuyến mãi", href: "/voucher", icon: GraduationCap },
-    { label: "Đánh giá", href: "/comments", icon: MessageCircle },
+    { label: "Tổng quan", href: "/shop/dashboard", icon: LayoutDashboard },
+    { label: "Đơn hàng", href: "/shop/order", icon: ShoppingCart },
+    { label: "Sản phẩm", href: "/shop/products", icon: Shirt },
+    { label: "Đánh giá", href: "/shop/comments", icon: MessageCircle },
+    { label: "Tồn kho", href: "/shop/inventory", icon: Box },
+    { label: "Nhập hàng", href: "/shop/stockentry", icon: ArrowDown  },
 ];
 
 export default function Sidebar() {
@@ -39,7 +40,6 @@ export default function Sidebar() {
         // Chuyển hướng sang login
         router.replace("https://fiyo.click/page/login");
     };
-
 
     return (
         <aside className={styles.aside}>

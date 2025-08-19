@@ -847,3 +847,9 @@
 .deleteButton:hover {
   text-decoration: underline;
 }
+
+.imageWarning {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}

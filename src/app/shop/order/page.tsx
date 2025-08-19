@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import styles from "./order.module.css";
 import { useEffect, useState } from "react";
-import Sidebar from "../component/Sidebar";
-import Topbar from "../component/Topbar";
-import Tabs from "../component/filterorder";
+import Sidebar from "@/app/component/S-Sidebar";
+import Topbar from "@/app/component/Topbar";
+import Tabs from "@/app/component/filterorder";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
@@ -108,7 +108,7 @@ export default function Order() {
   useEffect(() => {
     const fetchAllOrders = async () => {
       try {
-        const res = await fetch("http://localhost:3000/orders");
+        const res = await fetch("https://fiyo.click/api/orders");
         const data = await res.json();
 
         if (data.status && Array.isArray(data.result)) {
@@ -139,13 +139,13 @@ export default function Order() {
     fetchAllOrders();
     const interval = setInterval(fetchAllOrders, 5000);
 
-    return () => clearInterval(interval); 
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     const fetchFilteredOrders = async () => {
       try {
-        let url = "http://localhost:3000/orders/filter";
+        let url = "https://fiyo.click/api/orders/filter";
         const params = new URLSearchParams();
 
         if (filteredStatus !== "all") {
@@ -178,7 +178,7 @@ export default function Order() {
 
   const handleUpdateStatus = async (orderId: string, newStatus: string, showAlert = true) => {
     try {
-      const res = await fetch(`http://localhost:3000/orders/${orderId}/status`, {
+      const res = await fetch(`https://fiyo.click/api/orders/${orderId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -207,11 +207,19 @@ export default function Order() {
 
 
   const handleViewOrder = async (order: Order) => {
-    if (order.status_order === "pending") {
-      await handleUpdateStatus(order._id, "preparing", false);
+    try {
+      // Nếu trạng thái là "pending" thì gọi hàm xác nhận đơn luôn
+      if (order.status_order === "pending") {
+        await handleConfirmOrder(order._id, false); // false để không hiện alert
+      }
+      // Sau đó chuyển sang trang chi tiết đơn hàng
+      router.push(`/shop/orderdetail/${order._id}`);
+    } catch (error) {
+      console.error("Lỗi khi xử lý đơn hàng:", error);
+      alert("Có lỗi xảy ra khi xử lý đơn hàng");
     }
-    router.push(`/orderdetail/${order._id}`);
   };
+
 
   const getCustomerInfo = (order: Order) => {
     if (order.user_id) {
@@ -231,6 +239,32 @@ export default function Order() {
       };
     }
   };
+
+  const handleConfirmOrder = async (orderId: string, showAlert = true) => {
+    try {
+      const res = await fetch(`https://fiyo.click/api/orders/${orderId}/confirm`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Lỗi xác nhận đơn hàng");
+
+      if (showAlert) alert(data.message || "Xác nhận đơn hàng thành công!");
+
+      // Cập nhật lại trạng thái đơn trong local state
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === orderId ? { ...order, status_order: "preparing" } : order
+        )
+      );
+    } catch (error: any) {
+      if (showAlert) alert(error.message || "Lỗi khi xác nhận đơn hàng");
+    }
+  };
+
+
 
 
 
@@ -422,12 +456,10 @@ export default function Order() {
                         <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
                           <Eye size={25} />
                         </button>
-
-
                         {order.status_order === "pending" && (
                           <button
                             className={styles.statusBtn}
-                            onClick={() => handleUpdateStatus(order._id, "preparing")}
+                            onClick={() => handleConfirmOrder(order._id)}
                           >
                             Xác nhận
                           </button>

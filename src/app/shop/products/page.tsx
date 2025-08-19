@@ -5,8 +5,8 @@ import {
 } from "lucide-react";
 import styles from "./products.module.css";
 import { useEffect, useState } from "react";
-import Sidebar from "../component/Sidebar";
-import Topbar from "../component/Topbar";
+import Sidebar from "@/app/component/S-Sidebar";
+import Topbar from "@/app/component/Topbar";
 
 interface Variant {
   color: string;
@@ -64,19 +64,22 @@ export default function Product() {
   const [sizeInput, setSizeInput] = useState<string>("");
   const [quantityInput, setQuantityInput] = useState<number>(1);
   const [sizes, setSizes] = useState<{ size: string; quantity: number }[]>([]);
-  const [images, setImages] = useState<(File | null)[]>([null, null, null, null]);
-  const [previews, setPreviews] = useState<string[]>(["", "", "", ""]);
+  const [images, setImages] = useState<File[]>([]); // Mảng linh hoạt, không cố định 4 phần tử
+  const [previews, setPreviews] = useState<string[]>([]);
   const [productName, setProductName] = useState("");
-  const [sale, setSale] = useState(0);
-  const [saleCount, setSaleCount] = useState(0);
+  const [sale, setSale] = useState<string>("");
+  const [saleCount, setSaleCount] = useState<string>("");
+  const [price, setPrice] = useState<string>("");
   const [material, setMaterial] = useState("");
-  const [price, setPrice] = useState(0);
   const [description, setDescription] = useState("");
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [filterChild, setFilterChild] = useState(""); // cho bộ lọc
   const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
   const [editingSizeIndex, setEditingSizeIndex] = useState<number | null>(null);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [imageWarning, setImageWarning] = useState("");
+
 
 
   const handleEditProduct = async (product: Product) => {
@@ -87,7 +90,7 @@ export default function Product() {
 
     for (const parent of parentCategories) {
       try {
-        const res = await fetch(`http://localhost:3000/category/children/${parent._id}`);
+        const res = await fetch(`https://fiyo.click/api/category/children/${parent._id}`);
         const children = await res.json();
 
         const match = children.find((child: Category) => child._id === categoryId);
@@ -97,7 +100,7 @@ export default function Product() {
           break;
         }
       } catch (error) {
-        console.error("❌ Lỗi khi fetch danh mục con:", error);
+        console.error("Lỗi khi fetch danh mục con:", error);
       }
     }
 
@@ -110,12 +113,17 @@ export default function Product() {
 
     // Gán các giá trị khác vào form
     setEditProduct(product);
+    setEditingProductId(product._id);
     setShowAdd(true);
     setProductName(product.name);
-    setPrice(product.price);
+    setPrice(product.price?.toString() || "");
+    setSale(product.sale?.toString() || "");
+    setSaleCount(product.sale_count?.toString() || "");
+    setMaterial(product.material || "");
     setDescription(product.description);
     setVariants(product.variants || []);
     setPreviews(product.images || []);
+
   };
 
 
@@ -128,12 +136,23 @@ export default function Product() {
     const files = e.target.files;
     if (!files) return;
 
-    const selectedFiles = Array.from(files).slice(0, 4); // lấy tối đa 4 ảnh
-    setImages(selectedFiles);
+    const newFiles = Array.from(files);
+    const updatedImages = [...images, ...newFiles];
+    setImages(updatedImages);
 
-    const previewList = selectedFiles.map((file) => URL.createObjectURL(file));
-    setPreviews(previewList);
+    const updatedPreviews = updatedImages.map((file) =>
+      file instanceof File ? URL.createObjectURL(file) : file
+    );
+    setPreviews(updatedPreviews);
+
+    if (updatedImages.length > 4) {
+      setImageWarning("Bạn đã chọn hơn 4 ảnh. Vui lòng xóa bớt.");
+    } else {
+      setImageWarning("");
+    }
   };
+
+
 
   const resetForm = () => {
     setShowAdd(false);
@@ -144,43 +163,111 @@ export default function Product() {
     setSizes([]);
     setCurrentColor("");
     setProductName("");
-    setPrice(0);
+    setSale("");
+    setSaleCount("");
+    setPrice("");
+    setMaterial("");
     setDescription("");
     setSelectedParent("");
     setSelectedChild("");
   };
 
   const handleSubmit = async () => {
-    if (!productName || !selectedChild) {
-      alert("Vui lòng nhập đầy đủ thông tin sản phẩm và chọn danh mục con!");
+    const hasNewImages = images.filter(Boolean).length > 0;
+    const hasOldImages = previews && previews.length > 0;
+    const totalImageCount = (images.filter(Boolean).length || 0) + (previews?.length || 0);
+    const filteredImages = images.filter((img) => img !== null);
+    if (!productName.trim()) {
+      alert("Tên sản phẩm không được để trống!");
       return;
     }
+
+    const isDuplicateName = products.some(
+      (product) =>
+        product.name.trim().toLowerCase() === productName.trim().toLowerCase() &&
+        product._id !== editProduct?._id
+    );
+
+
+    if (isDuplicateName) {
+      alert("Tên sản phẩm đã tồn tại. Vui lòng chọn tên khác.");
+      return;
+    }
+
+
+    if (!price.trim()) {
+      alert("Vui lòng nhập giá sản phẩm!");
+      return;
+    }
+
+
+    if (!selectedChild) {
+      alert("Vui lòng chọn danh mục!");
+      return;
+    }
+
+    if (!description.trim()) {
+      alert("Mô tả sản phẩm không được để trống!");
+      return;
+    }
+
+
+    if (!hasNewImages && !hasOldImages) {
+      alert("Vui lòng thêm ảnh cho sản phẩm");
+      return;
+    }
+
+    const parsedPrice = parseInt(price || "0");
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      alert("Giá không hợp lệ! Vui lòng nhập số và không âm.");
+      return;
+    }
+
+    const parsedSale = parseInt(sale || "0");
+    if (isNaN(parsedSale) || parsedSale < 0) {
+      alert("Giá khuyến mãi không hợp lệ! Vui lòng nhập số và không âm.");
+      return;
+    }
+
+    // Kiểm tra giá khuyến mãi không được cao hơn giá gốc
+    if (parsedSale > parsedPrice) {
+      alert("Giá khuyến mãi không được cao hơn giá sản phẩm!");
+      return;
+    }
+
+    const parsedSaleCount = parseInt(saleCount || "0");
+    if (isNaN(parsedSaleCount) || parsedSaleCount < 0) {
+      alert("Số lượng đã bán không hợp lệ! Vui lòng nhập số và không âm.");
+      return;
+    }
+
 
     const formData = new FormData();
 
     const validImages = images.filter(Boolean);
+    // Nếu có ảnh mới => gửi cả ảnh mới và giữ lại ảnh cũ
     if (editProduct && validImages.length === 0) {
       // Gửi lại ảnh cũ
       previews.forEach((link) => {
         if (link) formData.append("images", link);
       });
     } else {
-      // Gửi file mới
+      // Thêm mới thì chỉ gửi ảnh file
       validImages.forEach((img) => {
         if (img) formData.append("images", img);
       });
     }
 
+
     formData.append("name", productName);
-    formData.append("price", price.toString());
+    formData.append("price", parsedPrice.toString());
+    formData.append("sale", parsedSale.toString());
+    formData.append("sale_count", parsedSaleCount.toString());
     formData.append("description", description);
     formData.append("category_id", selectedChild);
     formData.append("shop_id", "1");
     formData.append("variants", JSON.stringify(variants));
-    formData.append("sale", sale.toString());
-    formData.append("sale_count", saleCount.toString());
     formData.append("material", material);
-
 
     // Tính tổng quantity từ tất cả variants
     const totalQuantity = variants.reduce((total, variant) => {
@@ -194,8 +281,8 @@ export default function Product() {
 
     try {
       const url = editProduct
-        ? `http://localhost:3000/products/update/${editProduct._id}`
-        : `http://localhost:3000/products/create`;
+        ? `https://fiyo.click/api/products/update/${editProduct._id}`
+        : `https://fiyo.click/api/products/create`;
 
       const method = editProduct ? "PUT" : "POST";
 
@@ -205,35 +292,35 @@ export default function Product() {
       });
 
       const result = await response.json();
-      console.log("📥 Kết quả phản hồi:", result);
+      console.log("Kết quả phản hồi:", result);
 
       if (result.status) {
-        alert(editProduct ? "✅ Cập nhật thành công!" : "✅ Thêm thành công!");
+        alert(editProduct ? "Sửa sản phẩm thành công!" : "Thêm sản phẩm thành công!");
 
         // Reset form
         resetForm();
 
         // Gọi lại API danh sách
-        const fetchAgain = await fetch("http://localhost:3000/products");
+        const fetchAgain = await fetch("https://fiyo.click/api/products");
         const reload = await fetchAgain.json();
         setProducts(reload.products || []);
       } else {
-        alert("❌ " + (editProduct ? "Cập nhật thất bại" : "Thêm thất bại"));
+        alert((editProduct ? "Cập nhật sản phẩm thất bại" : "Thêm sản phẩm thất bại"));
       }
     } catch (error) {
-      console.error("❌ Lỗi gửi dữ liệu:", error);
+      console.error("Lỗi gửi dữ liệu:", error);
       alert("Lỗi khi gửi dữ liệu");
     }
   };
 
   const fetchProducts = async () => {
     try {
-      let url = "http://localhost:3000/products";
+      let url = "https://fiyo.click/api/products";
 
       if (filterChild) {
-        url = `http://localhost:3000/products/category/${filterChild}`;
+        url = `https://fiyo.click/api/products/category/${filterChild}`;
       } else if (selectedChild) {
-        url = `http://localhost:3000/products/category/${selectedChild}`;
+        url = `https://fiyo.click/api/products/category/${selectedChild}`;
       }
 
       const res = await fetch(url);
@@ -257,17 +344,13 @@ export default function Product() {
     }
   };
 
-
-
-
-
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        let url = "http://localhost:3000/products";
+        let url = "https://fiyo.click/api/products";
 
         if (filterChild) {
-          url = `http://localhost:3000/products/category/${filterChild}`;
+          url = `https://fiyo.click/api/products/category/${filterChild}`;
         }
 
         const res = await fetch(url);
@@ -329,7 +412,7 @@ export default function Product() {
   useEffect(() => {
     const fetchParents = async () => {
       try {
-        const res = await fetch("http://localhost:3000/category/parents");
+        const res = await fetch("https://fiyo.click/api/category/parents");
         const data = await res.json();
 
         // Lọc bỏ phần tử có status (nếu là object không có _id)
@@ -352,11 +435,11 @@ export default function Product() {
       }
 
       try {
-        const res = await fetch(`http://localhost:3000/category/children/${selectedParent}`);
+        const res = await fetch(`https://fiyo.click/api/category/children/${selectedParent}`);
         const data = await res.json();
 
         if (Array.isArray(data)) {
-          setChildCategories(data); // ✅ OK
+          setChildCategories(data);
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh mục con:", error);
@@ -369,11 +452,11 @@ export default function Product() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        let url = "http://localhost:3000/products";
+        let url = "https://fiyo.click/api/products";
 
         // Nếu chọn danh mục con thì lọc theo danh mục con
         if (selectedChild) {
-          url = `http://localhost:3000/products/category/${selectedChild}`;
+          url = `https://fiyo.click/api/products/category/${selectedChild}`;
         }
 
         const res = await fetch(url);
@@ -403,7 +486,7 @@ export default function Product() {
 
   const handleChangeVisibility = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`http://localhost:3000/products/${id}/visibility`, {
+      const res = await fetch(`https://fiyo.click/api/products/${id}/visibility`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -492,11 +575,11 @@ export default function Product() {
       sizes: updatedSizes,
     };
 
-    console.log("✅ Biến thể mới được thêm:", newVariant);
+    console.log("Biến thể mới được thêm:", newVariant);
 
     setVariants((prev) => {
       const updated = [...prev, newVariant];
-      console.log("📦 Danh sách biến thể hiện tại:", updated);
+      console.log("Danh sách biến thể hiện tại:", updated);
       return updated;
     });
 
@@ -546,12 +629,12 @@ export default function Product() {
   };
   const handleSearch = async () => {
     if (!searchKeyword.trim()) {
-      console.log("🔄 Không có từ khóa. Đang load lại tất cả sản phẩm...");
+      console.log("Không có từ khóa. Đang load lại tất cả sản phẩm...");
 
-      const res = await fetch("http://localhost:3000/products");
+      const res = await fetch("https://fiyo.click/api/products");
       const data = await res.json();
 
-      console.log("✅ Danh sách sản phẩm đầy đủ:", data.products);
+      console.log("Danh sách sản phẩm đầy đủ:", data.products);
 
       // Đảm bảo mỗi sản phẩm có mảng variants
       const updatedData = (data.products || []).map((product: any) => ({
@@ -566,19 +649,19 @@ export default function Product() {
 
     try {
       const encodedKeyword = encodeURIComponent(searchKeyword.trim());
-      const url = `http://localhost:3000/products/search?name=${encodedKeyword}`;
-      console.log("🔍 Gửi request tìm sản phẩm với keyword:", searchKeyword);
-      console.log("📤 URL gửi đi:", url);
+      const url = `https://fiyo.click/api/products/search?name=${encodedKeyword}`;
+      console.log("Gửi request tìm sản phẩm với keyword:", searchKeyword);
+      console.log("URL gửi đi:", url);
 
       const res = await fetch(url);
       const data = await res.json();
 
-      console.log("📥 Phản hồi từ server:", data);
+      console.log("Phản hồi từ server:", data);
 
       if (data && data.length > 0) {
-        console.log(`✅ Tìm thấy ${data.length} sản phẩm`);
+        console.log(`Tìm thấy ${data.length} sản phẩm`);
         const updatedData = data.map((product: any, i: number) => {
-          console.log(`📦 Sản phẩm ${i + 1}:`, product);
+          console.log(`Sản phẩm ${i + 1}:`, product);
           return {
             ...product,
             variants: product.variants ?? [],
@@ -593,9 +676,20 @@ export default function Product() {
       }
 
     } catch (error) {
-      console.error("❌ Lỗi khi tìm kiếm sản phẩm:", error);
+      console.error("Lỗi khi tìm kiếm sản phẩm:", error);
       setProducts([]);
       setNoProduct(true);
+    }
+  };
+  const handleRemoveImage = (indexToRemove: number) => {
+    const filteredImages = images.filter((_, idx) => idx !== indexToRemove);
+    setImages(filteredImages);
+
+    const filteredPreviews = previews.filter((_, idx) => idx !== indexToRemove);
+    setPreviews(filteredPreviews);
+
+    if (filteredImages.length <= 4) {
+      setImageWarning(""); // Xóa cảnh báo khi còn 4 ảnh trở xuống
     }
   };
 
@@ -632,22 +726,7 @@ export default function Product() {
                     setSelectedChild("");
                     setChildCategories([]);
                     setFilterChild("");
-                    fetch("http://localhost:3000/products")
-                      .then(res => res.json())
-                      .then(data => {
-                        if (data.products) {
-                          setProducts(data.products);
-                          setNoProduct(false);
-                        } else {
-                          setProducts([]);
-                          setNoProduct(true);
-                        }
-                      })
-                      .catch(err => {
-                        console.error("Lỗi khi lấy sản phẩm:", err);
-                        setProducts([]);
-                        setNoProduct(true);
-                      });
+                    fetchProducts(); // <-- Gọi lại hàm fetchProducts để lấy toàn bộ sản phẩm
                   }
                 }}
               >
@@ -703,7 +782,10 @@ export default function Product() {
         </div>
         {showAdd && (
           <div className={styles.addProductForm}>
-            <h2 className={styles.addProductTitle}>Thêm sản phẩm mới</h2>
+            <h2 className={styles.addProductTitle}>
+              {editProduct ? "Cập nhật sản phẩm" : "Thêm sản phẩm mới"}
+            </h2>
+
 
             {/* Hàng 1: Tên sản phẩm & Giá */}
             <div className={styles.row}>
@@ -718,10 +800,10 @@ export default function Product() {
               <input
                 className={styles.input}
                 type="number"
-                placeholder="Giá (price)"
+                placeholder="Giá bán"
                 name="price"
                 value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
+                onChange={(e) => setPrice(e.target.value)}
               />
             </div>
             {/* Hàng mới: Sale, Sale Count, Material */}
@@ -741,18 +823,18 @@ export default function Product() {
                 <input
                   className={styles.inputHalf}
                   type="number"
-                  placeholder="Giảm giá (%) - sale"
+                  placeholder="Giảm giá - sale (VND)"
                   name="sale"
                   value={sale}
-                  onChange={(e) => setSale(Number(e.target.value))}
+                  onChange={(e) => setSale(e.target.value)}
                 />
                 <input
                   className={styles.inputHalf}
                   type="number"
-                  placeholder="Đã bán (sale_count)"
+                  placeholder="Đã bán (mặc định là 0)"
                   name="sale_count"
                   value={saleCount}
-                  onChange={(e) => setSaleCount(Number(e.target.value))}
+                  onChange={(e) => setSaleCount(e.target.value)}
                 />
               </div>
             </div>
@@ -791,22 +873,46 @@ export default function Product() {
 
             {/* Hàng 3: Ảnh */}
             <div className={styles.rowColumn}>
-              <label>Chọn tối đa 4 ảnh sản phẩm:</label>
+              <label>Chọn ảnh sản phẩm:</label>
               <input
                 type="file"
                 accept="image/*"
                 multiple
                 onChange={handleMultipleImages}
               />
+              {imageWarning && <p className={styles.imageWarning}>{imageWarning}</p>}
+
               <div className={styles.imageGrid}>
                 {previews.map((preview, index) => (
-                  <div key={index} className={styles.imageSlot}>
-                    {preview ? (
-                      <img src={preview} alt={`Preview ${index + 1}`} className={styles.imagePreview} />
-                    ) : null}
+                  <div key={index} className={styles.imageSlot} style={{ position: "relative" }}>
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className={styles.imagePreview}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      style={{
+                        position: "absolute",
+                        top: 2,
+                        right: 2,
+                        background: "rgba(0,0,0,0.6)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: 24,
+                        height: 24,
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                        lineHeight: "20px",
+                        textAlign: "center",
+                      }}
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
-
               </div>
             </div>
 
@@ -905,7 +1011,15 @@ export default function Product() {
                       ))}
                     </ul>
 
-
+                    {/* Nút thao tác cho biến thể */}
+                    <div className={styles.buttonGroup}>
+                      <button
+                        className={styles.editButton}
+                        onClick={() => handleEditVariant(index)}
+                      >
+                        Sửa
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

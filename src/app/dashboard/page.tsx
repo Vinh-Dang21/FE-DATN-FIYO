@@ -11,10 +11,11 @@ import {
   Pie,
   Cell,
   Legend,
+  LabelList
 } from "recharts";
 import { useEffect, useState } from "react";
-import Sidebar from "./component/Sidebar";
-import Topbar from "./component/Topbar";
+import Sidebar from "../component/Sidebar";
+import Topbar from "../component/Topbar";
 
 
 interface MonthlyRevenueItem {
@@ -38,6 +39,24 @@ export default function Dashboard() {
   const [customerPieData, setCustomerPieData] = useState<
     { name: string; value: number }[]
   >([]);
+
+  const [user, setUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
+  
+    useEffect(() => {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const parsed = JSON.parse(userStr);
+          setUser({
+            id: parsed._id,
+            name: parsed.name,
+            avatar: parsed.avatar,
+          });
+        } catch (err) {
+          console.error("Lỗi parse user:", err);
+        }
+      }
+    }, []);
 
 
   const getStartAndEndOfCurrentWeek = () => {
@@ -107,7 +126,7 @@ export default function Dashboard() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
       );
       const data = await res.json();
 
@@ -131,7 +150,7 @@ export default function Dashboard() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
       );
       const data = await res.json();
 
@@ -155,7 +174,7 @@ export default function Dashboard() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
       );
       const data = await res.json();
 
@@ -166,8 +185,9 @@ export default function Dashboard() {
         const orderDate = new Date(order.createdAt);
         const isInRange =
           orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
+        const isDelivered = order.status_order === "delivered";
 
-        if (isInRange) {
+        if (isInRange && isDelivered) {
           total += order.total_price;
           count += 1;
         }
@@ -188,7 +208,7 @@ export default function Dashboard() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/orders?fromDate=${fromDate}&toDate=${toDate}`
+        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
       );
       const data = await res.json();
 
@@ -199,8 +219,9 @@ export default function Dashboard() {
         const orderDate = new Date(order.createdAt);
         const isInRange =
           orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
+        const isDelivered = order.status_order === "delivered";
 
-        if (isInRange) {
+        if (isInRange && isDelivered) {
           total += order.total_price;
           count += 1;
         }
@@ -218,7 +239,7 @@ export default function Dashboard() {
 
   const fetchTotalUsers = async () => {
     try {
-      const res = await fetch("http://localhost:3000/user/");
+      const res = await fetch("https://fiyo.click/api/user/");
       const data = await res.json();
 
       if (Array.isArray(data.result)) {
@@ -234,7 +255,7 @@ export default function Dashboard() {
 
   const fetchPendingOrders = async () => {
     try {
-      const res = await fetch("http://localhost:3000/orders");
+      const res = await fetch("https://fiyo.click/api/orders");
       const data = await res.json();
 
       if (data.status && Array.isArray(data.result)) {
@@ -264,14 +285,14 @@ export default function Dashboard() {
 
   const fetchTopUsers = async () => {
     try {
-      const resUser = await fetch("http://localhost:3000/user/");
+      const resUser = await fetch("https://fiyo.click/api/user/");
       const dataUser = await resUser.json();
       const users = dataUser.result;
 
       const spendingList = await Promise.all(
         users.map(async (user: any) => {
           const resOrder = await fetch(
-            `http://localhost:3000/orders/user/${user._id}`
+            `https://fiyo.click/api/orders/user/${user._id}`
           );
           const orders = await resOrder.json();
 
@@ -310,7 +331,7 @@ export default function Dashboard() {
 
   const fetchMonthlyRevenue = async () => {
     try {
-      const res = await fetch("http://localhost:3000/orders");
+      const res = await fetch("https://fiyo.click/api/orders");
       const data = await res.json(); // ✅ cần khai báo dòng này
 
       const orders = data.result || [];
@@ -345,7 +366,7 @@ export default function Dashboard() {
 
   const fetchCustomerTypeStats = async () => {
     try {
-      const res = await fetch("http://localhost:3000/orders");
+      const res = await fetch("https://fiyo.click/api/orders");
       const data = await res.json();
       const orders = data.result || [];
 
@@ -391,7 +412,7 @@ export default function Dashboard() {
       <section className={styles.content}>
         <Topbar />
         <div className={styles.greetingBox}>
-          Xin chào Admin -{" "}
+          Xin chào {user?.name} -{" "}
           <span style={{ fontWeight: 400, fontSize: 16 }}>
             Tình hình cửa hàng của bạn hôm nay như sau
           </span>
@@ -401,21 +422,23 @@ export default function Dashboard() {
             <h4 className={styles.cardTitle}>DOANH THU TUẦN NÀY</h4>
             <div className={styles.cardContent}>
               <span className={styles.cardValue}>
-                {weeklyRevenue.toLocaleString()} đ
+                {weeklyRevenue.toLocaleString("vi-VN")} ₫
               </span>
               <span
                 className={
-                  weeklyRevenue >= lastWeekRevenue
+                  weeklyRevenue > lastWeekRevenue
                     ? styles.cardStatusUp
-                    : styles.cardStatusDown
+                    : weeklyRevenue < lastWeekRevenue
+                      ? styles.cardStatusDown
+                      : styles.cardStatusNeutral // nếu muốn xử lý thêm cho bằng nhau
                 }
               >
                 {Math.abs(
-                  ((weeklyRevenue - lastWeekRevenue) / (lastWeekRevenue || 1)) *
-                  100
+                  ((weeklyRevenue - lastWeekRevenue) / (lastWeekRevenue || 1)) * 100
                 ).toFixed(1)}
-                % {weeklyRevenue >= lastWeekRevenue ? "↑" : "↓"}
+                % {weeklyRevenue > lastWeekRevenue ? "↑" : weeklyRevenue < lastWeekRevenue ? "↓" : ""}
               </span>
+
             </div>
           </div>
 
@@ -423,8 +446,9 @@ export default function Dashboard() {
             <h4 className={styles.cardTitle}>DOANH THU THÁNG</h4>
             <div className={styles.cardContent}>
               <span className={styles.cardValue}>
-                {Math.round(currentMonthRevenue / 1000)} tr
+                {currentMonthRevenue.toLocaleString("vi-VN")} ₫
               </span>
+
               <span
                 className={
                   weeklyRevenue >= lastWeekRevenue
@@ -485,13 +509,18 @@ export default function Dashboard() {
                 Biểu đồ thống kê doanh thu theo từng tháng
               </p>
               <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={monthlyRevenue} barCategoryGap={10}>
+                <BarChart data={monthlyRevenue} margin={{ left: 10, }} barCategoryGap={10}>
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip
                     formatter={(value: number) => `${value.toLocaleString()} đ`}
+                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc", color: "#444" }}
+                    labelStyle={{ color: "#888" }}
                   />
-                  <Bar dataKey="revenue" fill="#7367F0" radius={[5, 5, 0, 0]} />
+
+                  <Bar dataKey="revenue" fill="#7367F0" radius={[5, 5, 0, 0]}>
+
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
