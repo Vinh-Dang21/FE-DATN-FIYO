@@ -22,7 +22,9 @@ const menuItems = [
     { label: "Sản phẩm", href: "/shop/products", icon: Shirt },
     { label: "Đánh giá", href: "/shop/comments", icon: MessageCircle },
     { label: "Tồn kho", href: "/shop/inventory", icon: Box },
-    { label: "Nhập hàng", href: "/shop/stockentry", icon: ArrowDown  },
+    { label: "Nhập hàng", href: "/shop/stockentry", icon: ArrowDown },
+    { label: "Tin nhắn", href: "/messages", icon: MessageCircle }
+
 ];
 
 export default function Sidebar() {
