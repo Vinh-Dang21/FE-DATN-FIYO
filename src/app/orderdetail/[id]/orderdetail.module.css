@@ -6,37 +6,31 @@
 }
 
 .aside {
-    width: 300px;
-    background-color: white;
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    /* Luôn cao 100vh */
-    position: sticky;
-    /* Giữ cố định khi cuộn */
-    top: 0;
-    flex-shrink: 0;
-    /* Không co lại khi content cuộn */
-    border-right: 1px solid #e4e4e7;
-    /* Thêm đường viền bên phải */
+  width: 300px;
+  background-color: white;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Luôn cao 100vh */
+  position: sticky; /* Giữ cố định khi cuộn */
+  top: 0;
+  flex-shrink: 0; /* Không co lại khi content cuộn */
+  border-right: 1px solid #e4e4e7; /* Thêm đường viền bên phải */
 }
 
 .logo {
-    font-family: 'Bebas Neue', Arial, sans-serif;
-    letter-spacing: 8px;
-    display: flex;
-    align-items: center;
-    background-color: #fff;
-    color: #ff0a0a;
-    padding: 10px 20px;
-    font-size: 26px;
-    font-weight: bolder;
-    margin: 0 auto;
-    /* căn giữa ngang */
-    margin-bottom: 20px;
-    width: fit-content;
-    /* hoặc set width cụ thể nếu cần */
+  font-family: 'Bebas Neue', Arial, sans-serif;
+  letter-spacing: 8px;
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  color: #ff0a0a;
+  padding: 10px 20px;
+  font-size: 26px;
+  font-weight: bolder;
+  margin: 0 auto; /* căn giữa ngang */
+  margin-bottom: 20px;
+  width: fit-content; /* hoặc set width cụ thể nếu cần */
 }
 
 
@@ -74,31 +68,28 @@
 }
 
 .menuItem:hover {
-    background-color: #fff;
-    box-shadow:
-        0 4px 18px 0 rgba(30, 30, 30, 0.13),
-        0 2px 8px 0 rgba(30, 30, 30, 0.09);
-    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    /* Hover nền nhẹ của đỏ */
+  background-color: #fff; 
+  box-shadow:
+    0 4px 18px 0 rgba(30, 30, 30, 0.13),
+    0 2px 8px 0 rgba(30, 30, 30, 0.09);
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);/* Hover nền nhẹ của đỏ */
 }
-
 .activeItem .menuItem {
-    border: #fda2a2 1px solid;
-    background-color: #fff;
-    color: #ff0a0a;
-    font-weight: 700;
-    /* Hiệu ứng bóng đổ đen nhạt */
-    box-shadow:
-        0 4px 18px 0 rgba(30, 30, 30, 0.13),
-        0 2px 8px 0 rgba(30, 30, 30, 0.09);
-    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: #fda2a2 1px solid;
+  background-color: #fff;
+  color: #ff0a0a;
+  font-weight: 700;
+  /* Hiệu ứng bóng đổ đen nhạt */
+  box-shadow:
+    0 4px 18px 0 rgba(30, 30, 30, 0.13),
+    0 2px 8px 0 rgba(30, 30, 30, 0.09);
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
 }
-
 .activeItem .icon {
-    width: 20px;
-    height: 20px;
-    color: #ff0a0a !important;
-    background-color: #fff;
+  width: 20px;
+  height: 20px;
+  color: #ff0a0a !important;
+  background-color: #fff;
 }
 
 .icon {
@@ -249,58 +240,15 @@
     color: #444;
 }
 
-.status-choxacnhan {
-    background: #FFA500;
-    /* Cam vàng */
-    color: #fff;
-}
-
-.status-dangsoan {
-    background: #17C3CE;
-    /* Cyan sáng */
-    color: #fff;
-}
-
-.status-chogui {
-    background-color: #FFD93D;
-    /* Vàng sáng */
-    color: #fff;
-}
-
-.status-danggiao {
-    background: #3B82F6;
-    /* Xanh dương vừa */
-    color: #fff;
-}
-
-.status-dagiao {
-    background: #28A745;
-    /* Xanh lá */
-    color: #fff;
-}
-
-.status-dahuy {
-    background: #DC3545;
-    /* Đỏ */
-    color: #fff;
-}
-
-.status-trahang {
-    background: #6C757D;
-    /* Xám */
-    color: #fff;
-}
-
 .badge {
     margin-left: 6px;
     font-weight: 600;
     color: #fff;
+    background: #28A745;
     padding: 4px 12px;
     border-radius: 16px;
     font-size: 13px;
 }
-
-
 
 .orderDate {
     font-size: 16px;
@@ -312,15 +260,12 @@
 .productSection {
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* 🟢 thêm dòng này */
-    min-height: 500px;              /* 🟢 đặt chiều cao tối thiểu để có khoảng cho nút */
     margin-bottom: 24px;
     border: 1px solid #e4e4e7;
     border-radius: 10px;
     flex: 1 1 0%;
     min-width: 0;
 }
-
 
 .orderDetailTable {
     width: 100%;
@@ -505,8 +450,7 @@
     color: #666;
     margin-top: 0;
 }
-
-.userDesc strong {
+.userDesc  strong{
     font-weight: 600;
     color: #444;
 }
@@ -631,25 +575,4 @@
     color: #0ea5e9;
     font-size: 14px;
     font-weight: 700;
-}
-.actionButtons {
-  margin-top: auto;
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px;
-}
-
-.statusBtn {
-  background-color: #3b82f6;
-  color: white;
-  padding: 10px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-  font-size: 14px;
-}
-
-.statusBtn:hover {
-  background-color: #2563eb;
 }

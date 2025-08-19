@@ -1,134 +1,136 @@
-
 "use client";
-import { useEffect, useState } from "react";
+import {
+    Search,
+    Bell,
+} from "lucide-react";
 import styles from "./orderdetail.module.css";
 import Sidebar from "../../component/Sidebar";
 import Topbar from "../../component/Topbar";
-import { useParams } from "next/navigation";
-import dayjs from "dayjs";
-
-interface Product {
-    _id: string;
-    name: string;
-    images: string[];
-    price: number;
-    sale: number;
-    material: string;
-    shop_id: number;
-    create_at: string;
-    description: string;
-    sale_count?: number;
-    isHidden: boolean;
-    category_id: {
-        categoryName: string;
-        categoryId: string;
-    };
-    variants: Variant[]; // 👈 Thêm dòng này
-}
-
-interface Variant {
-    color: string;
-    sizes: {
-        size: string;
-        quantity: number;
-        sku?: string; // nếu có dùng SKU
-    }[];
-}
-
-
-
+const orderDetailData = {
+    orderId: "#DH20250613",
+    orderDate: "13/06/2025",
+    status: "Đã giao",
+    customer: {
+        name: "Trần Minh Hòa",
+        id: "#C1024",
+        email: "minhhoa.tran@gmail.com",
+        phone: "0987654321",
+        avatar: "https://randomuser.me/api/portraits/men/32.jpg"
+    },
+    shipping: {
+        receiver: "Trần Minh Hòa",
+        address: "Số 12, Nguyễn Thái Học, Ba Đình, Hà Nội",
+        note: "Giao sau 17h, gọi trước khi đến"
+    },
+    payment: {
+        method: "Momo",
+        transactionId: "2506130000456789"
+    },
+    products: [
+        {
+            name: "Áo sơ mi nam trắng",
+            desc: "Chất liệu cotton thoáng mát, size M",
+            image: "https://1557691689.e.cdneverest.net/fast/180x0/filters:format(webp)/static.5sfashion.vn/storage/product/0wyTFhVjgZqOy8DDcmRYqbc4gmMzy4jW.webp",
+            price: 320000,
+            quantity: 2,
+            total: 640000
+        },
+        {
+            name: "Quần jeans xanh",
+            desc: "Slim fit, size 30",
+            image: "https://1557691689.e.cdneverest.net/fast/1325x0/filters:format(webp)/static.5sfashion.vn/storage/product_color/XjuznF9TOo2H6wf2rRPjuxSjRPhrQmjh.webp",
+            price: 450000,
+            quantity: 1,
+            total: 450000
+        },
+        {
+            name: "Áo thun basic",
+            desc: "Chất liệu co giãn, size L",
+            image: "https://1557691689.e.cdneverest.net/fast/1325x0/filters:format(webp)/static.5sfashion.vn/storage/product_color/8wo2oe2X0LomZg4RUd9KUUtXQUGlq3lV.jpg",
+            price: 210000,
+            quantity: 2,
+            total: 420000
+        }
+    ],
+    total: {
+        value: 1510000,
+        discount: 110000,
+        final: 1400000
+    }
+};
+const trackingData = [
+    {
+        time: "08:12 13/06",
+        status: "Đặt hàng",
+        description: "Khách hàng đã đặt đơn hàng thành công trên website.",
+        active: true,
+    },
+    {
+        time: "08:25 13/06",
+        status: "Xác nhận",
+        description: "Nhân viên đã xác nhận đơn hàng và chuẩn bị đóng gói.",
+        active: true,
+    },
+    {
+        time: "08:50 13/06",
+        status: "Đã bàn giao cho đơn vị vận chuyển",
+        description: (
+            <>
+                Đơn hàng đã được bàn giao cho <strong style={{color: "#22c55e"}}>Giao Hàng Nhanh</strong>.<br />
+                <span style={{ color: "#22c55e", fontWeight: 600 }}>Shipper: Nguyễn Văn B (SDT: 0901234567)</span>
+            </>
+        ),
+        active: true,
+    },
+    {
+        time: "09:30 13/06",
+        status: "Đang lấy hàng",
+        description: "Shipper đang đến kho để nhận hàng.",
+        active: true,
+    },
+    {
+        time: "10:10 13/06",
+        status: "Đang giao",
+        description: (
+            <>
+                Đơn hàng đang được vận chuyển đến địa chỉ nhận: <br />
+                <span style={{ color: "#0ea5e9", fontWeight: 600 }}>Số 12, Nguyễn Thái Học, Ba Đình, Hà Nội</span>
+            </>
+        ),
+        active: true,
+    },
+    {
+        time: "12:30 13/06",
+        status: "Đang giao",
+        description: "Shipper đang giao hàng, vui lòng giữ điện thoại để liên hệ nhận hàng.",
+        active: true,
+    },
+    {
+        time: "15:42 13/06",
+        status: "Đã giao",
+        description: "Shipper đã giao hàng cho khách tại địa chỉ nhận.",
+        active: true,
+    },
+    {
+        time: "15:45 13/06",
+        status: "Đã giao thành công",
+        description: "Khách hàng đã nhận hàng và thanh toán tiền mặt.",
+        active: true,
+    },
+];
 
 export default function Order() {
-    const params = useParams();
-    const orderId = params?.id;
-    const [order, setOrder] = useState<any>(null);
-    const [orderProducts, setOrderProducts] = useState<any[]>([]);
-    const [user, setUser] = useState<any>(null);
-    const shippingAddress = order?.address_id || order?.address_guess;
-
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!orderId) return;
-
-            try {
-                const [orderDetailRes, orderInfoRes] = await Promise.all([
-                    fetch(`https://fiyo.click/api/orderDetail/${orderId}`),
-                    fetch(`https://fiyo.click/api/orders/${orderId}`)
-                ]);
-
-                const orderDetailData = await orderDetailRes.json();
-                const orderInfoData = await orderInfoRes.json();
-
-                console.log("📦 orderDetailData:", orderDetailData);
-                console.log("🧾 orderInfoData:", orderInfoData);
-
-                if (orderDetailData.status) {
-                    setOrderProducts(orderDetailData.result);  // lấy danh sách sản phẩm
-                    setUser(orderDetailData.user);              // lấy user nếu cần
-                }
-
-                if (orderInfoData.status) {
-                    setOrder(orderInfoData.order); // ✅ Lấy đúng `order`, KHÔNG dùng `.result`
-                }
-
-            } catch (error) {
-                console.error("Lỗi khi fetch order:", error);
-            }
-        };
-
-        fetchData();
-    }, [orderId]);
-
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case "pending":
-                return "Chờ xác nhận";
-            case "preparing":
-                return "Đang soạn";
-            case "awaiting_shipment":
-                return "Chờ gửi";
-            case "shipping":
-                return "Đang giao";
-            case "delivered":
-                return "Đã giao";
-            case "cancelled":
-                return "Đã hủy";
-            case "refund":
-                return "Trả hàng / Hoàn tiền";
-            default:
-                return "Không xác định";
-        }
-    };
-
-    const orderSubtotal = orderProducts.reduce((total, item) => {
-        return total + item.product.price * item.quantity;
-    }, 0);
-
-    const handleUpdateStatus = async (newStatus: string) => {
-        try {
-            const res = await fetch(`https://fiyo.click/api/orders/${orderId}/status`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ status: newStatus }),
-            });
-
-            const data = await res.json();
-
-            if (res.ok && data.status) {
-                alert("Cập nhật trạng thái thành công!");
-                setOrder((prev: any) => ({ ...prev, status_order: newStatus }));
-            } else {
-                alert(data.message || "Cập nhật thất bại");
-            }
-        } catch (error) {
-            console.error("Lỗi cập nhật trạng thái:", error);
-            alert("Lỗi kết nối máy chủ");
-        }
-    };
-
-
+    // Lấy dữ liệu đơn hàng từ orderDetailData
+    const {
+        orderId,
+        orderDate,
+        status,
+        customer,
+        shipping,
+        payment,
+        products,
+        total,
+    } = orderDetailData;
 
     return (
         <main className={styles.main}>
@@ -138,39 +140,17 @@ export default function Order() {
                 <Topbar />
                 <div className={styles.orderSummary}>
                     <div className={styles.orderInfoLeft}>
-                        <h2 className={styles.orderTitle}>Mã hóa đơn: {orderProducts[0]?.order_id || "Đang tải..."}</h2>
-
+                        <h2 className={styles.orderTitle}>
+                            Mã hóa đơn: {orderId}
+                        </h2>
                         <p className={styles.statusLine}>
                             Trạng thái:
-                            <span
-                                className={`${styles.badge} ${order?.status_order === "pending"
-                                    ? styles["status-choxacnhan"]
-                                    : order?.status_order === "preparing"
-                                        ? styles["status-dangsoan"]
-                                        : order?.status_order === "awaiting_shipment"
-                                            ? styles["status-chogui"]
-                                            : order?.status_order === "shipping"
-                                                ? styles["status-danggiao"]
-                                                : order?.status_order === "delivered"
-                                                    ? styles["status-dagiao"]
-                                                    : order?.status_order === "cancelled"
-                                                        ? styles["status-dahuy"]
-                                                        : order?.status_order === "refund"
-                                                            ? styles["status-trahang"]
-                                                            : ""
-                                    }`}
-                            >
-                                {getStatusLabel(order?.status_order || "")}
-                            </span>
-
+                            <span className={styles.badge}>{status}</span>
                         </p>
-
                         <p className={styles.orderDate}>
-                            Ngày đặt: {order?.createdAt ? dayjs(order.createdAt).format("DD/MM/YYYY HH:mm") : "..."}
+                            Ngày đặt: {orderDate}
                         </p>
-
                     </div>
-
 
                     <div className={styles.orderDetailGrid}>
                         <div className={styles.productSection}>
@@ -179,47 +159,43 @@ export default function Order() {
                                     <tr>
                                         <th>Sản phẩm</th>
                                         <th>Giá</th>
-                                        <th>loại</th>
                                         <th>Số lượng</th>
                                         <th>Thành tiền</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {orderProducts.map((item, index) => {
-                                        const product = item.product;
-                                        return (
-                                            <tr key={index}>
-                                                <td className={styles.orderDetailInfo}>
-                                                    <img
-                                                        src={product.images?.[0] || "/no-image.png"}
-                                                        alt={product.name}
-                                                        className={styles.userImage}
-                                                    />
-                                                    <div className={styles.productDetails}>
-                                                        <div className={styles.userName}>{product.name}</div>
-                                                        <div className={styles.userDesc}>{product.description}</div>
+                                    {products.map((product, i) => (
+                                        <tr key={i}>
+                                            <td className={styles.orderDetailInfo}>
+                                                <img
+                                                    src={product.image}
+                                                    alt={product.name}
+                                                    className={styles.userImage}
+                                                />
+                                                <div className={styles.productDetails}>
+                                                    <div className={styles.userName}>
+                                                        {product.name}
                                                     </div>
-                                                </td>
-                                                <td>
-                                                    {product.price.toLocaleString("vi-VN", {
-                                                        style: "currency",
-                                                        currency: "VND",
-                                                    })}
-                                                </td>
-                                                <td>
-                                                    {item.variant?.color || "Không rõ"} / {item.variant?.size?.size || "Không rõ"}
-                                                </td>
-
-                                                <td>{item.quantity}</td>
-                                                <td>
-                                                    {(product.price * item.quantity).toLocaleString("vi-VN", {
-                                                        style: "currency",
-                                                        currency: "VND",
-                                                    })}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                                    <div className={styles.userDesc}>
+                                                        {product.desc}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {product.price.toLocaleString("vi-VN", {
+                                                    style: "currency",
+                                                    currency: "VND",
+                                                })}
+                                            </td>
+                                            <td>{product.quantity}</td>
+                                            <td>
+                                                {product.total.toLocaleString("vi-VN", {
+                                                    style: "currency",
+                                                    currency: "VND",
+                                                })}
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
 
@@ -227,83 +203,40 @@ export default function Order() {
                                 <p>
                                     Giá trị đơn hàng:{" "}
                                     <span className={styles.totalValue}>
-                                        {orderSubtotal.toLocaleString("vi-VN", {
+                                        {total.value.toLocaleString("vi-VN", {
                                             style: "currency",
                                             currency: "VND",
                                         })}
                                     </span>
                                 </p>
-
                                 <p>
                                     Giảm:{" "}
                                     <span className={styles.totalValue}>
-                                        {order?.voucher?.discount?.toLocaleString("vi-VN", {
+                                        {total.discount.toLocaleString("vi-VN", {
                                             style: "currency",
                                             currency: "VND",
-                                        }) || "0 ₫"}
+                                        })}
                                     </span>
                                 </p>
-
                                 <p className={styles.totalFinal}>
                                     Tổng tiền thanh toán:{" "}
                                     <span className={styles.totalAmount}>
-                                        {order?.total_price?.toLocaleString("vi-VN", {
+                                        {total.final.toLocaleString("vi-VN", {
                                             style: "currency",
                                             currency: "VND",
-                                        }) || "0 ₫"}
+                                        })}
                                     </span>
                                 </p>
-
                             </div>
-                            {/* Nút chuyển trạng thái đơn hàng */}
-                            <div className={styles.actionButtons}>
-                                {order?.status_order === "pending" && (
-                                    <button
-                                        className={styles.statusBtn}
-                                        onClick={() => handleUpdateStatus("preparing")}
-                                    >
-                                        Xác nhận đơn
-                                    </button>
-                                )}
-
-                                {order?.status_order === "preparing" && (
-                                    <button
-                                        className={styles.statusBtn}
-                                        onClick={() => handleUpdateStatus("awaiting_shipment")}
-                                    >
-                                        Chờ gửi hàng
-                                    </button>
-                                )}
-
-                                {order?.status_order === "awaiting_shipment" && (
-                                    <button
-                                        className={styles.statusBtn}
-                                        onClick={() => handleUpdateStatus("shipping")}
-                                    >
-                                        Đang giao hàng
-                                    </button>
-                                )}
-
-                                {order?.status_order === "shipping" && (
-                                    <button
-                                        className={styles.statusBtn}
-                                        onClick={() => handleUpdateStatus("delivered")}
-                                    >
-                                        Đã giao hàng
-                                    </button>
-                                )}
-                            </div>
-
-
-                            {/* <div className={styles.shipping}>
+                            <div className={styles.shipping}>
                                 <h3 className={styles.heading}>Theo dõi kiện hàng</h3>
                                 <div className={styles.timeline}>
                                     {trackingData.map((item, index) => (
                                         <div
-                                            key={index}
-                                            className={`${styles.step} ${item.status === "Đang giao" ? styles.stepActive : ""}`}
+                                          key={index}
+                                          className={`${styles.step} ${item.status === "Đang giao" ? styles.stepActive : ""}`}
                                         >
-                                            <div className={styles.left}>
+                                          <div className={styles.left}>
                                                 <span className={styles.time}>{item.time}</span>
                                                 <span
                                                     className={`${styles.circle} ${item.active ? styles.active : ""}`}
@@ -314,99 +247,74 @@ export default function Order() {
                                             </div>
                                             <div className={styles.right}>
                                                 {item.status && (
-                                                    <p
-                                                        className={`${styles.status} ${item.status === "Đang giao" ? styles.statusDelivering : ""}`}
-                                                    >
-                                                        {item.status}
-                                                    </p>
+                                                  <p
+                                                    className={`${styles.status} ${item.status === "Đang giao" ? styles.statusDelivering : ""}`}
+                                                  >
+                                                    {item.status}
+                                                  </p>
                                                 )}
                                                 <p className={styles.description}>{item.description}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                            </div> */}
+                            </div>
                         </div>
 
                         <div className={styles.gridSection}>
                             <div className={styles.box}>
                                 <h3>Chi tiết khách hàng</h3>
                                 <div className={styles.userInfo}>
-
+                                    <img
+                                        src={customer.avatar}
+                                        alt="Hình SP"
+                                        className={styles.userImage}
+                                    />
                                     <div className={styles.productDetails}>
-                                        <div className={styles.userName}>{user?.name}</div>
-                                        <div className={styles.userDesc}>
-                                            <strong>Email:</strong> {user?.email}
+                                        <div className={styles.userName}>
+                                            {customer.name}
                                         </div>
-
+                                        <div className={styles.userDesc}>
+                                            ID người dùng:{" "}
+                                            <strong>{customer.id}</strong>
+                                        </div>
                                     </div>
                                 </div>
                                 <p className={styles.userMeta}>
-                                    <strong>SĐT</strong>: {user?.phone || "Chưa có"}
+                                    <strong>Email</strong>: {customer.email}
                                 </p>
                                 <p className={styles.userMeta}>
-                                    <strong>Địa chỉ</strong>:{" "}
-                                    {(user?.address?.detail || user?.address?.address)
-                                        ? `${user?.address?.detail || ""}, ${user?.address?.address || ""}`
-                                        : "Chưa có"}
+                                    <strong>SDT</strong>: {customer.phone}
                                 </p>
-
                             </div>
-
-
 
                             <div className={styles.box}>
                                 <h3>Địa chỉ giao hàng</h3>
                                 <p>
-                                    <strong>Tên người nhận</strong>: {shippingAddress?.name || "Chưa có"}
+                                    <strong>Tên người nhận</strong>:{" "}
+                                    {shipping.receiver}
                                 </p>
                                 <p>
-                                    <strong>SĐT</strong>: {shippingAddress?.phone || "Chưa có"}
+                                    <strong>Địa chỉ</strong>: {shipping.address}
                                 </p>
                                 <p>
-                                    <strong>Địa chỉ</strong>: {(shippingAddress?.detail || shippingAddress?.address)
-                                        ? `${shippingAddress?.detail || ""}, ${shippingAddress?.address || ""}`
-                                        : "Chưa có"}
-                                </p>
-                                <p>
-                                    <strong>Loại địa chỉ</strong>: {shippingAddress?.type || "Không rõ"}
+                                    <strong>Ghi chú</strong>: {shipping.note}
                                 </p>
                             </div>
 
-
-
-                            {order && (
-                                <div className={styles.box}>
-                                    <h3>Phương thức thanh toán</h3>
-
-                                    <p>
-                                        <strong>Phương thức</strong>:{" "}
-                                        {order.payment_method?.toUpperCase() === "COD" ? "Thanh toán khi nhận hàng (COD)" : order.payment_method || "Không rõ"}
-                                    </p>
-
-                                    <p>
-                                        <strong>Mã giao dịch</strong>:{" "}
-                                        {order.transaction_code ? order.transaction_code : "Không có"}
-                                    </p>
-
-                                    <p>
-                                        <strong>Trạng thái</strong>:{" "}
-                                        {{
-                                            unpaid: "Chưa thanh toán",
-                                            paid: "Đã thanh toán",
-                                            failed: "Thanh toán thất bại",
-                                            refunded: "Đã hoàn tiền",
-                                        }[order.transaction_status as "unpaid" | "paid" | "failed" | "refunded"] || "Không rõ"}
-                                    </p>
-
-                                </div>
-                            )}
-
-
-
+                            <div className={styles.box}>
+                                <h3>Phương thức thanh toán</h3>
+                                <p>
+                                    <strong>Phương thức</strong>: {payment.method}
+                                </p>
+                                <p>
+                                    <strong>Mã giao dịch</strong>:{" "}
+                                    {payment.transactionId}
+                                </p>
+                            </div>
                         </div>
                     </div>
-
+                    
                 </div>
             </section>
         </main>

@@ -1,8 +1,7 @@
 .main {
   display: flex;
   height: 100vh;
-  overflow: hidden;
-  /* Ngăn main cuộn, chỉ content cuộn */
+  overflow: hidden; /* Ngăn main cuộn, chỉ content cuộn */
 }
 
 .aside {
@@ -11,15 +10,11 @@
   padding: 30px;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  /* Luôn cao 100vh */
-  position: sticky;
-  /* Giữ cố định khi cuộn */
+  height: 100vh; /* Luôn cao 100vh */
+  position: sticky; /* Giữ cố định khi cuộn */
   top: 0;
-  flex-shrink: 0;
-  /* Không co lại khi content cuộn */
-  border-right: 1px solid #e4e4e7;
-  /* Thêm đường viền bên phải */
+  flex-shrink: 0; /* Không co lại khi content cuộn */
+  border-right: 1px solid #e4e4e7; /* Thêm đường viền bên phải */
 }
 
 .logo {
@@ -32,11 +27,9 @@
   padding: 10px 20px;
   font-size: 26px;
   font-weight: bolder;
-  margin: 0 auto;
-  /* căn giữa ngang */
+  margin: 0 auto; /* căn giữa ngang */
   margin-bottom: 20px;
-  width: fit-content;
-  /* hoặc set width cụ thể nếu cần */
+  width: fit-content; /* hoặc set width cụ thể nếu cần */
 }
 
 
@@ -55,8 +48,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  /* Thêm dòng này để tạo khoảng cách giữa các mục */
+  gap: 10px; /* Thêm dòng này để tạo khoảng cách giữa các mục */
 }
 
 .menuItem {
@@ -65,8 +57,7 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 6px;
-  color: #444;
-  /* Đổi màu chữ thành đỏ */
+  color: #444; /* Đổi màu chữ thành đỏ */
   text-decoration: none;
   transition: background 0.2s ease;
   font-weight: 600;
@@ -74,14 +65,12 @@
 }
 
 .menuItem:hover {
-  background-color: #fff;
+  background-color: #fff; 
   box-shadow:
     0 4px 18px 0 rgba(30, 30, 30, 0.13),
     0 2px 8px 0 rgba(30, 30, 30, 0.09);
-  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  /* Hover nền nhẹ của đỏ */
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);/* Hover nền nhẹ của đỏ */
 }
-
 .activeItem .menuItem {
   border: #fda2a2 1px solid;
   background-color: #fff;
@@ -91,9 +80,8 @@
   box-shadow:
     0 4px 18px 0 rgba(30, 30, 30, 0.13),
     0 2px 8px 0 rgba(30, 30, 30, 0.09);
-  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
 }
-
 .activeItem .icon {
   width: 20px;
   height: 20px;
@@ -107,9 +95,9 @@
 }
 
 .title {
-  flex: 1;
-  font-weight: 500;
-  font-size: 16px;
+    flex: 1;
+    font-weight: 500;
+    font-size: 16px;
 }
 
 .content {
@@ -117,8 +105,7 @@
   padding: 20px 30px;
   background-color: whitesmoke;
   height: 100vh;
-  overflow-y: auto;
-  /* Cho phép cuộn khi nội dung dài */
+  overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
 }
 
 /* topbar */
@@ -155,12 +142,10 @@
   color: #444;
   flex: 1;
 }
-
 .searchInput::placeholder {
-  color: #A1A1AA;
-  opacity: 1;
+  color: #A1A1AA; 
+  opacity: 1;     
 }
-
 .actions {
   display: flex;
   align-items: center;
@@ -215,6 +200,7 @@
 
 /* cac chuc nang */
 .searchProduct {
+  
   padding: 20px;
   background-color: #fff;
   border: 1px solid #e4e4e7;
@@ -226,7 +212,6 @@
   justify-content: space-between;
   gap: 12px;
 }
-
 .searchAddBar .searchInput {
   max-width: 200px;
   padding: 8px 14px;
@@ -237,42 +222,6 @@
   outline: none;
   transition: border 0.2s;
 }
-
-.searchBarWrapper {
-  display: flex;
-  justify-content: left;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  /* Cho responsive nếu bị nhỏ */
-}
-
-.dateFilterBar {
-  color: #444;
-  margin-top: 0;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.dateInput {
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  color: #444;
-  margin-left: 5px;
-}
-
-/* Thay icon mặc định */
-.dateInput::-webkit-calendar-picker-indicator {
-  background: url("data:image/svg+xml,%3Csvg fill='none' height='20' stroke='%23444' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'%3E%3Crect height='18' rx='2' ry='2' width='18' x='3' y='4'/%3E%3Cline x1='16' x2='16' y1='2' y2='6'/%3E%3Cline x1='8' x2='8' y1='2' y2='6'/%3E%3Cline x1='3' x2='21' y1='10' y2='10'/%3E%3C/svg%3E") no-repeat center;
-  background-size: 18px;
-  color: transparent;
-  opacity: 1;
-  cursor: pointer;
-}
-
 
 .searchAddBar .searchInput:focus {
   border-color: #d90429;
@@ -287,7 +236,6 @@
 /* Tông màu chủ đạo cho bảng */
 .userTable {
   width: 100%;
-  table-layout: fixed;
   border-collapse: collapse;
   font-size: 14px;
   overflow: hidden;
@@ -331,46 +279,18 @@
 
 /* Các trạng thái mới */
 .status-choxacnhan {
-  background: #FFA500;
-  /* Cam vàng */
-  color: #fff;
+  background: #ffc107; /* vàng - chờ xác nhận */
 }
-
-.status-dangsoan {
-  background: #17C3CE;
-  /* Cyan sáng */
-  color: #fff;
-}
-
-.status-chogui {
-  background-color: #FFD93D;
-  /* Vàng sáng */
-  color: #fff;
-}
-
 .status-danggiao {
-  background: #3B82F6;
-  /* Xanh dương vừa */
-  color: #fff;
+  background: #3b82f6; /* xanh dương - đang giao */
 }
-
 .status-dagiao {
-  background: #28A745;
-  /* Xanh lá */
-  color: #fff;
+  background: #28a745; /* xanh lá - đã giao */
 }
-
 .status-dahuy {
-  background: #DC3545;
-  /* Đỏ */
-  color: #fff;
+  background: #ef4444; /* đỏ - đã hủy */
 }
 
-.status-trahang {
-  background: #6C757D;
-  /* Xám */
-  color: #fff;
-}
 
 .statusAvailable {
   color: #fff;
@@ -382,20 +302,6 @@
 }
 
 /* Style cho icon chức năng */
-
-.actionGroup {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  /* Căn giữa theo chiều ngang */
-  align-items: center;
-  /* Căn giữa theo chiều dọc */
-  gap: 8px;
-  min-width: 120px;
-  height: 100%;
-}
-
-
 .actionBtn {
   background: none;
   border: none;
@@ -405,32 +311,6 @@
   font-size: 20px;
   transition: color 0.2s;
   padding: 4px;
-
-  display: inline-flex;
-  /* căn chỉnh bên trong */
-  align-items: center;
-  /* căn giữa theo chiều dọc */
-  justify-content: center;
-  /* căn giữa theo chiều ngang */
-}
-
-.statusBtn {
-  margin-left: 8px;
-  padding: 6px 12px;
-  background-color: #0ea5e9;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  vertical-align: middle;
-}
-
-
-.statusBtn:hover {
-  background-color: #0284c7;
-  /* xanh đậm hơn (sky-600) */
 }
 
 .actionBtn:last-child {
@@ -440,20 +320,11 @@
 .actionBtn:hover {
   color: #d90429;
 }
-
 .userInfo {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* căn giữa ngang */
-  justify-content: center;
-  /* căn giữa dọc nếu td có height cố định */
-  text-align: center;
-  height: 100%;
-  width: 100%;
-  padding: 8px 0;
+  align-items: flex-start;
+  gap: 16px;
 }
-
 .shippingInfo {
   font-size: 13px;
   line-height: 1.4;
@@ -515,7 +386,7 @@
 }
 
 .orderInfo {
-  min-width: 150px;
+  min-width:150px;
   display: flex;
   flex-direction: column;
   text-align: center;
@@ -543,5 +414,3 @@
   align-items: center;
   justify-content: center;
 }
-
-/* Ví dụ trong order.module.css */

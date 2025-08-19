@@ -8,7 +8,6 @@ import {
     Layers,
     LogOut,
     Shirt,
-    Box,
 } from "lucide-react";
 import styles from "../dashboard.module.css";
 import { usePathname } from "next/navigation";
@@ -19,8 +18,7 @@ const menuItems = [
     { label: "Danh mục", href: "/categories", icon: Layers },
     { label: "Người dùng", href: "/users", icon: Users },
     { label: "Khuyến mãi", href: "/voucher", icon: GraduationCap },
-    { label: "Đánh giá", href: "/comments", icon: MessageCircle },
-{ label: "Tồn kho", href: "/inventory", icon: Box },
+    { label: "Bình luận", href: "/comments", icon: MessageCircle },
     { label: "Đăng xuất", href: "/logout", icon: LogOut },
 ];
 

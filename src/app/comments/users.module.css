@@ -40,7 +40,6 @@
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  
 }
 
 .menuList {
@@ -106,8 +105,19 @@
   padding: 20px 30px;
   background-color: whitesmoke;
   height: 100vh;
-  overflow-y: auto;
-   /* Cho phép cuộn khi nội dung dài */
+  overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
+}
+
+/* topbar */
+.topbar {
+  height: 45px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  background-color: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
 }
 
 .searchWrapper {
@@ -227,10 +237,9 @@
   font-size: 16px;
 }
 .usertList {
-  margin: 20px 0px 0px 0px;
   background-color: #fff;
   border: 1px solid #e4e4e7;
-  border-radius: 8px 8px 8px 8px;
+  border-radius: 0 0 8px 8px;
 }
 
 .userListTitle {
@@ -240,13 +249,10 @@
   text-align: left;
   line-height: 1.2;
   padding: 20px;
-  border: 1px solid #e4e4e7;
-  border-radius: 8px 8px 0 0;
 }
 
 /* Tông màu chủ đạo cho bảng */
 .userTable {
-  
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
@@ -402,17 +408,4 @@
   display: inline-block;
   min-width: 100px;
   text-align: center;
-}
-.generatedAvatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #ff0a0a;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 18px;
-  text-transform: uppercase;
 }
