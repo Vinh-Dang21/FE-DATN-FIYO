@@ -10,7 +10,9 @@ import {
     GraduationCap,
     MessageCircle,
     Layers,
+    Store,
     LogOut,
+    BadgePercent,
     Shirt,
     Box, Package, ArrowDown
 } from "lucide-react";
@@ -18,10 +20,11 @@ import styles from "../dashboard/dashboard.module.css";
 
 const menuItems = [
     { label: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Danh mục", href: "/categories", icon: Layers },
-    { label: "Người dùng", href: "/users", icon: Users },
-    { label: "Khuyến mãi", href: "/voucher", icon: GraduationCap },
-    { label: "Đánh giá", href: "/comments", icon: MessageCircle },
+    { label: "Quản lý danh mục", href: "/categories", icon: Layers },
+    { label: "Quản lý người dùng", href: "/users", icon: Users },
+    { label: "Quản lý cửa hàng", href: "/shop-manager", icon: Store },
+    { label: "Quản lý khuyến mãi", href: "/voucher", icon: BadgePercent },
+    { label: "Quản lý đánh giá", href: "/comments", icon: MessageCircle },
 ];
 
 export default function Sidebar() {
