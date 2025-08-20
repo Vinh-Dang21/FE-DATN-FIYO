@@ -19,6 +19,34 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 
+interface OrderShop {
+  _id: string;
+  order_id: Order | null;     // có thể null
+  shop_id: {
+    _id: string;
+    name: string;
+    // ... các field khác nếu cần
+  };
+  total_price: number;
+  status_order: string;
+  status_history: { status: string; updatedAt: string; note?: string; _id: string }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Kiểu dòng hiển thị bảng (gộp từ OrderShop + Order nếu có)
+type RowOrder = {
+  _orderShopId: string;             // dùng để đi đến chi tiết
+  _id: string;                      // hiển thị mã (dùng luôn orderShopId cho chắc)
+  createdAt: string;                // ưu tiên OrderShop.createdAt
+  status_order: string;             // trạng thái của OrderShop
+  transaction_status?: string;      // nếu order cha có thì đếm failed
+  user_name: string;
+  user_email: string;
+  address_text: string;
+  user_id?: string;      // <-- thêm dòng này
+  address_id?: string;   // <-- thêm dòng này
+};
 
 
 interface Order {
@@ -92,9 +120,10 @@ interface Voucher {
 
 export default function Order() {
   const router = useRouter();
+  const [shopId, setShopId] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<RowOrder[]>([]);
   const [filteredStatus, setFilteredStatus] = useState<string>("pending");
   const [statusCounts, setStatusCounts] = useState({
     pending: 0,
@@ -103,6 +132,9 @@ export default function Order() {
     failed: 0,
     shipping: 0,
   });
+  const [customerInfoMap, setCustomerInfoMap] = useState<
+    Record<string, { name: string; email: string; phone?: string; address?: string }>
+  >({});
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -125,12 +157,81 @@ export default function Order() {
   }, [router]);
 
   useEffect(() => {
-    const fetchAllOrders = async () => {
+    // Lấy userId từ localStorage
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return;
+    try {
+      const user = JSON.parse(userStr);
+      const userId = user._id;
+      if (!userId) return;
+
+      // Gọi API lấy shop theo userId
+      fetch(`http://localhost:3000/shop/user/${userId}`)
+        .then(res => res.json())
+        .then(data => {
+          // Giả sử data trả về dạng { shopId: "..." } hoặc { _id: "..." }
+          const id = data.shopId || data._id;
+          setShopId(id);
+          console.log("Shop ID:", id);
+          // Bạn có thể dùng shopId cho các mục đích khác ở đây
+        })
+        .catch(err => {
+          console.error("Lỗi lấy shopId:", err);
+        });
+    } catch (err) {
+      console.error("Lỗi parse user:", err);
+    }
+  }, []);
+
+  // useEffect(() => {
+  //   if (!shopId) return;
+  //   const fetchAllOrders = async () => {
+  //     try {
+  //       const res = await fetch(`http://localhost:3000/orderShop/shop/${shopId}`);
+  //       const data = await res.json();
+
+  //       if (data.status && Array.isArray(data.result)) {
+  //         const counts = {
+  //           pending: 0,
+  //           delivered: 0,
+  //           refunded: 0,
+  //           failed: 0,
+  //           shipping: 0,
+  //         };
+
+  //         data.result.forEach((order: Order) => {
+  //           if (order.status_order === "pending") counts.pending++;
+  //           if (order.status_order === "delivered") counts.delivered++;
+  //           if (order.status_order === "refund") counts.refunded++;
+  //           if (order.transaction_status === "failed") counts.failed++;
+  //           if (order.status_order === "shipping") counts.shipping++;
+  //         });
+
+  //         setStatusCounts(counts);
+  //       }
+  //     } catch (error) {
+  //       console.error("Lỗi khi đếm đơn hàng theo trạng thái:", error);
+  //     }
+  //   };
+
+  //   fetchAllOrders();
+  //   const interval = setInterval(fetchAllOrders, 5000);
+
+  //   return () => clearInterval(interval);
+  // }, [shopId]);
+
+
+  useEffect(() => {
+    if (!shopId) return;
+
+    const fetchShopOrders = async () => {
       try {
-        const res = await fetch("https://fiyo.click/api/orders");
+        const res = await fetch(`http://localhost:3000/orderShop/shop/${shopId}`);
         const data = await res.json();
 
-        if (data.status && Array.isArray(data.result)) {
+        if (data.status && data.result && Array.isArray(data.result.items)) {
+          const items: OrderShop[] = data.result.items;
+
           const counts = {
             pending: 0,
             delivered: 0,
@@ -139,13 +240,15 @@ export default function Order() {
             shipping: 0,
           };
 
-          data.result.forEach((order: Order) => {
-            if (order.status_order === "pending") counts.pending++;
-            if (order.status_order === "delivered") counts.delivered++;
-            if (order.status_order === "refund") counts.refunded++;
-            if (order.transaction_status === "failed") counts.failed++;
-            if (order.status_order === "shipping") counts.shipping++;
+          items.forEach((os) => {
+            // đếm theo trạng thái đơn mức shop
+            if (os.status_order === "pending") counts.pending++;
+            if (os.status_order === "delivered") counts.delivered++;
+            if (os.status_order === "refund") counts.refunded++;
+            if (os.status_order === "shipping") counts.shipping++;
 
+            // nếu có order cha và transaction_status = failed thì cộng failed
+            if (os.order_id?.transaction_status === "failed") counts.failed++;
           });
 
           setStatusCounts(counts);
@@ -155,49 +258,71 @@ export default function Order() {
       }
     };
 
-    fetchAllOrders();
-    const interval = setInterval(fetchAllOrders, 5000);
-
+    fetchShopOrders();
+    const interval = setInterval(fetchShopOrders, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [shopId]);
 
   useEffect(() => {
+    if (!shopId) return;
+
     const fetchFilteredOrders = async () => {
       try {
-        let url = "https://fiyo.click/api/orders/filter";
-        const params = new URLSearchParams();
-
-        if (filteredStatus !== "all") {
-          params.append("status_order", filteredStatus);
-        }
-        if (fromDate) params.append("fromDate", fromDate);
-        if (toDate) params.append("toDate", toDate);
-
-        if (params.toString()) {
-          url += `?${params.toString()}`;
+        const url = new URL(`http://localhost:3000/orderShop/shop/${shopId}`);
+        if (filteredStatus && filteredStatus !== "all") {
+          url.searchParams.set("status", filteredStatus); // BE đã hỗ trợ ?status
         }
 
-        const res = await fetch(url);
+        const res = await fetch(url.toString());
         const data = await res.json();
 
-        if (data.status && Array.isArray(data.result)) {
-          setOrders(data.result);
+        if (data.status && data.result && Array.isArray(data.result.items)) {
+          let items: OrderShop[] = data.result.items;
+
+          // Lọc ngày theo OrderShop.createdAt (vì order_id có thể null)
+          if (fromDate) {
+            const from = dayjs(fromDate).startOf("day");
+            items = items.filter((os) => dayjs(os.createdAt).isAfter(from) || dayjs(os.createdAt).isSame(from));
+          }
+          if (toDate) {
+            const to = dayjs(toDate).endOf("day");
+            items = items.filter((os) => dayjs(os.createdAt).isBefore(to) || dayjs(os.createdAt).isSame(to));
+          }
+
+          // Map sang RowOrder để bảng render ổn định
+          const rows: RowOrder[] = items.map((os) => {
+            const o = os.order_id;
+            return {
+              _orderShopId: os._id,
+              _id: os._id,
+              createdAt: os.createdAt,
+              status_order: os.status_order,
+              transaction_status: o?.transaction_status,
+              user_name: "", // sẽ lấy sau
+              user_email: "",
+              address_text: "",
+              user_id: typeof o?.user_id === "string" ? o.user_id : undefined,
+              address_id: typeof o?.address_id === "string" ? o.address_id : undefined,
+            };
+          });
+
+          setOrders(rows);
         } else {
           setOrders([]);
         }
       } catch (error) {
         console.error("Lỗi khi lọc đơn hàng:", error);
+        setOrders([]);
       }
     };
 
     fetchFilteredOrders();
-  }, [filteredStatus, fromDate, toDate]); // ✅ phải có đủ 3 biến
-
+  }, [shopId, filteredStatus, fromDate, toDate]);
 
 
   const handleUpdateStatus = async (orderId: string, newStatus: string, showAlert = true) => {
     try {
-      const res = await fetch(`https://fiyo.click/api/orders/${orderId}/status`, {
+      const res = await fetch(`http://localhost:3000/orderShop/${orderId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -261,14 +386,14 @@ export default function Order() {
 
   const handleConfirmOrder = async (orderId: string, showAlert = true) => {
     try {
-      const res = await fetch(`https://fiyo.click/api/orders/${orderId}/confirm`, {
+      const res = await fetch(`http://localhost:3000/orderShop/${orderId}/confirm`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
       });
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message || "Lỗi xác nhận đơn hàng");
+      if (!res.ok || !data.status) throw new Error(data.message || "Lỗi xác nhận đơn hàng");
 
       if (showAlert) alert(data.message || "Xác nhận đơn hàng thành công!");
 
@@ -284,7 +409,57 @@ export default function Order() {
   };
 
 
+  // Hàm lấy thông tin người dùng và địa chỉ từ order
+  async function fetchUserAndAddressInfo(userId: string, addressId: string) {
+    console.log("Fetching user and address info for:", userId, addressId);
 
+    try {
+      const [userRes, addressRes] = await Promise.all([
+        fetch(`http://localhost:3000/user/${userId}`),
+        fetch(`http://localhost:3000/address/${addressId}`)
+      ]);
+      const userData = await userRes.json();
+      const addressData = await addressRes.json();
+
+      // user ở userData.data, address ở addressData.result
+      return {
+        user: userData.data || null,
+        address: addressData.result || null,
+      };
+    } catch (error) {
+      console.error("Lỗi lấy thông tin user hoặc address:", error);
+      return { user: null, address: null };
+    }
+  }
+
+  useEffect(() => {
+    // Lọc ra các order cần fetch info (chưa có trong customerInfoMap)
+    const needFetch = orders.filter(
+      (order) =>
+        order.user_id &&
+        order.address_id &&
+        !customerInfoMap[order._id]
+    );
+
+    if (needFetch.length === 0) return;
+
+    needFetch.forEach((order) => {
+      fetchUserAndAddressInfo(order.user_id!, order.address_id!).then((info) => {
+        console.log("User info:", info.user); // <-- kiểm tra ở đây
+        setCustomerInfoMap((prev) => ({
+          ...prev,
+          [order._id]: {
+            name: info.user?.name || "Không rõ",
+            email: info.user?.email || "Không rõ",
+            phone: info.address?.phone || info.user?.phone || "",
+            address: info.address
+              ? `${info.address.detail}, ${info.address.address}`
+              : "",
+          },
+        }));
+      });
+    });
+  }, [orders, customerInfoMap]);
 
 
   return (
@@ -385,14 +560,13 @@ export default function Order() {
             </thead>
             <tbody>
               {orders.map((order) => {
-                const customer = getCustomerInfo(order);
-
+                const customer = customerInfoMap[order._id] || { name: "Đang tải...", email: "" };
                 return (
                   <tr key={order._id}>
                     <td>
                       <Link href="#" onClick={(e) => {
                         e.preventDefault();
-                        handleViewOrder(order);
+                        // handleViewOrder(order);
                       }}>
                         {order._id}
                       </Link>
@@ -404,6 +578,11 @@ export default function Order() {
                       <div className={styles.userInfo}>
                         <div className={styles.userName}>{customer.name}</div>
                         <div className={styles.userDesc}>{customer.email}</div>
+                        {customer.phone && (
+                          <div className={styles.userDesc}>
+                            <strong>SĐT:</strong> {customer.phone}
+                          </div>
+                        )}
                       </div>
                     </td>
 
@@ -445,7 +624,24 @@ export default function Order() {
 
 
                     </td>
+
                     <td className={styles.shippingInfo}>
+                      {customer.address ? (
+                        <>
+                        <div className={styles.userDesc}>
+                            <strong>SĐT:</strong> {customer.phone}
+                          </div>
+                          <div className={styles.userDesc}>
+                            <strong>Địa chỉ:</strong> {customer.address}
+                          </div>
+                          </>
+
+                      ) : (
+                        <div className={styles.userDesc}>Không có địa chỉ</div>
+                      )}
+                    </td>
+
+                    {/* <td className={styles.shippingInfo}>
                       {order.address_id ? (
                         <>
                           <div className={styles.userDesc}>
@@ -468,17 +664,18 @@ export default function Order() {
                       ) : (
                         <div className={styles.userDesc}>Không có địa chỉ</div>
                       )}
-                    </td>
+                    </td> */}
 
                     <td>
                       <div className={styles.actionGroup}>
-                        <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
+                        {/* <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
                           <Eye size={25} />
-                        </button>
+                        </button> */}
                         {order.status_order === "pending" && (
                           <button
                             className={styles.statusBtn}
                             onClick={() => handleConfirmOrder(order._id)}
+                            // onClick={() => handleUpdateStatus(order._id, "preparing")}
                           >
                             Xác nhận
                           </button>
