@@ -23,7 +23,7 @@ const menuItems = [
     { label: "Đánh giá", href: "/shop/comments", icon: MessageCircle },
     { label: "Tồn kho", href: "/shop/inventory", icon: Box },
     { label: "Nhập hàng", href: "/shop/stockentry", icon: ArrowDown },
-    { label: "Tin nhắn", href: "/messages", icon: MessageCircle }
+    { label: "Tin nhắn", href: "/shop/messages", icon: MessageCircle }
 
 ];
 
