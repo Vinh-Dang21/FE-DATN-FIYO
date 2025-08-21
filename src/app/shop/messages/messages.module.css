@@ -10,6 +10,12 @@
   flex-direction: column;
 }
 
+/* NEW: bọc Topbar bằng <div className={styles.toolbarPad}> trong TSX
+   để mép trái/phải của ô tìm kiếm thẳng với khối chat */
+.toolbarPad {
+  padding: 0 16px;
+}
+
 .chatWrapper {
   flex: 1;
   display: grid;
@@ -38,6 +44,9 @@
   border: 1px solid #ddd;
   border-radius: 6px;
   outline: none;
+}
+.searchBox input:focus {
+  border-color: #ef4444;     /* touch: viền đỏ khi focus cho đồng bộ */
 }
 
 .convList {
@@ -226,6 +235,9 @@
   border: 1px solid #ddd;
   border-radius: 8px;
   outline: none;
+}
+.chatInput:focus {
+  border-color: #ef4444;      /* touch: đồng bộ focus */
 }
 
 .sendBtn {

@@ -47,10 +47,13 @@ export default function Messages() {
     <main className={styles.main}>
       <Sidebar />
       <section className={styles.content}>
-        <Topbar />
+        {/* bọc Topbar để căn lề thẳng hàng */}
+        <div className={styles.toolbarPad}>
+          <Topbar />
+        </div>
 
         <div className={styles.chatWrapper}>
-          {/* LEFT */}
+          {/* Sidebar danh sách hội thoại */}
           <aside className={styles.chatSidebar}>
             <div className={styles.searchBox}>
               <input
@@ -68,12 +71,17 @@ export default function Messages() {
                 .map((c) => (
                   <button
                     key={c.id}
-                    className={`${styles.convItem} ${selectedId === c.id ? styles.active : ""
-                      }`}
+                    className={`${styles.convItem} ${
+                      selectedId === c.id ? styles.active : ""
+                    }`}
                     onClick={() => setSelectedId(c.id)}
                   >
                     <div className={styles.avatar}>
-                      {c.avatar ? <img src={c.avatar} alt={c.name} /> : <span>M</span>}
+                      {c.avatar ? (
+                        <img src={c.avatar} alt={c.name} />
+                      ) : (
+                        <span>M</span>
+                      )}
                     </div>
                     <div className={styles.convMain}>
                       <div className={styles.convTop}>
@@ -87,7 +95,7 @@ export default function Messages() {
             </div>
           </aside>
 
-          {/* RIGHT */}
+          {/* Pane chat */}
           <section className={styles.chatPane}>
             <header className={styles.chatHeader}>
               <div className={styles.headerLeft}>
@@ -109,8 +117,9 @@ export default function Messages() {
               {messages.map((m) => (
                 <div
                   key={m.id}
-                  className={`${styles.msgRow} ${m.sender === "Admin" ? styles.right : styles.left
-                    }`}
+                  className={`${styles.msgRow} ${
+                    m.sender === "Admin" ? styles.right : styles.left
+                  }`}
                 >
                   <div className={styles.msgBubble}>
                     <div className={styles.msgMeta}>
