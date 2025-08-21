@@ -409,3 +409,118 @@
   align-items: center;
   justify-content: center;
 }
+
+
+.shopCell {
+  justify-content: left;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.shopImg {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: #f3f3f3;
+}
+.shopText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* để text ellipsis hoạt động */
+}
+.shopName {
+  text-align: left;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shopDesc {
+  text-align: left;
+  font-size: 12px;
+  color: #666;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+
+.ownerCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left; /* canh trái */
+}
+
+.ownerRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ownerIcon {
+  flex-shrink: 0;
+  color: #666;
+}
+
+.ownerName {
+  font-weight: 600;
+  color: #222;
+}
+
+.ownerPhone {
+  font-size: 14px;
+  color: #444;
+}
+
+.ownerEmail {
+  font-size: 13px;
+  color: #888;
+  font-style: italic;
+  white-space: nowrap;        /* không xuống dòng */
+  overflow: hidden;           /* ẩn phần thừa */
+  text-overflow: ellipsis;    /* hiện ... */
+  max-width: 160px;           /* giới hạn độ rộng, bạn chỉnh theo bảng */
+  display: inline-block;      /* cần để ellipsis hoạt động */
+  vertical-align: middle;
+}
+
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  min-width: 100px;
+}
+
+/* Trạng thái */
+.active {
+  background-color: #e6f7f1;
+  color: #1e9d68;
+  border: 1px solid #1e9d68;
+}
+
+.inactive {
+  background-color: #f9f9f9;
+  color: #555;
+  border: 1px solid #ccc;
+}
+
+.locked {
+  background-color: #fdecea;
+  color: #d93025;
+  border: 1px solid #d93025;
+}
+
+.pending {
+  background-color: #fff8e1;
+  color: #e6a700;
+  border: 1px solid #e6a700;
+}
