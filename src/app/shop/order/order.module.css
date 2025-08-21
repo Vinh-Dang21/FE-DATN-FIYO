@@ -400,7 +400,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  margin-right: 8px;
+  
   color: #444;
   font-size: 20px;
   transition: color 0.2s;
@@ -415,7 +415,6 @@
 }
 
 .statusBtn {
-  margin-left: 8px;
   padding: 6px 12px;
   background-color: #0ea5e9;
   color: #fff;

@@ -117,6 +117,7 @@ interface Voucher {
 }
 
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
 
 export default function Order() {
   const router = useRouter();
@@ -350,17 +351,64 @@ export default function Order() {
   };
 
 
-  const handleViewOrder = async (order: Order) => {
+  // const handleViewOrder = async (order: RowOrder) => {
+  //   try {
+  //     // Nếu trạng thái là "pending" thì gọi hàm xác nhận đơn luôn
+  //     // if (order.status_order === "pending") {
+  //     //   await handleConfirmOrder(order._id, false); // false để không hiện alert
+  //     // }
+  //     // Sau đó chuyển sang trang chi tiết đơn hàng
+  //     router.push(`/orderdetail/${order._orderShopId}`);
+  //   } catch (error) {
+  //     console.error("Lỗi khi xử lý đơn hàng:", error);
+  //     alert("Có lỗi xảy ra khi xử lý đơn hàng");
+  //   }
+  // };
+
+  const getOrderShopId = (order: any) =>
+    order._orderShopId ||
+    order.order_shop_id ||
+    order.orderShopId ||
+    order?.order_shop?._id;
+
+  const handleViewOrder = async (order: RowOrder) => {
     try {
-      // Nếu trạng thái là "pending" thì gọi hàm xác nhận đơn luôn
-      if (order.status_order === "pending") {
-        await handleConfirmOrder(order._id, false); // false để không hiện alert
+      const orderShopId = getOrderShopId(order);
+
+      if (!orderShopId) {
+        console.error("Thiếu orderShopId trong RowOrder:", order);
+        alert("Không tìm thấy orderShopId của đơn.");
+        return;
       }
-      // Sau đó chuyển sang trang chi tiết đơn hàng
-      router.push(`/shop/orderdetail/${order._id}`);
+
+      // Gọi API mới để lấy chi tiết đơn của shop
+      const res = await fetch(
+        `${API_BASE}/orderDetail/order-shops/${orderShopId}/details`,
+        { method: "GET" }
+      );
+
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j?.message || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Lưu tạm vào sessionStorage (trang chi tiết có thể đọc lại)
+      try {
+        sessionStorage.setItem(
+          `orderDetail:${orderShopId}`,
+          JSON.stringify(data)
+        );
+      } catch {
+        // nếu storage đầy hoặc bị chặn thì bỏ qua, trang chi tiết tự fetch
+      }
+
+      // Điều hướng sang trang chi tiết FE
+      router.push(`/shop/orderdetail/${orderShopId}`);
     } catch (error) {
       console.error("Lỗi khi xử lý đơn hàng:", error);
-      alert("Có lỗi xảy ra khi xử lý đơn hàng");
+      alert(`Có lỗi khi tải chi tiết đơn: ${String((error as Error)?.message || error)}`);
     }
   };
 
@@ -566,7 +614,7 @@ export default function Order() {
                     <td>
                       <Link href="#" onClick={(e) => {
                         e.preventDefault();
-                        // handleViewOrder(order);
+                        handleViewOrder(order);
                       }}>
                         {order._id}
                       </Link>
@@ -628,13 +676,13 @@ export default function Order() {
                     <td className={styles.shippingInfo}>
                       {customer.address ? (
                         <>
-                        <div className={styles.userDesc}>
+                          <div className={styles.userDesc}>
                             <strong>SĐT:</strong> {customer.phone}
                           </div>
                           <div className={styles.userDesc}>
                             <strong>Địa chỉ:</strong> {customer.address}
                           </div>
-                          </>
+                        </>
 
                       ) : (
                         <div className={styles.userDesc}>Không có địa chỉ</div>
@@ -668,14 +716,14 @@ export default function Order() {
 
                     <td>
                       <div className={styles.actionGroup}>
-                        {/* <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
+                        <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
                           <Eye size={25} />
-                        </button> */}
+                        </button>
                         {order.status_order === "pending" && (
                           <button
                             className={styles.statusBtn}
-                            onClick={() => handleConfirmOrder(order._id)}
-                            // onClick={() => handleUpdateStatus(order._id, "preparing")}
+                            // onClick={() => handleConfirmOrder(order._id)}
+                            onClick={() => handleUpdateStatus(order._id, "preparing")}
                           >
                             Xác nhận
                           </button>

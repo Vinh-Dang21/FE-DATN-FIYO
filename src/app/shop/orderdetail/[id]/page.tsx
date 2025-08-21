@@ -7,6 +7,7 @@ import Topbar from "@/app/component/Topbar";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import dayjs from "dayjs";
+import { useCallback } from "react";
 
 interface Product {
     _id: string;
@@ -36,17 +37,81 @@ interface Variant {
     }[];
 }
 
+interface OrderShop {
+    _id: string;
+    shop_id: string;
+    order_id: string;
+    status: string;
+    total_price: number;
+    createdAt: string;
+    status_history: {
+        status: string;
+        updatedAt: string;
+        note?: string;
+        _id: string;
+    }[];
+}
+
+interface OrderParent {
+    _id: string;
+    payment_method: string;
+    status_order: string;
+    transaction_status: string | null;
+    transaction_code: string | null;
+    total_price: number;
+    createdAt: string;
+    status_history: {
+        status: string;
+        updatedAt: string;
+        note?: string;
+        _id: string;
+    }[];
+    address_id?: string;
+}
+
+interface OrderItem {
+    order_id: string;
+    order_shop_id: string;
+    createdAt: string;
+    quantity: number;
+    product: Product & {
+        variant?: Variant | null;
+        size?: { size: string; quantity: number; sku?: string } | null;
+    };
+}
+
+interface UserInfo {
+    _id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    address?: ShippingAddress;
+}
+
+type ShippingAddress = {
+    _id?: string; name?: string; phone?: string;
+    address?: string; detail?: string; type?: string;
+} | null;
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+
 
 
 
 export default function Order() {
     const router = useRouter();
-    const params = useParams();
-    const orderId = params?.id;
-    const [order, setOrder] = useState<any>(null);
+    const params = useParams<{ id: string }>();
+    const orderShopId = params.id;
+    console.log("Order Shop ID:", orderShopId);
+    const [order, setOrder] = useState<any>(null);           // đơn cha (order_parent)
     const [orderProducts, setOrderProducts] = useState<any[]>([]);
-    const [user, setUser] = useState<any>(null);
-    const shippingAddress = order?.address_id || order?.address_guess;
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [orderShop, setOrderShop] = useState<OrderShop | null>(null);
+    const [orderParent, setOrderParent] = useState<OrderParent | null>(null);
+    const [items, setItems] = useState<OrderItem[]>([]);
+    const [shippingAddress, setShippingAddress] = useState<ShippingAddress>(null);
+    const [user, setUser] = useState<UserInfo | null>(null);
+
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -68,38 +133,57 @@ export default function Order() {
         }
     }, [router]);
 
+    // useEffect(() => {
+    //     const fetchData = async () => {
+    //         if (!orderShopId) return;
+
+    //         try {
+    //             const [orderDetailRes, orderInfoRes] = await Promise.all([
+    //                 fetch(`${API_BASE}/orderDetail/order-shops/${orderShopId}/details`),
+    //                 fetch(`${API_BASE}/orderShop/${orderShopId}`)
+    //             ]);
+
+    //             const orderDetailData = await orderDetailRes.json();
+    //             const orderInfoData = await orderInfoRes.json();
+
+    //             console.log("📦 orderDetailData:", orderDetailData);
+    //             console.log("🧾 orderInfoData:", orderInfoData);
+
+    //             if (orderDetailData.status) {
+    //                 setOrderProducts(orderDetailData.result);  // lấy danh sách sản phẩm
+    //                 setUser(orderDetailData.user);              // lấy user nếu cần
+    //             }
+
+    //             if (orderInfoData.status) {
+    //                 setOrder(orderInfoData.order); // ✅ Lấy đúng `order`, KHÔNG dùng `.result`
+    //             }
+
+    //         } catch (error) {
+    //             console.error("Lỗi khi fetch order:", error);
+    //         }
+    //     };
+
+    //     fetchData();
+    // }, [orderShopId]);
+
     useEffect(() => {
-        const fetchData = async () => {
-            if (!orderId) return;
-
+        if (!orderShopId) return;
+        (async () => {
             try {
-                const [orderDetailRes, orderInfoRes] = await Promise.all([
-                    fetch(`https://fiyo.click/api/orderDetail/${orderId}`),
-                    fetch(`https://fiyo.click/api/orders/${orderId}`)
-                ]);
+                const res = await fetch(`${API_BASE}/orderDetail/order-shops/${orderShopId}/details`);
+                const data = await res.json();
+                if (!res.ok || !data.status) throw new Error(data?.message || `HTTP ${res.status}`);
 
-                const orderDetailData = await orderDetailRes.json();
-                const orderInfoData = await orderInfoRes.json();
-
-                console.log("📦 orderDetailData:", orderDetailData);
-                console.log("🧾 orderInfoData:", orderInfoData);
-
-                if (orderDetailData.status) {
-                    setOrderProducts(orderDetailData.result);  // lấy danh sách sản phẩm
-                    setUser(orderDetailData.user);              // lấy user nếu cần
-                }
-
-                if (orderInfoData.status) {
-                    setOrder(orderInfoData.order); // ✅ Lấy đúng `order`, KHÔNG dùng `.result`
-                }
-
-            } catch (error) {
-                console.error("Lỗi khi fetch order:", error);
+                setOrderShop(data.order_shop);
+                setOrder(data.order_parent);
+                setUser(data.user || null);
+                setOrderProducts(Array.isArray(data.items) ? data.items : []);
+                setShippingAddress(data.shipping_address || null);
+            } catch (e) {
+                console.error("Fetch order detail error:", e);
             }
-        };
-
-        fetchData();
-    }, [orderId]);
+        })();
+    }, [orderShopId]);
 
     const getStatusLabel = (status: string) => {
         switch (status) {
@@ -126,13 +210,26 @@ export default function Order() {
         return total + item.product.price * item.quantity;
     }, 0);
 
+    const reload = useCallback(async () => {
+        if (!orderShopId) return;
+        const res = await fetch(`${API_BASE}/orderDetail/order-shops/${orderShopId}/details`, { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok || !data.status) throw new Error(data?.message || `HTTP ${res.status}`);
+
+        setOrderShop(data.order_shop);
+        setOrder(data.order_parent);
+        setUser(data.user || null);
+        setOrderProducts(Array.isArray(data.items) ? data.items : []);
+        setShippingAddress(data.shipping_address || data.user?.address || null);
+    }, [orderShopId]);
+
+    useEffect(() => { reload().catch(console.error); }, [reload]);
+
     const handleUpdateStatus = async (newStatus: string) => {
         try {
-            const res = await fetch(`https://fiyo.click/api/orders/${orderId}/status`, {
+            const res = await fetch(`${API_BASE}/orderShop/${orderShopId}/status`, {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus }),
             });
 
@@ -140,7 +237,9 @@ export default function Order() {
 
             if (res.ok && data.status) {
                 alert("Cập nhật trạng thái thành công!");
-                setOrder((prev: any) => ({ ...prev, status_order: newStatus }));
+                setOrderShop((prev: OrderShop | null) =>
+                    prev ? { ...prev, status: newStatus } : prev
+                );
             } else {
                 alert(data.message || "Cập nhật thất bại");
             }
@@ -150,6 +249,38 @@ export default function Order() {
         }
     };
 
+    const code = orderShop?._id || order?._id || orderProducts?.[0]?.order_id || "Đang tải...";
+    const statusValue = (orderShop?.status || order?.status_order || "") as string;
+    const createdAt = order?.createdAt || orderShop?.createdAt || null;
+
+
+    // Ưu tiên order (order_parent), fallback sang orderShop.order_id nếu bạn có gọi /orderShop/:id
+    const payment = order ?? orderShop?.order_id ?? null;
+
+    const paymentMethodLabel = payment?.payment_method
+        ? (payment.payment_method.toLowerCase() === "cod"
+            ? "Thanh toán khi nhận hàng (COD)"
+            : payment.payment_method.toUpperCase() === "VNPAY"
+                ? "VNPay"
+                : payment.payment_method)
+        : "Không rõ";
+
+    const txStatusLabel =
+        ({
+            unpaid: "Chưa thanh toán",
+            paid: "Đã thanh toán",
+            failed: "Thanh toán thất bại",
+            refunded: "Đã hoàn tiền",
+        } as const)[(payment?.transaction_status || "") as "unpaid" | "paid" | "failed" | "refunded"] || "Không rõ";
+
+    const shopTotal = Number(orderShop?.total_price ?? 0);              // tổng tiền của đơn con (đúng API)
+    const grossTotal = Array.isArray(orderProducts)                     // giá trị trước giảm (từ items)
+        ? orderProducts.reduce(
+            (sum: number, it: any) => sum + ((it?.product?.price || 0) * (it?.quantity || 0)),
+            0
+        )
+        : 0;
+    const discountTotal = Math.max(0, grossTotal - shopTotal);          // phần chênh lệch coi như giảm giá
 
 
     return (
@@ -160,38 +291,29 @@ export default function Order() {
                 <Topbar />
                 <div className={styles.orderSummary}>
                     <div className={styles.orderInfoLeft}>
-                        <h2 className={styles.orderTitle}>Mã hóa đơn: {orderProducts[0]?.order_id || "Đang tải..."}</h2>
+                        <h2 className={styles.orderTitle}>Mã hóa đơn: {code}</h2>
 
                         <p className={styles.statusLine}>
                             Trạng thái:
                             <span
-                                className={`${styles.badge} ${order?.status_order === "pending"
-                                    ? styles["status-choxacnhan"]
-                                    : order?.status_order === "preparing"
-                                        ? styles["status-dangsoan"]
-                                        : order?.status_order === "awaiting_shipment"
-                                            ? styles["status-chogui"]
-                                            : order?.status_order === "shipping"
-                                                ? styles["status-danggiao"]
-                                                : order?.status_order === "delivered"
-                                                    ? styles["status-dagiao"]
-                                                    : order?.status_order === "cancelled"
-                                                        ? styles["status-dahuy"]
-                                                        : order?.status_order === "refund"
-                                                            ? styles["status-trahang"]
-                                                            : ""
+                                className={`${styles.badge} ${statusValue === "pending" ? styles["status-choxacnhan"] :
+                                    statusValue === "preparing" ? styles["status-dangsoan"] :
+                                        statusValue === "awaiting_shipment" ? styles["status-chogui"] :
+                                            statusValue === "shipping" ? styles["status-danggiao"] :
+                                                statusValue === "delivered" ? styles["status-dagiao"] :
+                                                    statusValue === "cancelled" ? styles["status-dahuy"] :
+                                                        statusValue === "refund" ? styles["status-trahang"] : ""
                                     }`}
                             >
-                                {getStatusLabel(order?.status_order || "")}
+                                {getStatusLabel(statusValue)}
                             </span>
-
                         </p>
 
                         <p className={styles.orderDate}>
-                            Ngày đặt: {order?.createdAt ? dayjs(order.createdAt).format("DD/MM/YYYY HH:mm") : "..."}
+                            Ngày đặt: {createdAt ? dayjs(createdAt).format("DD/MM/YYYY HH:mm") : "..."}
                         </p>
-
                     </div>
+
 
 
                     <div className={styles.orderDetailGrid}>
@@ -249,72 +371,56 @@ export default function Order() {
                                 <p>
                                     Giá trị đơn hàng:{" "}
                                     <span className={styles.totalValue}>
-                                        {orderSubtotal.toLocaleString("vi-VN", {
-                                            style: "currency",
-                                            currency: "VND",
-                                        })}
+                                        {grossTotal.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
                                     </span>
                                 </p>
 
                                 <p>
                                     Giảm:{" "}
                                     <span className={styles.totalValue}>
-                                        {order?.voucher?.discount?.toLocaleString("vi-VN", {
-                                            style: "currency",
-                                            currency: "VND",
-                                        }) || "0 ₫"}
+                                        {discountTotal.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
                                     </span>
                                 </p>
 
                                 <p className={styles.totalFinal}>
                                     Tổng tiền thanh toán:{" "}
                                     <span className={styles.totalAmount}>
-                                        {order?.total_price?.toLocaleString("vi-VN", {
-                                            style: "currency",
-                                            currency: "VND",
-                                        }) || "0 ₫"}
+                                        {shopTotal.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
                                     </span>
                                 </p>
-
                             </div>
+
                             {/* Nút chuyển trạng thái đơn hàng */}
                             <div className={styles.actionButtons}>
-                                {order?.status_order === "pending" && (
-                                    <button
-                                        className={styles.statusBtn}
-                                        onClick={() => handleUpdateStatus("preparing")}
-                                    >
-                                        Xác nhận đơn
+                                {statusValue === "pending" && (
+                                    <button className={styles.statusBtn} disabled={isUpdating}
+                                        onClick={() => handleUpdateStatus("preparing")}>
+                                        {isUpdating ? "Đang cập nhật..." : "Xác nhận đơn"}
                                     </button>
                                 )}
 
-                                {order?.status_order === "preparing" && (
-                                    <button
-                                        className={styles.statusBtn}
-                                        onClick={() => handleUpdateStatus("awaiting_shipment")}
-                                    >
-                                        Chờ gửi hàng
+                                {statusValue === "preparing" && (
+                                    <button className={styles.statusBtn} disabled={isUpdating}
+                                        onClick={() => handleUpdateStatus("awaiting_shipment")}>
+                                        {isUpdating ? "Đang cập nhật..." : "Chờ gửi hàng"}
                                     </button>
                                 )}
 
-                                {order?.status_order === "awaiting_shipment" && (
-                                    <button
-                                        className={styles.statusBtn}
-                                        onClick={() => handleUpdateStatus("shipping")}
-                                    >
-                                        Đang giao hàng
+                                {statusValue === "awaiting_shipment" && (
+                                    <button className={styles.statusBtn} disabled={isUpdating}
+                                        onClick={() => handleUpdateStatus("shipping")}>
+                                        {isUpdating ? "Đang cập nhật..." : "Đang giao hàng"}
                                     </button>
                                 )}
 
-                                {order?.status_order === "shipping" && (
-                                    <button
-                                        className={styles.statusBtn}
-                                        onClick={() => handleUpdateStatus("delivered")}
-                                    >
-                                        Đã giao hàng
+                                {statusValue === "shipping" && (
+                                    <button className={styles.statusBtn} disabled={isUpdating}
+                                        onClick={() => handleUpdateStatus("delivered")}>
+                                        {isUpdating ? "Đang cập nhật..." : "Đã giao hàng"}
                                     </button>
                                 )}
                             </div>
+
 
 
                             {/* <div className={styles.shipping}>
@@ -379,52 +485,37 @@ export default function Order() {
 
                             <div className={styles.box}>
                                 <h3>Địa chỉ giao hàng</h3>
+                                <p><strong>Tên người nhận</strong>: {shippingAddress?.name || "Chưa có"}</p>
+                                <p><strong>SĐT</strong>: {shippingAddress?.phone || "Chưa có"}</p>
                                 <p>
-                                    <strong>Tên người nhận</strong>: {shippingAddress?.name || "Chưa có"}
-                                </p>
-                                <p>
-                                    <strong>SĐT</strong>: {shippingAddress?.phone || "Chưa có"}
-                                </p>
-                                <p>
-                                    <strong>Địa chỉ</strong>: {(shippingAddress?.detail || shippingAddress?.address)
+                                    <strong>Địa chỉ</strong>:
+                                    {(shippingAddress?.detail || shippingAddress?.address)
                                         ? `${shippingAddress?.detail || ""}, ${shippingAddress?.address || ""}`
                                         : "Chưa có"}
                                 </p>
-                                <p>
-                                    <strong>Loại địa chỉ</strong>: {shippingAddress?.type || "Không rõ"}
-                                </p>
+                                <p><strong>Loại địa chỉ</strong>: {shippingAddress?.type || "Không rõ"}</p>
                             </div>
 
 
 
-                            {order && (
+
+                            {payment && (
                                 <div className={styles.box}>
                                     <h3>Phương thức thanh toán</h3>
 
                                     <p>
-                                        <strong>Phương thức</strong>:{" "}
-                                        {order.payment_method?.toUpperCase() === "COD" ? "Thanh toán khi nhận hàng (COD)" : order.payment_method || "Không rõ"}
+                                        <strong>Phương thức</strong>: {paymentMethodLabel}
                                     </p>
 
                                     <p>
-                                        <strong>Mã giao dịch</strong>:{" "}
-                                        {order.transaction_code ? order.transaction_code : "Không có"}
+                                        <strong>Mã giao dịch</strong>: {payment?.transaction_code || "Không có"}
                                     </p>
 
                                     <p>
-                                        <strong>Trạng thái</strong>:{" "}
-                                        {{
-                                            unpaid: "Chưa thanh toán",
-                                            paid: "Đã thanh toán",
-                                            failed: "Thanh toán thất bại",
-                                            refunded: "Đã hoàn tiền",
-                                        }[order.transaction_status as "unpaid" | "paid" | "failed" | "refunded"] || "Không rõ"}
+                                        <strong>Trạng thái</strong>: {txStatusLabel}
                                     </p>
-
                                 </div>
                             )}
-
-
 
                         </div>
                     </div>

@@ -85,7 +85,7 @@ export default function ShopPage() {
       setErr("");
       try {
         const token = localStorage.getItem("token") || "";
-        const res = await fetch(`${API_BASE}api/shop`, {
+        const res = await fetch(`${API_BASE}shop`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
