@@ -8,6 +8,7 @@ import Topbar from "@/app/component/Topbar";
 export default function Messages() {
   // ===== STATE =====
   const [search, setSearch] = useState("");
+  const [sellerId, setSellerId] = useState<string>("");
   const [selectedId, setSelectedId] = useState<string>(""); // _id thread đang chọn
   const [text, setText] = useState("");
 
