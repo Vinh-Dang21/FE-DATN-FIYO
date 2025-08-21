@@ -12,8 +12,8 @@ export default function Messages() {
 
   // dữ liệu hội thoại mẫu
   const [conversations, setConversations] = useState([
-    { id: "global", name: "Fiyo", lastMsg: "Xin chào!", time: "Hôm nay", avatar: "/logo.png" },
-    { id: "room1", name: "Khách A", lastMsg: "Tôi cần tư vấn", time: "Hôm qua", avatar: "" },
+    { id: "global", name: "Fiyo", lastMsg: "Xin chào!", time: "Hôm nay", avatar: "https://i.pravatar.cc/150?img=1" },
+    { id: "room1", name: "Khách A", lastMsg: "Tôi cần tư vấn", time: "Hôm qua", avatar: "https://i.pravatar.cc/150?img=2" },
   ]);
 
   // dữ liệu tin nhắn mẫu
@@ -68,9 +68,8 @@ export default function Messages() {
                 .map((c) => (
                   <button
                     key={c.id}
-                    className={`${styles.convItem} ${
-                      selectedId === c.id ? styles.active : ""
-                    }`}
+                    className={`${styles.convItem} ${selectedId === c.id ? styles.active : ""
+                      }`}
                     onClick={() => setSelectedId(c.id)}
                   >
                     <div className={styles.avatar}>
@@ -110,9 +109,8 @@ export default function Messages() {
               {messages.map((m) => (
                 <div
                   key={m.id}
-                  className={`${styles.msgRow} ${
-                    m.sender === "Admin" ? styles.right : styles.left
-                  }`}
+                  className={`${styles.msgRow} ${m.sender === "Admin" ? styles.right : styles.left
+                    }`}
                 >
                   <div className={styles.msgBubble}>
                     <div className={styles.msgMeta}>
