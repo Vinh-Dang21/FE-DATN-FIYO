@@ -19,8 +19,8 @@ export default function Messages() {
   // dữ liệu tin nhắn mẫu
   const [messages, setMessages] = useState([
     { id: 1, sender: "Fiyo", text: "Chào bạn, mình có thể giúp gì?", time: "10:00" },
-    { id: 2, sender: "Khách", text: "Mình muốn hỏi size áo thun", time: "10:01" },
-    { id: 3, sender: "Admin", text: "Size áo M sẽ vừa nhé!", time: "10:02" },
+    { id: 2, sender: "Khách", text: "Shop nghe bài Trình chưa", time: "10:01" },
+    { id: 3, sender: "Admin", text: "Chưa nha:))", time: "10:02" },
   ]);
 
   const handleSend = () => {
