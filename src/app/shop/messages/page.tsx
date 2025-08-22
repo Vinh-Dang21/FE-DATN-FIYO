@@ -1,260 +1,59 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Send } from "lucide-react";
 import styles from "./messages.module.css";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
 
-type Thread = {
-  _id: string;
-  user_id?: { name?: string; avatar?: string; email?: string } | null;
-  shop_id?: { name?: string; avatar?: string } | null;
-  lastMessage?: { text?: string; at?: string; from?: "user" | "seller" } | null;
-  updatedAt?: string;
-};
-type Msg = {
-  _id: string;
-  sender: "user" | "seller";
-  text?: string;
-  attachments?: Array<{ url?: string; name?: string; type?: string }>;
-  createdAt?: string;
-};
-
 export default function Messages() {
-  // ====== STATE ======
   const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState("global");
   const [text, setText] = useState("");
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [selectedId, setSelectedId] = useState<string>("");
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
 
-  // ✅ GỌI ĐÚNG DOMAIN + PREFIX CỦA BẠN
-  const BASE_API = "https://fiyo.click/api/messeger";
+  // dữ liệu hội thoại mẫu
+  const [conversations, setConversations] = useState([
+    { id: "global", name: "Fiyo", lastMsg: "Xin chào!", time: "Hôm nay", avatar: "https://i.pravatar.cc/150?img=1" },
+    { id: "room1", name: "Khách A", lastMsg: "Tôi cần tư vấn", time: "Hôm qua", avatar: "https://i.pravatar.cc/150?img=2" },
+  ]);
 
-  // ====== sellerId (ID của user sở hữu shop) ======
-  const OWNER_ID = ""; // nếu muốn cố định ID chủ shop, điền vào đây
-  const [sellerId, setSellerId] = useState<string>("");
+  // dữ liệu tin nhắn mẫu
+  const [messages, setMessages] = useState([
+    { id: 1, sender: "Fiyo", text: "Chào bạn, mình có thể giúp gì?", time: "10:00" },
+    { id: 2, sender: "Khách", text: "Shop nghe bài Trình chưa", time: "10:01" },
+    { id: 3, sender: "Admin", text: "Chưa nha:))", time: "10:02" },
+  ]);
 
-  useEffect(() => {
-    if (OWNER_ID) {
-      setSellerId(OWNER_ID);
-      return;
-    }
-    try {
-      const raw = localStorage.getItem("user");
-      if (raw) {
-        const u = JSON.parse(raw);
-        const id = u?._id || u?.id || "";
-        setSellerId(id || "");
-      }
-    } catch {}
-  }, []);
-
-  // ====== helpers ======
-  const formatDate = (iso?: string) => {
-    if (!iso) return "";
-    const d = new Date(iso);
-    const dd = `0${d.getDate()}`.slice(-2);
-    const mm = `0${d.getMonth() + 1}`.slice(-2);
-    const yyyy = d.getFullYear();
-    const hh = `0${d.getHours()}`.slice(-2);
-    const mi = `0${d.getMinutes()}`.slice(-2);
-    return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
-  };
-
-  // ====== LẤY THREAD CỦA SELLER ======
-  useEffect(() => {
-    if (!sellerId) return;
-    (async () => {
-      try {
-        setLoading(true);
-        setErr("");
-
-        // đúng query 'seller_user_id'
-        const res = await fetch(
-          `${BASE_API}/threads/me/seller?seller_user_id=${encodeURIComponent(
-            sellerId
-          )}`,
-          { cache: "no-store" }
-        );
-        if (!res.ok) throw new Error(`Lỗi lấy thread (${res.status})`);
-        const data = await res.json();
-
-        const list: Thread[] = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.result)
-          ? data.result
-          : Array.isArray(data?.data)
-          ? data.data
-          : [];
-
-        setThreads(list);
-        // chọn thread đầu nếu chưa có
-        setSelectedId((prev) => prev || (list?.[0]?._id || ""));
-      } catch (e: any) {
-        setErr(e?.message || "Lỗi lấy thread");
-        setThreads([]);
-        setSelectedId("");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [sellerId]);
-
-  // ====== LẤY MESSAGES KHI CHỌN THREAD ======
-  useEffect(() => {
-    if (!selectedId) {
-      setMessages([]);
-      setHasMore(true);
-      setPage(1);
-      return;
-    }
-    (async () => {
-      try {
-        setLoading(true);
-        setErr("");
-
-        const res = await fetch(
-          `${BASE_API}/threads/${selectedId}/messages?page=1&limit=20`,
-          { cache: "no-store" }
-        );
-        if (!res.ok) throw new Error("Lỗi tải tin nhắn");
-        const raw = await res.json();
-
-        // BE có thể trả array hoặc {items: []}
-        const firstRaw: any[] = Array.isArray(raw)
-          ? raw
-          : Array.isArray(raw?.items)
-          ? raw.items
-          : [];
-
-        // map dữ liệu bảo đảm có sender/text/time
-        const first: Msg[] = firstRaw.map((m: any) => ({
-          _id: String(m?._id || ""),
-          sender: (m?.sender || m?.who || "user") as "user" | "seller",
-          text: m?.text || "",
-          attachments: Array.isArray(m?.attachments) ? m.attachments : [],
-          createdAt: m?.createdAt || m?.at || "",
-        }));
-
-        setMessages(first);
-        setPage(1);
-        setHasMore(first.length === 20);
-
-        // mark read phía seller (POST, không cần body)
-        await fetch(`${BASE_API}/threads/${selectedId}/read`, {
-          method: "POST",
-        }).catch(() => {});
-      } catch (e: any) {
-        setErr(e?.message || "Lỗi tải tin nhắn");
-        setMessages([]);
-        setPage(1);
-        setHasMore(true);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [selectedId, sellerId]);
-
-  // ====== TẢI THÊM ======
-  const loadMore = async () => {
-    if (!selectedId || !hasMore || loading) return;
-    try {
-      setLoading(true);
-      const next = page + 1;
-      const res = await fetch(
-        `${BASE_API}/threads/${selectedId}/messages?page=${next}&limit=20`,
-        { cache: "no-store" }
-      );
-      if (!res.ok) throw new Error("Lỗi tải thêm tin nhắn");
-      const raw = await res.json();
-
-      const olderRaw: any[] = Array.isArray(raw)
-        ? raw
-        : Array.isArray(raw?.items)
-        ? raw.items
-        : [];
-
-      const older: Msg[] = olderRaw.map((m: any) => ({
-        _id: String(m?._id || ""),
-        sender: (m?.sender || m?.who || "user") as "user" | "seller",
-        text: m?.text || "",
-        attachments: Array.isArray(m?.attachments) ? m.attachments : [],
-        createdAt: m?.createdAt || m?.at || "",
-      }));
-
-      setMessages((prev) => [...older, ...prev]);
-      setPage(next);
-      setHasMore(older.length === 20);
-    } catch (e: any) {
-      setErr(e?.message || "Lỗi tải thêm tin nhắn");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ====== GỬI TIN ======
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!text.trim()) return;
-    if (!selectedId) {
-      alert("Chưa có cuộc hội thoại — hãy chọn 1 thread ở cột trái trước.");
-      return;
-    }
-    try {
-      setLoading(true);
-      setErr("");
-
-      const res = await fetch(`${BASE_API}/threads/${selectedId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // Nếu BE của bạn nhận 'who' thay vì 'sender', đổi 'sender' → 'who'
-        body: JSON.stringify({
-          text: text.trim(),
-          sender: "seller",
-          user_id: sellerId, // BE map user_id chủ shop => role "seller"
-        }),
-      });
-      if (!res.ok) throw new Error("Gửi tin nhắn thất bại");
-      const createdRaw: any = await res.json();
-
-      const created: Msg = {
-        _id: String(createdRaw?._id || ""),
-        sender: (createdRaw?.sender || createdRaw?.who || "seller") as
-          | "user"
-          | "seller",
-        text: createdRaw?.text || text.trim(),
-        attachments: Array.isArray(createdRaw?.attachments)
-          ? createdRaw.attachments
-          : [],
-        createdAt: createdRaw?.createdAt || new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, created]);
-      setText("");
-    } catch (e: any) {
-      setErr(e?.message || "Gửi tin nhắn thất bại");
-    } finally {
-      setLoading(false);
-    }
+    const newMsg = {
+      id: Date.now(),
+      sender: "Admin",
+      text: text,
+      time: new Date().toLocaleTimeString(),
+    };
+    setMessages([...messages, newMsg]);
+    setText("");
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === selectedId ? { ...c, lastMsg: text, time: "Vừa xong" } : c
+      )
+    );
   };
 
-  const selectedThread =
-    threads.find((t) => t?._id === selectedId) || threads[0];
+  const selected =
+    conversations.find((c) => c.id === selectedId) || conversations[0];
 
   return (
     <main className={styles.main}>
       <Sidebar />
       <section className={styles.content}>
+        {/* bọc Topbar để căn lề thẳng hàng */}
         <div className={styles.toolbarPad}>
           <Topbar />
         </div>
 
         <div className={styles.chatWrapper}>
-          {/* SIDEBAR THREADS */}
+          {/* Sidebar danh sách hội thoại */}
           <aside className={styles.chatSidebar}>
             <div className={styles.searchBox}>
               <input
@@ -265,122 +64,68 @@ export default function Messages() {
               />
             </div>
             <div className={styles.convList}>
-              {threads.length === 0 ? (
-                <div style={{ padding: 12, color: "#777" }}>
-                  {loading ? "Đang tải..." : "Chưa có cuộc hội thoại"}
-                </div>
-              ) : (
-                threads
-                  .filter((t) =>
-                    String(t?.user_id?.name || "")
-                      .toLowerCase()
-                      .includes(search.toLowerCase())
-                  )
-                  .map((t) => (
-                    <button
-                      key={t?._id}
-                      className={`${styles.convItem} ${
-                        selectedId === t?._id ? styles.active : ""
-                      }`}
-                      onClick={() => setSelectedId(t?._id)}
-                    >
-                      <div className={styles.avatar}>
-                        {t?.user_id?.avatar ? (
-                          <img
-                            src={t.user_id.avatar}
-                            alt={t?.user_id?.name || "User"}
-                          />
-                        ) : (
-                          <span>M</span>
-                        )}
+              {conversations
+                .filter((c) =>
+                  c.name.toLowerCase().includes(search.toLowerCase())
+                )
+                .map((c) => (
+                  <button
+                    key={c.id}
+                    className={`${styles.convItem} ${
+                      selectedId === c.id ? styles.active : ""
+                    }`}
+                    onClick={() => setSelectedId(c.id)}
+                  >
+                    <div className={styles.avatar}>
+                      {c.avatar ? (
+                        <img src={c.avatar} alt={c.name} />
+                      ) : (
+                        <span>M</span>
+                      )}
+                    </div>
+                    <div className={styles.convMain}>
+                      <div className={styles.convTop}>
+                        <span className={styles.convName}>{c.name}</span>
+                        <span className={styles.convTime}>{c.time}</span>
                       </div>
-                      <div className={styles.convMain}>
-                        <div className={styles.convTop}>
-                          <span className={styles.convName}>
-                            {t?.user_id?.name || "Khách"}
-                          </span>
-                          <span className={styles.convTime}>
-                            {t?.updatedAt ? formatDate(t.updatedAt) : ""}
-                          </span>
-                        </div>
-                        <div className={styles.convLast}>
-                          {t?.lastMessage?.text || ""}
-                        </div>
-                      </div>
-                    </button>
-                  ))
-              )}
+                      <div className={styles.convLast}>{c.lastMsg}</div>
+                    </div>
+                  </button>
+                ))}
             </div>
           </aside>
 
-          {/* PANE CHAT */}
+          {/* Pane chat */}
           <section className={styles.chatPane}>
             <header className={styles.chatHeader}>
               <div className={styles.headerLeft}>
                 <div className={styles.headerAvatar}>
-                  {selectedThread?.user_id?.avatar ? (
-                    <img
-                      src={selectedThread.user_id.avatar}
-                      alt={selectedThread?.user_id?.name || "User"}
-                    />
+                  {selected?.avatar ? (
+                    <img src={selected.avatar} alt={selected?.name} />
                   ) : (
                     <span>M</span>
                   )}
                 </div>
                 <div className={styles.headerInfo}>
-                  <div className={styles.headerName}>
-                    {selectedThread?.user_id?.name || "Khách"}
-                  </div>
+                  <div className={styles.headerName}>{selected?.name}</div>
                   <div className={styles.headerStatus}>Offline</div>
                 </div>
               </div>
             </header>
 
-            {hasMore && selectedId ? (
-              <div style={{ padding: "8px 12px" }}>
-                <button onClick={loadMore} disabled={loading}>
-                  {loading ? "Đang tải..." : "Tải thêm"}
-                </button>
-              </div>
-            ) : null}
-
             <div className={styles.chatBody}>
               {messages.map((m) => (
                 <div
-                  key={m?._id}
+                  key={m.id}
                   className={`${styles.msgRow} ${
-                    m?.sender === "seller" ? styles.right : styles.left
+                    m.sender === "Admin" ? styles.right : styles.left
                   }`}
                 >
                   <div className={styles.msgBubble}>
                     <div className={styles.msgMeta}>
-                      <b>{m?.sender || ""}</b>{" "}
-                      <span>{m?.createdAt ? formatDate(m.createdAt) : ""}</span>
+                      <b>{m.sender}</b> <span>{m.time}</span>
                     </div>
-
-                    {m?.text ? (
-                      <div className={styles.msgText}>{m.text}</div>
-                    ) : null}
-
-                    {Array.isArray(m?.attachments) &&
-                    m.attachments.length > 0 ? (
-                      <div style={{ marginTop: 4 }}>
-                        {m.attachments.map((a, idx) => (
-                          <a
-                            key={idx}
-                            href={a?.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ marginRight: 8 }}
-                          >
-                            {(a?.type === "image" && "Ảnh") ||
-                              (a?.type === "video" && "Video") ||
-                              "File"}
-                            : {a?.name}
-                          </a>
-                        ))}
-                      </div>
-                    ) : null}
+                    <div className={styles.msgText}>{m.text}</div>
                   </div>
                 </div>
               ))}
@@ -395,18 +140,10 @@ export default function Messages() {
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
               />
-              <button
-                className={styles.sendBtn}
-                onClick={handleSend}
-                disabled={!text.trim() || loading}
-              >
+              <button className={styles.sendBtn} onClick={handleSend}>
                 <Send size={20} />
               </button>
             </div>
-
-            {err ? (
-              <div style={{ color: "red", padding: "6px 12px" }}>{err}</div>
-            ) : null}
           </section>
         </div>
       </section>
