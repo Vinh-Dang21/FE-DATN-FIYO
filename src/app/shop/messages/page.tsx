@@ -32,11 +32,11 @@ export default function Messages() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  // ✅ SỬA: đúng chính tả "messenger"
-  const BASE_API = "https://fiyo.click/api/messenger";
+  // ✅ GỌI ĐÚNG DOMAIN + PREFIX CỦA BẠN
+  const BASE_API = "https://fiyo.click/api/messeger";
 
   // ====== sellerId (ID của user sở hữu shop) ======
-  const OWNER_ID = ""; // nếu biết chắc ID chủ shop, điền vào đây cho chắc
+  const OWNER_ID = ""; // nếu muốn cố định ID chủ shop, điền vào đây
   const [sellerId, setSellerId] = useState<string>("");
 
   useEffect(() => {
@@ -74,11 +74,12 @@ export default function Messages() {
         setLoading(true);
         setErr("");
 
-        // ✅ SỬA: đúng query 'seller_user_id'
+        // đúng query 'seller_user_id'
         const res = await fetch(
           `${BASE_API}/threads/me/seller?seller_user_id=${encodeURIComponent(
             sellerId
-          )}`
+          )}`,
+          { cache: "no-store" }
         );
         if (!res.ok) throw new Error(`Lỗi lấy thread (${res.status})`);
         const data = await res.json();
@@ -92,7 +93,7 @@ export default function Messages() {
           : [];
 
         setThreads(list);
-        // ✅ Chọn thread đầu nếu chưa có lựa chọn
+        // chọn thread đầu nếu chưa có
         setSelectedId((prev) => prev || (list?.[0]?._id || ""));
       } catch (e: any) {
         setErr(e?.message || "Lỗi lấy thread");
@@ -118,20 +119,35 @@ export default function Messages() {
         setErr("");
 
         const res = await fetch(
-          `${BASE_API}/threads/${selectedId}/messages?page=1&limit=20`
+          `${BASE_API}/threads/${selectedId}/messages?page=1&limit=20`,
+          { cache: "no-store" }
         );
         if (!res.ok) throw new Error("Lỗi tải tin nhắn");
-        const first: Msg[] = await res.json();
+        const raw = await res.json();
 
-        setMessages(Array.isArray(first) ? first : []);
+        // BE có thể trả array hoặc {items: []}
+        const firstRaw: any[] = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.items)
+          ? raw.items
+          : [];
+
+        // map dữ liệu bảo đảm có sender/text/time
+        const first: Msg[] = firstRaw.map((m: any) => ({
+          _id: String(m?._id || ""),
+          sender: (m?.sender || m?.who || "user") as "user" | "seller",
+          text: m?.text || "",
+          attachments: Array.isArray(m?.attachments) ? m.attachments : [],
+          createdAt: m?.createdAt || m?.at || "",
+        }));
+
+        setMessages(first);
         setPage(1);
-        setHasMore(Array.isArray(first) && first.length === 20);
+        setHasMore(first.length === 20);
 
-        // mark read phía seller (không cần auth nếu BE cho phép body role)
+        // mark read phía seller (POST, không cần body)
         await fetch(`${BASE_API}/threads/${selectedId}/read`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: "seller", user_id: sellerId || undefined }),
         }).catch(() => {});
       } catch (e: any) {
         setErr(e?.message || "Lỗi tải tin nhắn");
@@ -151,13 +167,29 @@ export default function Messages() {
       setLoading(true);
       const next = page + 1;
       const res = await fetch(
-        `${BASE_API}/threads/${selectedId}/messages?page=${next}&limit=20`
+        `${BASE_API}/threads/${selectedId}/messages?page=${next}&limit=20`,
+        { cache: "no-store" }
       );
       if (!res.ok) throw new Error("Lỗi tải thêm tin nhắn");
-      const older: Msg[] = await res.json();
+      const raw = await res.json();
+
+      const olderRaw: any[] = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.items)
+        ? raw.items
+        : [];
+
+      const older: Msg[] = olderRaw.map((m: any) => ({
+        _id: String(m?._id || ""),
+        sender: (m?.sender || m?.who || "user") as "user" | "seller",
+        text: m?.text || "",
+        attachments: Array.isArray(m?.attachments) ? m.attachments : [],
+        createdAt: m?.createdAt || m?.at || "",
+      }));
+
       setMessages((prev) => [...older, ...prev]);
       setPage(next);
-      setHasMore(Array.isArray(older) && older.length === 20);
+      setHasMore(older.length === 20);
     } catch (e: any) {
       setErr(e?.message || "Lỗi tải thêm tin nhắn");
     } finally {
@@ -179,6 +211,7 @@ export default function Messages() {
       const res = await fetch(`${BASE_API}/threads/${selectedId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // Nếu BE của bạn nhận 'who' thay vì 'sender', đổi 'sender' → 'who'
         body: JSON.stringify({
           text: text.trim(),
           sender: "seller",
@@ -186,7 +219,19 @@ export default function Messages() {
         }),
       });
       if (!res.ok) throw new Error("Gửi tin nhắn thất bại");
-      const created: Msg = await res.json();
+      const createdRaw: any = await res.json();
+
+      const created: Msg = {
+        _id: String(createdRaw?._id || ""),
+        sender: (createdRaw?.sender || createdRaw?.who || "seller") as
+          | "user"
+          | "seller",
+        text: createdRaw?.text || text.trim(),
+        attachments: Array.isArray(createdRaw?.attachments)
+          ? createdRaw.attachments
+          : [],
+        createdAt: createdRaw?.createdAt || new Date().toISOString(),
+      };
 
       setMessages((prev) => [...prev, created]);
       setText("");
