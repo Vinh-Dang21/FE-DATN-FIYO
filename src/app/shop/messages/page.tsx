@@ -1,56 +1,218 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import styles from "./messages.module.css";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
 
-export default function Messages() {
+type Who = "user" | "seller";
+type Thread = {
+  _id: string;
+  user_id?: { _id?: string; name?: string; avatar?: string; email?: string } | null;
+  shop_id?: { _id?: string; name?: string; avatar?: string } | null;
+  lastMessage?: { text?: string; at?: string; from?: Who } | null;
+  updatedAt?: string;
+};
+type Msg = {
+  _id: string;
+  sender: Who; // BE có thể trả "user"/"seller"
+  text?: string;
+  attachments?: Array<{ url?: string; name?: string; type?: string }>;
+  createdAt?: string;
+};
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+
+function getFallbackUserId(): string {
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return "";
+    const u = JSON.parse(raw);
+    return u?._id || u?.id || "";
+  } catch {
+    return "";
+  }
+}
+
+export default function Messages({ currentUserId }: { currentUserId?: string }) {
+  // ====== state ======
   const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState("global");
   const [text, setText] = useState("");
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [messages, setMessages] = useState<Msg[]>([]);
 
-  // dữ liệu hội thoại mẫu
-  const [conversations, setConversations] = useState([
-    { id: "global", name: "Fiyo", lastMsg: "Xin chào!", time: "Hôm nay", avatar: "https://i.pravatar.cc/150?img=1" },
-    { id: "room1", name: "Khách A", lastMsg: "Tôi cần tư vấn", time: "Hôm qua", avatar: "https://i.pravatar.cc/150?img=2" },
-  ]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string>("");
 
-  // dữ liệu tin nhắn mẫu
-  const [messages, setMessages] = useState([
-    { id: 1, sender: "Fiyo", text: "Chào bạn, mình có thể giúp gì?", time: "10:00" },
-    { id: 2, sender: "Khách", text: "Shop nghe bài Trình chưa", time: "10:01" },
-    { id: 3, sender: "Admin", text: "Chưa nha:))", time: "10:02" },
-  ]);
+  // ====== helpers ======
+  const selected = useMemo(
+    () => threads.find((t) => t._id === selectedId) || null,
+    [threads, selectedId]
+  );
 
-  const handleSend = () => {
-    if (!text.trim()) return;
-    const newMsg = {
-      id: Date.now(),
-      sender: "Admin",
-      text: text,
-      time: new Date().toLocaleTimeString(),
-    };
-    setMessages([...messages, newMsg]);
+  // ====== fetch: thread list for seller ======
+  useEffect(() => {
+    (async () => {
+      setLoadingList(true);
+      setError("");
+      try {
+        const uid = currentUserId || getFallbackUserId();
+        if (!uid) throw new Error("Không tìm thấy userId. Hãy truyền currentUserId hoặc lưu user vào localStorage.");
+
+        const url = `${API_BASE}/api/messeger/threads/me/seller?seller_user_id=${encodeURIComponent(
+          uid
+        )}`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`Lỗi lấy danh sách hội thoại: ${res.status} - ${txt}`);
+        }
+        const data = await res.json();
+        // Chuẩn hóa: BE có thể trả {status, result} hoặc mảng trực tiếp
+        const list: Thread[] = Array.isArray(data) ? data : (data.result || data.threads || []);
+        setThreads(list || []);
+        // auto select thread đầu tiên
+        if ((list || []).length && !selectedId) {
+          setSelectedId(list[0]._id);
+        }
+      } catch (e: any) {
+        setError(e?.message || "Không tải được danh sách hội thoại.");
+      } finally {
+        setLoadingList(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUserId]);
+
+  // ====== fetch: messages of selected thread ======
+  useEffect(() => {
+    if (!selectedId) return;
+    (async () => {
+      setLoadingMsgs(true);
+      setError("");
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/messeger/threads/${selectedId}/messages?page=1&limit=200`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`Lỗi lấy tin nhắn: ${res.status} - ${txt}`);
+        }
+        const data = await res.json();
+        const list: Msg[] = Array.isArray(data) ? data : (data.result || data.messages || []);
+        setMessages(list || []);
+      } catch (e: any) {
+        setError(e?.message || "Không tải được tin nhắn.");
+        setMessages([]);
+      } finally {
+        setLoadingMsgs(false);
+      }
+    })();
+  }, [selectedId]);
+
+  // ====== send message ======
+  const handleSend = async () => {
+    if (!text.trim() || !selectedId || sending) return;
+    setSending(true);
+    setError("");
+    const content = text;
     setText("");
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === selectedId ? { ...c, lastMsg: text, time: "Vừa xong" } : c
-      )
-    );
+
+    // Optimistic UI
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: Msg = {
+      _id: tempId,
+      sender: "seller",
+      text: content,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimistic]);
+
+    try {
+      // thử gửi JSON
+      let res = await fetch(`${API_BASE}/api/messeger/threads/${selectedId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ who: "seller", text: content }),
+      });
+
+      // nếu BE không nhận JSON (415/400), fallback multipart
+      if (!res.ok && res.status !== 200) {
+        const fd = new FormData();
+        fd.append("who", "seller");
+        fd.append("text", content);
+        res = await fetch(`${API_BASE}/api/messeger/threads/${selectedId}/messages`, {
+          method: "POST",
+          body: fd,
+        });
+      }
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Gửi tin nhắn thất bại: ${res.status} - ${txt}`);
+      }
+
+      const data = await res.json();
+      // Chuẩn hóa message trả về (nếu có)
+      const saved: Msg =
+        (data?.message || data?.result || data) as Msg;
+
+      setMessages((prev) => {
+        // thay optimistic bằng saved nếu có _id thật
+        if (saved && saved._id) {
+          return prev.map((m) => (m._id === tempId ? saved : m));
+        }
+        return prev;
+      });
+
+      // cập nhật lastMessage ở danh sách thread
+      setThreads((prev) =>
+        prev.map((t) =>
+          t._id === selectedId
+            ? {
+              ...t,
+              lastMessage: { text: content, at: new Date().toISOString(), from: "seller" },
+              updatedAt: new Date().toISOString(),
+            }
+            : t
+        )
+      );
+    } catch (e: any) {
+      // revert optimistic nếu lỗi
+      setMessages((prev) => prev.filter((m) => m._id !== tempId));
+      setError(e?.message || "Gửi tin nhắn thất bại.");
+      setText(content); // trả lại text cho người dùng sửa/ gửi lại
+    } finally {
+      setSending(false);
+    }
   };
 
-  const selected =
-    conversations.find((c) => c.id === selectedId) || conversations[0];
+  // ====== render ======
+  const filteredThreads = useMemo(
+    () =>
+      threads.filter((c) => {
+        const name =
+          c?.user_id?.name ||
+          c?.shop_id?.name ||
+          "Cuộc hội thoại";
+        return name.toLowerCase().includes(search.toLowerCase());
+      }),
+    [threads, search]
+  );
 
   return (
     <main className={styles.main}>
       <Sidebar />
       <section className={styles.content}>
-        {/* bọc Topbar để căn lề thẳng hàng */}
         <div className={styles.toolbarPad}>
           <Topbar />
         </div>
+
+        {error && <div className={styles.errorBanner}>{error}</div>}
 
         <div className={styles.chatWrapper}>
           {/* Sidebar danh sách hội thoại */}
@@ -63,35 +225,43 @@ export default function Messages() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+
             <div className={styles.convList}>
-              {conversations
-                .filter((c) =>
-                  c.name.toLowerCase().includes(search.toLowerCase())
-                )
-                .map((c) => (
+              {loadingList && <div className={styles.loadingItem}>Đang tải hội thoại…</div>}
+              {!loadingList && filteredThreads.length === 0 && (
+                <div className={styles.empty}>Không có hội thoại</div>
+              )}
+
+              {filteredThreads.map((c) => {
+                const name = c?.user_id?.name || c?.shop_id?.name || "Cuộc hội thoại";
+                const avatar = c?.user_id?.avatar || c?.shop_id?.avatar || "";
+                const time =
+                  c?.lastMessage?.at
+                    ? new Date(c.lastMessage.at).toLocaleString()
+                    : c?.updatedAt
+                      ? new Date(c.updatedAt).toLocaleString()
+                      : "";
+                const last = c?.lastMessage?.text || "";
+
+                return (
                   <button
-                    key={c.id}
-                    className={`${styles.convItem} ${
-                      selectedId === c.id ? styles.active : ""
-                    }`}
-                    onClick={() => setSelectedId(c.id)}
+                    key={c._id}
+                    className={`${styles.convItem} ${selectedId === c._id ? styles.active : ""}`}
+                    onClick={() => setSelectedId(c._id)}
                   >
                     <div className={styles.avatar}>
-                      {c.avatar ? (
-                        <img src={c.avatar} alt={c.name} />
-                      ) : (
-                        <span>M</span>
-                      )}
+                      {avatar ? <img src={avatar} alt={name} /> : <span>M</span>}
                     </div>
                     <div className={styles.convMain}>
                       <div className={styles.convTop}>
-                        <span className={styles.convName}>{c.name}</span>
-                        <span className={styles.convTime}>{c.time}</span>
+                        <span className={styles.convName}>{name}</span>
+                        <span className={styles.convTime}>{time}</span>
                       </div>
-                      <div className={styles.convLast}>{c.lastMsg}</div>
+                      <div className={styles.convLast}>{last}</div>
                     </div>
                   </button>
-                ))}
+                );
+              })}
             </div>
           </aside>
 
@@ -100,35 +270,47 @@ export default function Messages() {
             <header className={styles.chatHeader}>
               <div className={styles.headerLeft}>
                 <div className={styles.headerAvatar}>
-                  {selected?.avatar ? (
-                    <img src={selected.avatar} alt={selected?.name} />
+                  {selected?.user_id?.avatar || selected?.shop_id?.avatar ? (
+                    <img
+                      src={selected?.user_id?.avatar || selected?.shop_id?.avatar || ""}
+                      alt={selected?.user_id?.name || selected?.shop_id?.name || "Chat"}
+                    />
                   ) : (
                     <span>M</span>
                   )}
                 </div>
                 <div className={styles.headerInfo}>
-                  <div className={styles.headerName}>{selected?.name}</div>
-                  <div className={styles.headerStatus}>Offline</div>
+                  <div className={styles.headerName}>
+                    {selected?.user_id?.name || selected?.shop_id?.name || "Chat"}
+                  </div>
+                  <div className={styles.headerStatus}>—</div>
                 </div>
               </div>
             </header>
 
             <div className={styles.chatBody}>
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`${styles.msgRow} ${
-                    m.sender === "Admin" ? styles.right : styles.left
-                  }`}
-                >
-                  <div className={styles.msgBubble}>
-                    <div className={styles.msgMeta}>
-                      <b>{m.sender}</b> <span>{m.time}</span>
+              {loadingMsgs && <div className={styles.loadingItem}>Đang tải tin nhắn…</div>}
+              {!loadingMsgs &&
+                messages.map((m) => (
+                  <div
+                    key={m._id}
+                    className={`${styles.msgRow} ${m.sender === "seller" ? styles.right : styles.left}`}
+                  >
+                    <div className={styles.msgBubble}>
+                      <div className={styles.msgMeta}>
+                        <b>{m.sender === "seller" ? "Bạn" : "Khách"}</b>{" "}
+                        <span>
+                          {m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : ""}
+                        </span>
+                      </div>
+                      {m.text && <div className={styles.msgText}>{m.text}</div>}
                     </div>
-                    <div className={styles.msgText}>{m.text}</div>
                   </div>
-                </div>
-              ))}
+                ))}
+
+              {!loadingMsgs && messages.length === 0 && (
+                <div className={styles.empty}>Chưa có tin nhắn</div>
+              )}
             </div>
 
             <div className={styles.chatInputBar}>
@@ -140,7 +322,7 @@ export default function Messages() {
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
               />
-              <button className={styles.sendBtn} onClick={handleSend}>
+              <button className={styles.sendBtn} onClick={handleSend} disabled={!text.trim() || sending || !selectedId}>
                 <Send size={20} />
               </button>
             </div>
