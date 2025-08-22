@@ -51,7 +51,7 @@ const normalizeShop = (s: Shop): Shop => ({
 
 
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/";
 // 👉 Đặt đúng port backend (VD: 3001). Tạo file .env.local: NEXT_PUBLIC_API_URL=http://localhost:3001
 
 export default function ShopPage() {
@@ -236,11 +236,11 @@ export default function ShopPage() {
                     <td>
                       <div className={styles.shopCell}>
                         <img
-                          src={shop.avatar || "http://localhost:3000/images/default-shop.jpg"}
+                          src={shop.avatar || `${API_BASE}images/default-shop.jpg`}
                           alt={shop.name}
                           className={styles.shopImg}
                           loading="lazy"
-                          onError={(e: any) => (e.currentTarget.src = "http://localhost:3000/images/default-shop.jpg")}
+                          onError={(e: any) => (e.currentTarget.src = `${API_BASE}images/default-shop.jpg`)}
                         />
                         <div className={styles.shopText}>
                           <div className={styles.shopName}>{shop.name}</div>

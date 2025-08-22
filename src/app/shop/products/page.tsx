@@ -44,12 +44,13 @@ interface Product {
   variants: Variant[]; // 👈 Thêm dòng này
 }
 
-
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
 
 
 
 export default function Product() {
   const router = useRouter();
+  const [shopId, setShopId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
@@ -81,6 +82,8 @@ export default function Product() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [imageWarning, setImageWarning] = useState("");
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -102,6 +105,36 @@ export default function Product() {
     }
   }, [router]);
 
+useEffect(() => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return;
+
+  (async () => {
+    try {
+      const user = JSON.parse(userStr);
+      const userId = user?._id;
+      if (!userId) return;
+
+      const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
+      const data = await res.json();
+
+      // Đúng cấu trúc trả về
+      const id =
+        data?.shop?._id   // ✅ trường hợp hiện tại
+        ?? data?.shopId   // fallback nếu BE đổi
+        ?? data?._id;     // fallback khác
+
+      if (id) {
+        setShopId(String(id));
+        console.log("Shop ID:", id);
+      } else {
+        console.warn("Không tìm được shopId trong payload:", data);
+      }
+    } catch (err) {
+      console.error("Lỗi lấy shopId:", err);
+    }
+  })();
+}, []);
 
 
   const handleEditProduct = async (product: Product) => {
@@ -112,7 +145,7 @@ export default function Product() {
 
     for (const parent of parentCategories) {
       try {
-        const res = await fetch(`https://fiyo.click/api/category/children/${parent._id}`);
+        const res = await fetch(`${API_BASE}category/children/${parent._id}`);
         const children = await res.json();
 
         const match = children.find((child: Category) => child._id === categoryId);
@@ -199,6 +232,11 @@ export default function Product() {
     const hasOldImages = previews && previews.length > 0;
     const totalImageCount = (images.filter(Boolean).length || 0) + (previews?.length || 0);
     const filteredImages = images.filter((img) => img !== null);
+    if (!shopId) {
+      alert("Không xác định được shop của bạn. Vui lòng tải lại trang!");
+      return;
+    }
+
     if (!productName.trim()) {
       alert("Tên sản phẩm không được để trống!");
       return;
@@ -287,7 +325,7 @@ export default function Product() {
     formData.append("sale_count", parsedSaleCount.toString());
     formData.append("description", description);
     formData.append("category_id", selectedChild);
-    formData.append("shop_id", "1");
+    formData.append("shop_id", shopId);
     formData.append("variants", JSON.stringify(variants));
     formData.append("material", material);
 
@@ -303,8 +341,8 @@ export default function Product() {
 
     try {
       const url = editProduct
-        ? `https://fiyo.click/api/products/update/${editProduct._id}`
-        : `https://fiyo.click/api/products/create`;
+        ? `${API_BASE}products/update/${editProduct._id}`
+        : `${API_BASE}products/create`;
 
       const method = editProduct ? "PUT" : "POST";
 
@@ -323,7 +361,7 @@ export default function Product() {
         resetForm();
 
         // Gọi lại API danh sách
-        const fetchAgain = await fetch("https://fiyo.click/api/products");
+        const fetchAgain = await fetch(`${API_BASE}products/shop/${shopId}`);
         const reload = await fetchAgain.json();
         setProducts(reload.products || []);
       } else {
@@ -336,68 +374,101 @@ export default function Product() {
   };
 
   const fetchProducts = async () => {
-    try {
-      let url = "https://fiyo.click/api/products";
+  if (!shopId) {
+    setProducts([]);
+    setNoProduct(true);
+    return;
+  }
 
-      if (filterChild) {
-        url = `https://fiyo.click/api/products/category/${filterChild}`;
-      } else if (selectedChild) {
-        url = `https://fiyo.click/api/products/category/${selectedChild}`;
-      }
+  try {
+    setLoading(true);
 
-      const res = await fetch(url);
-      const data = await res.json();
+    const res = await fetch(
+      `${API_BASE}products/shop/${shopId}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      if (Array.isArray(data) && data.length > 1 && data[0].status === true) {
-        const products = data.slice(1);
-        setProducts(products);
-        setNoProduct(false);
-      } else if (data.products) {
-        setProducts(data.products);
-        setNoProduct(false);
-      } else {
-        setProducts([]);
-        setNoProduct(true);
-      }
-    } catch (error) {
-      console.error("Lỗi khi lấy sản phẩm:", error);
-      setProducts([]);
-      setNoProduct(true);
+    const data = await res.json();
+
+    // Hỗ trợ 2 format: [ {status:true}, ...items ] HOẶC { products: [...] }
+    let list: Product[] = [];
+    if (Array.isArray(data) && data.length > 1 && data[0]?.status === true) {
+      list = data.slice(1) as Product[];
+    } else if (Array.isArray((data as any)?.products)) {
+      list = (data as any).products as Product[];
+    } else if (Array.isArray(data)) {
+      list = data as Product[];
     }
-  };
+
+    // Đảm bảo có variants
+    list = list.map(p => ({ ...p, variants: p.variants ?? [] }));
+
+    // Lọc theo danh mục ở FE (nếu cần)
+    const catId = filterChild || selectedChild;
+    if (catId) {
+      list = list.filter(p => String(p?.category_id?.categoryId) === String(catId));
+    }
+
+    setProducts(list);
+    setNoProduct(list.length === 0);
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm:", error);
+    setProducts([]);
+    setNoProduct(true);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    if (!shopId) return; // chưa có shopId thì chưa fetch
+
+    const controller = new AbortController();
+
+    (async () => {
       try {
-        let url = "https://fiyo.click/api/products";
+        setLoading(true);
 
-        if (filterChild) {
-          url = `https://fiyo.click/api/products/category/${filterChild}`;
-        }
+        const res = await fetch(
+          `${API_BASE}products/shop/${encodeURIComponent(shopId)}`,
+          { cache: "no-store", signal: controller.signal }
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        const res = await fetch(url);
         const data = await res.json();
 
-        if (Array.isArray(data) && data.length > 1 && data[0].status === true) {
-          const products = data.slice(1);
-          setProducts(products);
-          setNoProduct(false);
-        } else if (data.products) {
-          setProducts(data.products);
-          setNoProduct(false);
-        } else {
+        // Hỗ trợ 2 dạng response: [ {status:true}, ...items ] hoặc { products: [...] }
+        let list: Product[] = [];
+        if (Array.isArray(data) && data.length > 1 && data[0]?.status === true) {
+          list = data.slice(1) as Product[];
+        } else if (Array.isArray((data as any)?.products)) {
+          list = (data as any).products as Product[];
+        }
+
+        // Lọc danh mục ở FE (ưu tiên filterChild, rồi đến selectedChild)
+        const catId = filterChild || selectedChild;
+        if (catId) {
+          list = list.filter(p => p?.category_id?.categoryId === catId);
+        }
+
+        setProducts(list);
+        setNoProduct(list.length === 0);
+      } catch (err: any) {
+        if (err?.name !== "AbortError") {
+          console.error("Lỗi khi lấy sản phẩm:", err);
           setProducts([]);
           setNoProduct(true);
         }
-      } catch (error) {
-        console.error("Lỗi khi lấy sản phẩm:", error);
-        setProducts([]);
-        setNoProduct(true);
+      } finally {
+        setLoading(false);
       }
-    };
+    })();
 
-    fetchProducts();
-  }, [filterChild]);
+    return () => controller.abort();
+  }, [shopId, filterChild, selectedChild]); // ⬅️ deps cần có shopId & selectedChild
+
 
 
   const getTotalQuantity = (variants: any[]) => {
@@ -434,7 +505,7 @@ export default function Product() {
   useEffect(() => {
     const fetchParents = async () => {
       try {
-        const res = await fetch("https://fiyo.click/api/category/parents");
+        const res = await fetch(`${API_BASE}category/parents`);
         const data = await res.json();
 
         // Lọc bỏ phần tử có status (nếu là object không có _id)
@@ -457,7 +528,7 @@ export default function Product() {
       }
 
       try {
-        const res = await fetch(`https://fiyo.click/api/category/children/${selectedParent}`);
+        const res = await fetch(`${API_BASE}category/children/${selectedParent}`);
         const data = await res.json();
 
         if (Array.isArray(data)) {
@@ -474,11 +545,11 @@ export default function Product() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        let url = "https://fiyo.click/api/products";
+        let url = `${API_BASE}products/shop/${shopId}`;
 
         // Nếu chọn danh mục con thì lọc theo danh mục con
         if (selectedChild) {
-          url = `https://fiyo.click/api/products/category/${selectedChild}`;
+          url = `${API_BASE}products/category/${selectedChild}`;
         }
 
         const res = await fetch(url);
@@ -505,10 +576,10 @@ export default function Product() {
 
     fetchProducts();
   }, [selectedChild]);
-
+ 
   const handleChangeVisibility = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`https://fiyo.click/api/products/${id}/visibility`, {
+      const res = await fetch(`${API_BASE}products/${id}/visibility`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -649,60 +720,65 @@ export default function Product() {
     setSizes([]);
     setEditingVariantIndex(null); // reset mode sửa
   };
-  const handleSearch = async () => {
-    if (!searchKeyword.trim()) {
-      console.log("Không có từ khóa. Đang load lại tất cả sản phẩm...");
 
-      const res = await fetch("https://fiyo.click/api/products");
-      const data = await res.json();
+  function extractProducts(data: any): Product[] {
+    if (Array.isArray(data) && data.length > 1 && data[0]?.status === true) return data.slice(1);
+    if (Array.isArray(data?.products)) return data.products;
+    if (Array.isArray(data)) return data;
+    return [];
+  }
+  const normalize = (s: string = "") =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-      console.log("Danh sách sản phẩm đầy đủ:", data.products);
-
-      // Đảm bảo mỗi sản phẩm có mảng variants
-      const updatedData = (data.products || []).map((product: any) => ({
-        ...product,
-        variants: product.variants ?? [],
-      }));
-
-      setProducts(updatedData);
-      setNoProduct(false);
-      return;
-    }
-
+  const loadShopProducts = async () => {
+    if (!shopId) return;
     try {
-      const encodedKeyword = encodeURIComponent(searchKeyword.trim());
-      const url = `https://fiyo.click/api/products/search?name=${encodedKeyword}`;
-      console.log("Gửi request tìm sản phẩm với keyword:", searchKeyword);
-      console.log("URL gửi đi:", url);
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      console.log("Phản hồi từ server:", data);
-
-      if (data && data.length > 0) {
-        console.log(`Tìm thấy ${data.length} sản phẩm`);
-        const updatedData = data.map((product: any, i: number) => {
-          console.log(`Sản phẩm ${i + 1}:`, product);
-          return {
-            ...product,
-            variants: product.variants ?? [],
-          };
-        });
-
-        setProducts(updatedData);
-        setNoProduct(false);
-      } else {
-        setProducts([]);
-        setNoProduct(true);
-      }
-
-    } catch (error) {
-      console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+      setLoading(true);
+      const res = await fetch(`${API_BASE}products/shop/${shopId}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const raw = await res.json();
+      const list = extractProducts(raw).map(p => ({ ...p, variants: p.variants ?? [] }));
+      setAllProducts(list);
+      // áp bộ lọc lần đầu
+      applyFilters(list);
+    } catch (e) {
+      console.error(e);
+      setAllProducts([]);
       setProducts([]);
       setNoProduct(true);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const applyFilters = (src = allProducts) => {
+    const catId = filterChild || selectedChild;
+    const kw = normalize(searchKeyword.trim());
+
+    let list = src;
+
+    if (catId) {
+      list = list.filter(p => String(p?.category_id?.categoryId) === String(catId));
+    }
+    if (kw) {
+      list = list.filter(p =>
+        normalize(p?.name).includes(kw) || normalize(p?.description).includes(kw)
+      );
+    }
+
+    setProducts(list);
+    setNoProduct(list.length === 0);
+  };
+
+  useEffect(() => { if (shopId) loadShopProducts(); }, [shopId]);
+  useEffect(() => { applyFilters(); }, [filterChild, selectedChild, searchKeyword, allProducts]);
+
+
+  const handleSearch = () => {
+    applyFilters(); // không fetch, chỉ lọc từ allProducts
+  };
+
+
   const handleRemoveImage = (indexToRemove: number) => {
     const filteredImages = images.filter((_, idx) => idx !== indexToRemove);
     setImages(filteredImages);

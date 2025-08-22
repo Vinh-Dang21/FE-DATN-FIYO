@@ -119,6 +119,24 @@ interface Voucher {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
 
+// Kiểu dữ liệu cho các đơn hàng trong bảng
+interface OrderTableRow {
+  _id: string;
+  createdAt: string;
+  status_order: string;
+  user_id?: User;
+  address_id?: Address;
+  address_guess?: {
+    name: string;
+    phone: string;
+    email?: string;
+    province: string;
+    district: string;
+    ward: string;
+    detail: string;
+  };
+}
+
 export default function Order() {
   const router = useRouter();
   const [shopId, setShopId] = useState<string | null>(null);
@@ -167,7 +185,7 @@ export default function Order() {
       if (!userId) return;
 
       // Gọi API lấy shop theo userId
-      fetch(`http://localhost:3000/shop/user/${userId}`)
+      fetch(`${API_BASE}/shop/user/${userId}`)
         .then(res => res.json())
         .then(data => {
           // Giả sử data trả về dạng { shopId: "..." } hoặc { _id: "..." }
@@ -188,7 +206,7 @@ export default function Order() {
   //   if (!shopId) return;
   //   const fetchAllOrders = async () => {
   //     try {
-  //       const res = await fetch(`http://localhost:3000/orderShop/shop/${shopId}`);
+  //       const res = await fetch(`http://localhost:3000/orderShop/${shopId}/confirm`);
   //       const data = await res.json();
 
   //       if (data.status && Array.isArray(data.result)) {
@@ -227,7 +245,7 @@ export default function Order() {
 
     const fetchShopOrders = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/orderShop/shop/${shopId}`);
+        const res = await fetch(`${API_BASE}/orderShop/shop/${shopId}`);
         const data = await res.json();
 
         if (data.status && data.result && Array.isArray(data.result.items)) {
@@ -269,7 +287,7 @@ export default function Order() {
 
     const fetchFilteredOrders = async () => {
       try {
-        const url = new URL(`http://localhost:3000/orderShop/shop/${shopId}`);
+        const url = new URL(`${API_BASE}/orderShop/shop/${shopId}`);
         if (filteredStatus && filteredStatus !== "all") {
           url.searchParams.set("status", filteredStatus); // BE đã hỗ trợ ?status
         }
@@ -323,7 +341,7 @@ export default function Order() {
 
   const handleUpdateStatus = async (orderId: string, newStatus: string, showAlert = true) => {
     try {
-      const res = await fetch(`http://localhost:3000/orderShop/${orderId}/status`, {
+      const res = await fetch(`${API_BASE}/orderShop/${orderId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -434,7 +452,7 @@ export default function Order() {
 
   const handleConfirmOrder = async (orderId: string, showAlert = true) => {
     try {
-      const res = await fetch(`http://localhost:3000/orderShop/${orderId}/confirm`, {
+      const res = await fetch(`${API_BASE}/orderShop/${orderId}/confirm`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
       });
@@ -463,8 +481,8 @@ export default function Order() {
 
     try {
       const [userRes, addressRes] = await Promise.all([
-        fetch(`http://localhost:3000/user/${userId}`),
-        fetch(`http://localhost:3000/address/${addressId}`)
+        fetch(`${API_BASE}/user/${userId}`),
+        fetch(`${API_BASE}/address/${addressId}`)
       ]);
       const userData = await userRes.json();
       const addressData = await addressRes.json();
@@ -722,8 +740,8 @@ export default function Order() {
                         {order.status_order === "pending" && (
                           <button
                             className={styles.statusBtn}
-                            // onClick={() => handleConfirmOrder(order._id)}
-                            onClick={() => handleUpdateStatus(order._id, "preparing")}
+                            onClick={() => handleConfirmOrder(order._id)}
+                            // onClick={() => handleUpdateStatus(order._id, "preparing")}
                           >
                             Xác nhận
                           </button>
