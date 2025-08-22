@@ -32,17 +32,15 @@ export default function Messages() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  // ====== GỌI GIỐNG FILE ORDER (fetch thẳng domain) ======
-  const BASE_API = "https://fiyo.click/api/messeger";
+  // ✅ SỬA: đúng chính tả "messenger"
+  const BASE_API = "https://fiyo.click/api/messenger";
 
-  // ====== CHỖ 1: sellerId (CHỦ SHOP) ======
-  // 👉 THAY chuỗi dưới bằng shops.user_id (ID chủ shop) để chắc chắn ra dữ liệu
-  const OWNER_ID = "PUT_OWNER_ID_OF_SHOP_HERE"; // VD: "68a466c6566d4a95019d201c_owner"
+  // ====== sellerId (ID của user sở hữu shop) ======
+  const OWNER_ID = ""; // nếu biết chắc ID chủ shop, điền vào đây cho chắc
   const [sellerId, setSellerId] = useState<string>("");
 
   useEffect(() => {
-    // ƯU TIÊN OWNER_ID nếu bạn đã điền đúng; nếu không, fallback từ localStorage.user
-    if (OWNER_ID && OWNER_ID !== "PUT_OWNER_ID_OF_SHOP_HERE") {
+    if (OWNER_ID) {
       setSellerId(OWNER_ID);
       return;
     }
@@ -53,7 +51,7 @@ export default function Messages() {
         const id = u?._id || u?.id || "";
         setSellerId(id || "");
       }
-    } catch { }
+    } catch {}
   }, []);
 
   // ====== helpers ======
@@ -68,36 +66,34 @@ export default function Messages() {
     return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
   };
 
-  // ====== CHỖ 2: LẤY THREAD – chuẩn hoá parse mọi kiểu payload ======
+  // ====== LẤY THREAD CỦA SELLER ======
   useEffect(() => {
     if (!sellerId) return;
     (async () => {
       try {
         setLoading(true);
+        setErr("");
+
+        // ✅ SỬA: đúng query 'seller_user_id'
         const res = await fetch(
-          `${BASE_API}/threads/me/seller?seller_user_id=${sellerId}`
+          `${BASE_API}/threads/me/seller?seller_user_id=${encodeURIComponent(
+            sellerId
+          )}`
         );
-        const raw = await res.text(); // đọc thô trước để debug/parse an toàn
-
         if (!res.ok) throw new Error(`Lỗi lấy thread (${res.status})`);
-
-        let data: any = [];
-        try {
-          data = JSON.parse(raw);
-        } catch {
-          data = [];
-        }
+        const data = await res.json();
 
         const list: Thread[] = Array.isArray(data)
           ? data
           : Array.isArray(data?.result)
-            ? data.result
-            : Array.isArray(data?.data)
-              ? data.data
-              : [];
+          ? data.result
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
 
-        setThreads(list || []);
-        setSelectedId(list?.[0]?._id || "");
+        setThreads(list);
+        // ✅ Chọn thread đầu nếu chưa có lựa chọn
+        setSelectedId((prev) => prev || (list?.[0]?._id || ""));
       } catch (e: any) {
         setErr(e?.message || "Lỗi lấy thread");
         setThreads([]);
@@ -119,6 +115,8 @@ export default function Messages() {
     (async () => {
       try {
         setLoading(true);
+        setErr("");
+
         const res = await fetch(
           `${BASE_API}/threads/${selectedId}/messages?page=1&limit=20`
         );
@@ -129,12 +127,12 @@ export default function Messages() {
         setPage(1);
         setHasMore(Array.isArray(first) && first.length === 20);
 
-        // mark read phía seller
+        // mark read phía seller (không cần auth nếu BE cho phép body role)
         await fetch(`${BASE_API}/threads/${selectedId}/read`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ role: "seller", user_id: sellerId || undefined }),
-        });
+        }).catch(() => {});
       } catch (e: any) {
         setErr(e?.message || "Lỗi tải tin nhắn");
         setMessages([]);
@@ -167,7 +165,7 @@ export default function Messages() {
     }
   };
 
-  // ====== CHỖ 3: GỬI TIN (luôn gửi kèm user_id = sellerId) ======
+  // ====== GỬI TIN ======
   const handleSend = async () => {
     if (!text.trim()) return;
     if (!selectedId) {
@@ -176,17 +174,20 @@ export default function Messages() {
     }
     try {
       setLoading(true);
+      setErr("");
+
       const res = await fetch(`${BASE_API}/threads/${selectedId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: text.trim(),
           sender: "seller",
-          user_id: sellerId, // <- bắt buộc là OWNER_ID/chủ shop
+          user_id: sellerId, // BE map user_id chủ shop => role "seller"
         }),
       });
       if (!res.ok) throw new Error("Gửi tin nhắn thất bại");
       const created: Msg = await res.json();
+
       setMessages((prev) => [...prev, created]);
       setText("");
     } catch (e: any) {
@@ -221,7 +222,7 @@ export default function Messages() {
             <div className={styles.convList}>
               {threads.length === 0 ? (
                 <div style={{ padding: 12, color: "#777" }}>
-                  Chưa có cuộc hội thoại
+                  {loading ? "Đang tải..." : "Chưa có cuộc hội thoại"}
                 </div>
               ) : (
                 threads
@@ -233,8 +234,9 @@ export default function Messages() {
                   .map((t) => (
                     <button
                       key={t?._id}
-                      className={`${styles.convItem} ${selectedId === t?._id ? styles.active : ""
-                        }`}
+                      className={`${styles.convItem} ${
+                        selectedId === t?._id ? styles.active : ""
+                      }`}
                       onClick={() => setSelectedId(t?._id)}
                     >
                       <div className={styles.avatar}>
@@ -292,7 +294,7 @@ export default function Messages() {
             {hasMore && selectedId ? (
               <div style={{ padding: "8px 12px" }}>
                 <button onClick={loadMore} disabled={loading}>
-                  Tải thêm
+                  {loading ? "Đang tải..." : "Tải thêm"}
                 </button>
               </div>
             ) : null}
@@ -301,8 +303,9 @@ export default function Messages() {
               {messages.map((m) => (
                 <div
                   key={m?._id}
-                  className={`${styles.msgRow} ${m?.sender === "seller" ? styles.right : styles.left
-                    }`}
+                  className={`${styles.msgRow} ${
+                    m?.sender === "seller" ? styles.right : styles.left
+                  }`}
                 >
                   <div className={styles.msgBubble}>
                     <div className={styles.msgMeta}>
@@ -315,7 +318,7 @@ export default function Messages() {
                     ) : null}
 
                     {Array.isArray(m?.attachments) &&
-                      m.attachments.length > 0 ? (
+                    m.attachments.length > 0 ? (
                       <div style={{ marginTop: 4 }}>
                         {m.attachments.map((a, idx) => (
                           <a
@@ -350,7 +353,7 @@ export default function Messages() {
               <button
                 className={styles.sendBtn}
                 onClick={handleSend}
-                disabled={!text.trim()}
+                disabled={!text.trim() || loading}
               >
                 <Send size={20} />
               </button>
