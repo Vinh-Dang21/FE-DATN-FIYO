@@ -240,7 +240,7 @@ export default function ShopPage() {
                           alt={shop.name}
                           className={styles.shopImg}
                           loading="lazy"
-                          onError={(e: any) => (e.currentTarget.src = `${API_BASE}images/default-shop.jpg`)}
+                          // onError={(e: any) => (e.currentTarget.src = `${API_BASE}images/default-shop.jpg`)}
                         />
                         <div className={styles.shopText}>
                           <div className={styles.shopName}>{shop.name}</div>

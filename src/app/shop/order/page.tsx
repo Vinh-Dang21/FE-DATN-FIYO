@@ -18,6 +18,7 @@ import Tabs from "@/app/component/filterorder";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
+import { log } from "console";
 
 interface OrderShop {
   _id: string;
@@ -117,7 +118,7 @@ interface Voucher {
 }
 
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
 
 // Kiểu dữ liệu cho các đơn hàng trong bảng
 interface OrderTableRow {
@@ -175,32 +176,36 @@ export default function Order() {
     }
   }, [router]);
 
-  useEffect(() => {
-    // Lấy userId từ localStorage
-    const userStr = localStorage.getItem("user");
-    if (!userStr) return;
+useEffect(() => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return;
+
+  (async () => {
     try {
       const user = JSON.parse(userStr);
-      const userId = user._id;
+      const userId = user?._id;
       if (!userId) return;
 
-      // Gọi API lấy shop theo userId
-      fetch(`${API_BASE}/shop/user/${userId}`)
-        .then(res => res.json())
-        .then(data => {
-          // Giả sử data trả về dạng { shopId: "..." } hoặc { _id: "..." }
-          const id = data.shopId || data._id;
-          setShopId(id);
-          console.log("Shop ID:", id);
-          // Bạn có thể dùng shopId cho các mục đích khác ở đây
-        })
-        .catch(err => {
-          console.error("Lỗi lấy shopId:", err);
-        });
+      const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
+      const data = await res.json();
+
+      // Đúng cấu trúc trả về
+      const id =
+        data?.shop?._id   // ✅ trường hợp hiện tại
+        ?? data?.shopId   // fallback nếu BE đổi
+        ?? data?._id;     // fallback khác
+
+      if (id) {
+        setShopId(String(id));
+        console.log("Shop ID:", id);
+      } else {
+        console.warn("Không tìm được shopId trong payload:", data);
+      }
     } catch (err) {
-      console.error("Lỗi parse user:", err);
+      console.error("Lỗi lấy shopId:", err);
     }
-  }, []);
+  })();
+}, []);
 
   // useEffect(() => {
   //   if (!shopId) return;
@@ -245,7 +250,7 @@ export default function Order() {
 
     const fetchShopOrders = async () => {
       try {
-        const res = await fetch(`${API_BASE}/orderShop/shop/${shopId}`);
+        const res = await fetch(`${API_BASE}orderShop/shop/${shopId}`);
         const data = await res.json();
 
         if (data.status && data.result && Array.isArray(data.result.items)) {
@@ -287,7 +292,7 @@ export default function Order() {
 
     const fetchFilteredOrders = async () => {
       try {
-        const url = new URL(`${API_BASE}/orderShop/shop/${shopId}`);
+        const url = new URL(`${API_BASE}orderShop/shop/${shopId}`);
         if (filteredStatus && filteredStatus !== "all") {
           url.searchParams.set("status", filteredStatus); // BE đã hỗ trợ ?status
         }
@@ -341,7 +346,7 @@ export default function Order() {
 
   const handleUpdateStatus = async (orderId: string, newStatus: string, showAlert = true) => {
     try {
-      const res = await fetch(`${API_BASE}/orderShop/${orderId}/status`, {
+      const res = await fetch(`${API_BASE}orderShop/${orderId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -401,7 +406,7 @@ export default function Order() {
 
       // Gọi API mới để lấy chi tiết đơn của shop
       const res = await fetch(
-        `${API_BASE}/orderDetail/order-shops/${orderShopId}/details`,
+        `${API_BASE}orderDetail/order-shops/${orderShopId}/details`,
         { method: "GET" }
       );
 
@@ -452,7 +457,7 @@ export default function Order() {
 
   const handleConfirmOrder = async (orderId: string, showAlert = true) => {
     try {
-      const res = await fetch(`${API_BASE}/orderShop/${orderId}/confirm`, {
+      const res = await fetch(`${API_BASE}orderShop/${orderId}/confirm`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
       });
@@ -481,8 +486,8 @@ export default function Order() {
 
     try {
       const [userRes, addressRes] = await Promise.all([
-        fetch(`${API_BASE}/user/${userId}`),
-        fetch(`${API_BASE}/address/${addressId}`)
+        fetch(`${API_BASE}user/${userId}`),
+        fetch(`${API_BASE}address/${addressId}`)
       ]);
       const userData = await userRes.json();
       const addressData = await addressRes.json();

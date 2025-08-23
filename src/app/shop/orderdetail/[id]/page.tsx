@@ -93,7 +93,7 @@ type ShippingAddress = {
     address?: string; detail?: string; type?: string;
 } | null;
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
 
 
 
@@ -170,7 +170,7 @@ export default function Order() {
         if (!orderShopId) return;
         (async () => {
             try {
-                const res = await fetch(`${API_BASE}/orderDetail/order-shops/${orderShopId}/details`);
+                const res = await fetch(`${API_BASE}orderDetail/order-shops/${orderShopId}/details`);
                 const data = await res.json();
                 if (!res.ok || !data.status) throw new Error(data?.message || `HTTP ${res.status}`);
 
@@ -212,7 +212,7 @@ export default function Order() {
 
     const reload = useCallback(async () => {
         if (!orderShopId) return;
-        const res = await fetch(`${API_BASE}/orderDetail/order-shops/${orderShopId}/details`, { cache: "no-store" });
+        const res = await fetch(`${API_BASE}orderDetail/order-shops/${orderShopId}/details`, { cache: "no-store" });
         const data = await res.json();
         if (!res.ok || !data.status) throw new Error(data?.message || `HTTP ${res.status}`);
 
@@ -227,7 +227,7 @@ export default function Order() {
 
     const handleUpdateStatus = async (newStatus: string) => {
         try {
-            const res = await fetch(`${API_BASE}/orderShop/${orderShopId}/status`, {
+            const res = await fetch(`${API_BASE}orderShop/${orderShopId}/status`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus }),
