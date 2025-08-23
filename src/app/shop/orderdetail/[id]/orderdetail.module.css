@@ -653,3 +653,22 @@
 .statusBtn:hover {
   background-color: #2563eb;
 }
+
+.cancelLine {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: 1px solid #ffccc7;
+  background: #fff1f0;
+  color: #a8071a;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.cancelLabel {
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.cancelText {
+  white-space: pre-wrap; /* giữ xuống dòng nếu note dài */
+}

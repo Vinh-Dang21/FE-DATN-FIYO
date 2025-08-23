@@ -524,3 +524,88 @@
   color: #e6a700;
   border: 1px solid #e6a700;
 }
+
+.actionCell { position: relative; }
+
+.kebabBtn {
+  background: transparent;
+  border: 0;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.kebabBtn:hover { background: #f2f3f5; }
+
+.dropdownMenu {
+  position: absolute;
+  right: 5px;
+  top: 7px;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  padding: 6px;
+  z-index: 10;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  color: #111827;
+  border-radius: 8px;
+  font: inherit;
+}
+.menuItem:hover { background: #f9fafb; }
+
+
+/* Modal */
+.modalBackdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:11000;
+}
+.modalCard{
+  position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:min(740px, calc(100vw - 32px));
+  max-height:calc(100vh - 80px);
+  overflow:auto;
+  background:#fff; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.25);
+  z-index:11001;
+}
+.modalHeader{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px; border-bottom:1px solid #eee;
+}
+.modalTitle{ font-size:18px; font-weight:600; }
+.closeBtn{
+  background:transparent; border:0; font-size:24px; line-height:1; cursor:pointer;
+}
+.modalBody{ padding:16px 20px; display:flex; flex-direction:column; gap:12px; }
+.modalFooter{ padding:12px 20px; border-top:1px solid #eee; display:flex; justify-content:flex-end; }
+
+.shopTop{ display:flex; gap:16px; align-items:flex-start; }
+.modalAvatar{ width:72px; height:72px; border-radius:12px; object-fit:cover; }
+.modalName{ font-size:20px; font-weight:700; margin-bottom:6px; }
+
+.statusBadge{
+  display:inline-block; padding:4px 10px; border-radius:999px;
+  font-size:12px; font-weight:600; margin-bottom:8px;
+}
+.status-active{ color:#065f46; background:#d1fae5; }
+.status-inactive{ color:#92400e; background:#fef3c7; }
+.status-locked{ color:#7f1d1d; background:#fee2e2; }
+.status-pending{ color:#1e3a8a; background:#dbeafe; }
+
+.metaRow{ font-size:13px; color:#374151; margin-top:4px; }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.field{ margin-bottom:8px; }
+.primaryBtn{
+  background:#111827; color:#fff; border:0; padding:8px 14px; border-radius:10px; cursor:pointer;
+}
+.primaryBtn:hover{ opacity:.9; }

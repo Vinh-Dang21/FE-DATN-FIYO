@@ -341,86 +341,86 @@ export default function Order() {
   }, [shopId]);
 
   useEffect(() => {
-  if (!shopId) return;
+    if (!shopId) return;
 
-  const fetchFilteredOrders = async () => {
-    try {
-      const url = new URL(`${API_BASE}orderShop/shop/${shopId}`);
+    const fetchFilteredOrders = async () => {
+      try {
+        const url = new URL(`${API_BASE}orderShop/shop/${shopId}`);
 
-      // BE chỉ lọc được theo status của OrderShop.
-      // Với 'unpending' (thuộc order cha) thì KHÔNG gắn query cho BE.
-      if (filteredStatus && filteredStatus !== "all" && filteredStatus !== "unpending") {
-        url.searchParams.set("status", filteredStatus);
-      }
-
-      const res = await fetch(url.toString());
-      const data = await res.json();
-
-      if (data.status && data.result && Array.isArray(data.result.items)) {
-        let items: OrderShop[] = data.result.items;
-
-        // Lọc 'unpending' theo trạng thái của ORDER CHA
-        if (filteredStatus === "unpending") {
-          items = items.filter(os => os.order_id?.status_order === "unpending");
+        // BE chỉ lọc được theo status của OrderShop.
+        // Với 'unpending' (thuộc order cha) thì KHÔNG gắn query cho BE.
+        if (filteredStatus && filteredStatus !== "all" && filteredStatus !== "unpending") {
+          url.searchParams.set("status", filteredStatus);
         }
 
-        // Lọc ngày theo OrderShop.createdAt
-        if (fromDate) {
-          const from = dayjs(fromDate).startOf("day");
-          items = items.filter(os => dayjs(os.createdAt).isAfter(from) || dayjs(os.createdAt).isSame(from));
-        }
-        if (toDate) {
-          const to = dayjs(toDate).endOf("day");
-          items = items.filter(os => dayjs(os.createdAt).isBefore(to) || dayjs(os.createdAt).isSame(to));
-        }
+        const res = await fetch(url.toString());
+        const data = await res.json();
 
-        // Map sang RowOrder
-        const rows: RowOrder[] = items.map((os) => {
-          const o = os.order_id;
-          const ag = o?.address_guess;               // AddressGuess | undefined
-          const addrText = formatGuestAddress(ag);   // 🔹 dùng helper, KHÔNG gọi ag.address trực tiếp
-          const parentUnpending = o?.status_order === "unpending";
+        if (data.status && data.result && Array.isArray(data.result.items)) {
+          let items: OrderShop[] = data.result.items;
 
-          return {
-            _orderShopId: os._id,
-            _id: os._id,
-            createdAt: os.createdAt,
-            // Ưu tiên hiển thị 'unpending' nếu order cha còn unpending
-            status_order: parentUnpending ? "unpending" : os.status_order,
-            transaction_status: o?.transaction_status,
+          // Lọc 'unpending' theo trạng thái của ORDER CHA
+          if (filteredStatus === "unpending") {
+            items = items.filter(os => os.order_id?.status_order === "unpending");
+          }
 
-            // sẽ điền bởi fetch user/address hoặc dùng guest
-            user_name: "",
-            user_email: "",
-            address_text: addrText,   // 🔹 lưu sẵn text địa chỉ để fallback khi render
+          // Lọc ngày theo OrderShop.createdAt
+          if (fromDate) {
+            const from = dayjs(fromDate).startOf("day");
+            items = items.filter(os => dayjs(os.createdAt).isAfter(from) || dayjs(os.createdAt).isSame(from));
+          }
+          if (toDate) {
+            const to = dayjs(toDate).endOf("day");
+            items = items.filter(os => dayjs(os.createdAt).isBefore(to) || dayjs(os.createdAt).isSame(to));
+          }
 
-            user_id: typeof o?.user_id === "string" ? o.user_id : undefined,
-            address_id: typeof o?.address_id === "string" ? o.address_id : undefined,
+          // Map sang RowOrder
+          const rows: RowOrder[] = items.map((os) => {
+            const o = os.order_id;
+            const ag = o?.address_guess;               // AddressGuess | undefined
+            const addrText = formatGuestAddress(ag);   // 🔹 dùng helper, KHÔNG gọi ag.address trực tiếp
+            const parentUnpending = o?.status_order === "unpending";
 
-            // Block guest để render nhanh
-            _guest: ag
-              ? {
+            return {
+              _orderShopId: os._id,
+              _id: os._id,
+              createdAt: os.createdAt,
+              // Ưu tiên hiển thị 'unpending' nếu order cha còn unpending
+              status_order: parentUnpending ? "unpending" : os.status_order,
+              transaction_status: o?.transaction_status,
+
+              // sẽ điền bởi fetch user/address hoặc dùng guest
+              user_name: "",
+              user_email: "",
+              address_text: addrText,   // 🔹 lưu sẵn text địa chỉ để fallback khi render
+
+              user_id: typeof o?.user_id === "string" ? o.user_id : undefined,
+              address_id: typeof o?.address_id === "string" ? o.address_id : undefined,
+
+              // Block guest để render nhanh
+              _guest: ag
+                ? {
                   name: ag.name,
                   email: ag.email ?? "",
                   phone: ag.phone ?? "",
                   address: addrText,
                 }
-              : undefined,
-          };
-        });
+                : undefined,
+            };
+          });
 
-        setOrders(rows);
-      } else {
+          setOrders(rows);
+        } else {
+          setOrders([]);
+        }
+      } catch (error) {
+        console.error("Lỗi khi lọc đơn hàng:", error);
         setOrders([]);
       }
-    } catch (error) {
-      console.error("Lỗi khi lọc đơn hàng:", error);
-      setOrders([]);
-    }
-  };
+    };
 
-  fetchFilteredOrders();
-}, [shopId, filteredStatus, fromDate, toDate]);
+    fetchFilteredOrders();
+  }, [shopId, filteredStatus, fromDate, toDate]);
 
 
 
@@ -474,46 +474,43 @@ export default function Order() {
     order.orderShopId ||
     order?.order_shop?._id;
 
-  const handleViewOrder = async (order: RowOrder) => {
+  const handleViewOrder = async (row: RowOrder) => {
     try {
-      const orderShopId = getOrderShopId(order);
-
+      const orderShopId = getOrderShopId(row);
       if (!orderShopId) {
-        console.error("Thiếu orderShopId trong RowOrder:", order);
+        console.error("Thiếu orderShopId trong RowOrder:", row);
         alert("Không tìm thấy orderShopId của đơn.");
         return;
       }
 
-      // Gọi API mới để lấy chi tiết đơn của shop
+      // 🔹 Nếu đang chờ xác nhận thì xác nhận đơn trước khi xem
+      if (row.status_order === "pending") {
+        // false = không hiện alert, state list sẽ được cập nhật sang "preparing"
+        await handleConfirmOrder(row._id, false);
+      }
+
+      // 🔹 Lấy chi tiết & điều hướng
       const res = await fetch(
         `${API_BASE}orderDetail/order-shops/${orderShopId}/details`,
         { method: "GET" }
       );
-
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j?.message || `HTTP ${res.status}`);
       }
-
       const data = await res.json();
 
-      // Lưu tạm vào sessionStorage (trang chi tiết có thể đọc lại)
       try {
-        sessionStorage.setItem(
-          `orderDetail:${orderShopId}`,
-          JSON.stringify(data)
-        );
-      } catch {
-        // nếu storage đầy hoặc bị chặn thì bỏ qua, trang chi tiết tự fetch
-      }
+        sessionStorage.setItem(`orderDetail:${orderShopId}`, JSON.stringify(data));
+      } catch { }
 
-      // Điều hướng sang trang chi tiết FE
       router.push(`/shop/orderdetail/${orderShopId}`);
     } catch (error) {
       console.error("Lỗi khi xử lý đơn hàng:", error);
       alert(`Có lỗi khi tải chi tiết đơn: ${String((error as Error)?.message || error)}`);
     }
   };
+
 
 
   // const getCustomerInfo = (order: Order) => {
@@ -595,7 +592,7 @@ export default function Order() {
 
     needFetch.forEach((order) => {
       fetchUserAndAddressInfo(order.user_id!, order.address_id!).then((info) => {
-        
+
         setCustomerInfoMap((prev) => ({
           ...prev,
           [order._id]: {
@@ -610,6 +607,35 @@ export default function Order() {
       });
     });
   }, [orders, customerInfoMap]);
+
+  const handleCancelOrder = async (orderId: string) => {
+    // hỏi nhanh lý do hủy (có thể bỏ trống)
+    const note = prompt("Nhập lý do huỷ (có thể để trống):", "");
+    if (note === null) return; // user bấm Cancel
+
+    try {
+      const res = await fetch(`${API_BASE}orderShop/${orderId}/cancel`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.status) {
+        throw new Error(data?.message || `HTTP ${res.status}`);
+      }
+
+      alert("Đã huỷ đơn.");
+      // cập nhật state local để hiển thị ngay
+      setOrders((prev) =>
+        prev.map((o) => (o._id === orderId ? { ...o, status_order: "cancelled" } : o))
+      );
+    } catch (e: any) {
+      console.error("Huỷ đơn thất bại:", e);
+      alert(e?.message || "Huỷ đơn thất bại");
+    }
+  };
+
 
 
   return (
@@ -799,56 +825,69 @@ export default function Order() {
                     </td>
 
                     <td>
-                      <div className={styles.actionGroup}>
-                        <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
-                          <Eye size={25} />
+                      <div className={styles.actionCell}>
+                        {/* Con mắt (xem đơn) bên trái */}
+                        <button className={styles.viewBtn} onClick={() => handleViewOrder(order)}>
+                          <Eye size={22} />
                         </button>
-                        {order.status_order === "unpending" && (
-                          <button
-                            className={styles.statusBtn}
-                            // onClick={() => handleConfirmOrder(order._id)}
-                            onClick={() => handleUpdateStatus(order._id, "pending")}
-                          >
-                            Đã xác thực
-                          </button>
-                        )}
 
-                        {order.status_order === "pending" && (
-                          <button
-                            className={styles.statusBtn}
-                            onClick={() => handleConfirmOrder(order._id)}
-                          // onClick={() => handleUpdateStatus(order._id, "preparing")}
-                          >
-                            Xác nhận
-                          </button>
-                        )}
+                        {/* 👉 Toàn bộ Chức năng + Huỷ đơn nằm chung 1 div bên phải */}
+                        <div className={styles.actionStack}>
+                          {order.status_order === "unpending" && (
+                            <button
+                              className={styles.statusBtn}
+                              onClick={() => handleUpdateStatus(order._id, "pending")}
+                            >
+                              Đã xác thực
+                            </button>
+                          )}
 
-                        {order.status_order === "preparing" && (
-                          <button
-                            className={styles.statusBtn}
-                            onClick={() => handleUpdateStatus(order._id, "awaiting_shipment")}
-                          >
-                            Chờ gửi
-                          </button>
-                        )}
+                          {order.status_order === "pending" && (
+                            <button
+                              className={styles.statusBtn}
+                              onClick={() => handleConfirmOrder(order._id)}
+                            >
+                              Xác nhận
+                            </button>
+                          )}
 
-                        {order.status_order === "awaiting_shipment" && (
-                          <button
-                            className={styles.statusBtn}
-                            onClick={() => handleUpdateStatus(order._id, "shipping")}
-                          >
-                            Đang giao
-                          </button>
-                        )}
+                          {order.status_order === "preparing" && (
+                            <button
+                              className={styles.statusBtn}
+                              onClick={() => handleUpdateStatus(order._id, "awaiting_shipment")}
+                            >
+                              Chờ gửi
+                            </button>
+                          )}
 
-                        {order.status_order === "shipping" && (
-                          <button
-                            className={styles.statusBtn}
-                            onClick={() => handleUpdateStatus(order._id, "delivered")}
-                          >
-                            Đã giao
-                          </button>
-                        )}
+                          {order.status_order === "awaiting_shipment" && (
+                            <button
+                              className={styles.statusBtn}
+                              onClick={() => handleUpdateStatus(order._id, "shipping")}
+                            >
+                              Đang giao
+                            </button>
+                          )}
+
+                          {order.status_order === "shipping" && (
+                            <button
+                              className={styles.statusBtn}
+                              onClick={() => handleUpdateStatus(order._id, "delivered")}
+                            >
+                              Đã giao
+                            </button>
+                          )}
+
+                          {/* Huỷ đơn hiển thị ở 4 trạng thái cho phép */}
+                          {["unpending", "pending", "preparing", "awaiting_shipment"].includes(order.status_order) && (
+                            <button
+                              className={styles.cancelBtn}
+                              onClick={() => handleCancelOrder(order._id)}
+                            >
+                              Huỷ đơn
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </td>
 

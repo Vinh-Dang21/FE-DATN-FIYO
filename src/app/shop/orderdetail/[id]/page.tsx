@@ -7,7 +7,7 @@ import Topbar from "@/app/component/Topbar";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import dayjs from "dayjs";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 interface Product {
     _id: string;
@@ -69,16 +69,25 @@ interface OrderParent {
     address_id?: string;
 }
 
+type ItemVariant = { _id?: string; color?: string };
+type ItemSize = { _id?: string; sku?: string; quantity?: number; size?: string };
+
 interface OrderItem {
     order_id: string;
     order_shop_id: string;
     createdAt: string;
     quantity: number;
-    product: Product & {
-        variant?: Variant | null;
-        size?: { size: string; quantity: number; sku?: string } | null;
+    product: {
+        product_id: string;
+        name: string;
+        description: string;
+        price: number;
+        images: string[];
+        variant?: ItemVariant | null; // ⬅️ màu
+        size?: ItemSize | null;       // ⬅️ size, sku
     };
 }
+
 
 interface UserInfo {
     _id: string;
@@ -132,39 +141,6 @@ export default function Order() {
             router.push("/warning-login");
         }
     }, [router]);
-
-    // useEffect(() => {
-    //     const fetchData = async () => {
-    //         if (!orderShopId) return;
-
-    //         try {
-    //             const [orderDetailRes, orderInfoRes] = await Promise.all([
-    //                 fetch(`${API_BASE}/orderDetail/order-shops/${orderShopId}/details`),
-    //                 fetch(`${API_BASE}/orderShop/${orderShopId}`)
-    //             ]);
-
-    //             const orderDetailData = await orderDetailRes.json();
-    //             const orderInfoData = await orderInfoRes.json();
-
-    //             console.log("📦 orderDetailData:", orderDetailData);
-    //             console.log("🧾 orderInfoData:", orderInfoData);
-
-    //             if (orderDetailData.status) {
-    //                 setOrderProducts(orderDetailData.result);  // lấy danh sách sản phẩm
-    //                 setUser(orderDetailData.user);              // lấy user nếu cần
-    //             }
-
-    //             if (orderInfoData.status) {
-    //                 setOrder(orderInfoData.order); // ✅ Lấy đúng `order`, KHÔNG dùng `.result`
-    //             }
-
-    //         } catch (error) {
-    //             console.error("Lỗi khi fetch order:", error);
-    //         }
-    //     };
-
-    //     fetchData();
-    // }, [orderShopId]);
 
     useEffect(() => {
         if (!orderShopId) return;
@@ -280,7 +256,26 @@ export default function Order() {
             0
         )
         : 0;
-    const discountTotal = Math.max(0, grossTotal - shopTotal);          // phần chênh lệch coi như giảm giá
+    const discountTotal = Math.max(0, grossTotal - shopTotal);
+
+    // ngay dưới các useState, sau khi đã có orderShop và order
+    const cancelReason = useMemo(() => {
+        const fromShop =
+            orderShop?.status_history
+                ?.slice()
+                .reverse()
+                .find((h) => h.status === "cancelled")?.note;
+
+        const fromParentDirect = order?.cancel_reason;
+        const fromParentHistory =
+            order?.status_history
+                ?.slice()
+                .reverse()
+                .find((h: any) => h.status === "cancelled")?.note;
+
+        return fromShop || fromParentDirect || fromParentHistory || "";
+    }, [orderShop, order]);
+
 
 
     return (
@@ -308,10 +303,16 @@ export default function Order() {
                                 {getStatusLabel(statusValue)}
                             </span>
                         </p>
-
+                        
                         <p className={styles.orderDate}>
                             Ngày đặt: {createdAt ? dayjs(createdAt).format("DD/MM/YYYY HH:mm") : "..."}
                         </p>
+                        {statusValue === "cancelled" && (
+                            <p className={styles.cancelLine}>
+                                <span className={styles.cancelLabel}>Lý do huỷ:</span>
+                                <span className={styles.cancelText}>{cancelReason || "Không có"}</span>
+                            </p>
+                        )}
                     </div>
 
 
@@ -351,8 +352,11 @@ export default function Order() {
                                                     })}
                                                 </td>
                                                 <td>
-                                                    {item.variant?.color || "Không rõ"} / {item.variant?.size?.size || "Không rõ"}
+                                                    {item.product?.variant?.color || "Không rõ"} /
+                                                    {" "}
+                                                    {item.product?.size?.size || "Không rõ"}
                                                 </td>
+
 
                                                 <td>{item.quantity}</td>
                                                 <td>

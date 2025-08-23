@@ -292,47 +292,125 @@
 
 .userDetails {
   display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar,
+.avatarFallback {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  flex: 0 0 44px;
+}
+
+.avatar {
+  object-fit: cover;
+  border: 1px solid #eee;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  background: #f8f8f8;
+}
+
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.userMeta {
+  display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  align-items: flex-start; /* 👈 căn theo trục ngang về trái */
+  text-align: left;        /* 👈 đảm bảo text-align trái */
+  line-height: 1.2;
 }
 
 .userName {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 14px;
-  color: #444;
-  margin-bottom: 4px;
+  color: #111827; /* gray-900 */
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.userDesc {
-  font-size: 13px;
-  color: #666;
-  margin-top: 0;
+
+.userEmail {
+  font-size: 12px;
+  color: #6b7280; /* gray-500 */
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 640px) {
+  .userName { max-width: 150px; }
+  .userEmail { max-width: 150px; }
+}
+
+
+.productInfo {
+  text-align: left;         /* tránh bị center bởi bảng */
+  vertical-align: middle;
 }
 
 .productBox {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  white-space: nowrap;
+  align-items: left;
+  gap: 12px;
+  min-width: 260px;
 }
 
-.productImage {
-  width: 50px;
+.productThumb {
+  height: 60px;
+  flex: 0 0 48px;
   object-fit: cover;
   border-radius: 8px;
+  background: #f8fafc;       /* slate-50 */
+  border: 1px solid #e5e7eb;  /* gray-200 */
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+
+.productMeta {
+  display: flex;
+  align-items: flex-start; /* 👈 căn theo trục ngang về trái */
+  text-align: left; 
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;              /* cho phép ellipsis hoạt động */
 }
 
 .productName {
   font-weight: 600;
   font-size: 14px;
-  color: #222;
+  color: #111827;            /* gray-900 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
-  max-width: 120px;
-  display: inline-block;
+  max-width: 360px;          /* chỉnh theo layout bảng */
 }
+
+.productDesc {
+  font-size: 12px;
+  color: #6b7280;            /* gray-500 */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;   /* tối đa 2 dòng */
+  -webkit-box-orient: vertical;
+  max-width: 520px;          /* chỉnh theo layout bảng */
+  line-height: 1.35;
+}
+
+@media (max-width: 768px) {
+  .productName { max-width: 220px; }
+  .productDesc { max-width: 260px; }
+}
+
 
 .stars {
   color: #ffc107;

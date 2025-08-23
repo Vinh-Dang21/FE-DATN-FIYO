@@ -388,17 +388,15 @@
 
 /* Style cho icon chức năng */
 
-.actionGroup {
+/* .actionGroup {
   display: flex;
   flex-direction: row;
   justify-content: center;
-  /* Căn giữa theo chiều ngang */
   align-items: center;
-  /* Căn giữa theo chiều dọc */
   gap: 8px;
   min-width: 120px;
   height: 100%;
-}
+} */
 
 
 .actionBtn {
@@ -420,7 +418,7 @@
 }
 
 .statusBtn {
-  padding: 6px 12px;
+  padding: 6px 6px;
   background-color: #0ea5e9;
   color: #fff;
   border: none;
@@ -549,3 +547,60 @@
 }
 
 /* Ví dụ trong order.module.css */
+/* .actionGroup {
+  display: flex;
+  flex-direction: column; 
+  gap: 8px;
+  align-items: flex-start;
+} */
+
+
+.actionCell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewBtn {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+}
+.viewBtn:hover {
+  background: #f9fafb; /* gray-50 */
+}
+
+.actionStack {
+  display: flex;
+  flex-direction: column;  /* các nút xếp dọc */
+  gap: 8px;
+  align-items: flex-start;
+}
+
+/* Có sẵn: .statusBtn dùng như trước */
+.cancelBtn {
+   padding: 6px 6px;
+  background-color: #e74d4d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  vertical-align: middle;
+}
+.cancelBtn:hover {
+  background: #ffebee;
+  border-color: #e57373;
+}
+
+/* Responsive: dưới mobile cho nút trải ngang nếu muốn */
+@media (max-width: 640px) {
+  .actionCell { flex-direction: column; align-items: stretch; }
+  .actionStack { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+}
