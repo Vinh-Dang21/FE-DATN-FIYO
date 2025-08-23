@@ -265,7 +265,7 @@ export default function InventoryPage() {
     try {
       // ✅ GHÉP URL ĐÚNG: có dấu /
       // Lấy tất cả sản phẩm của shop, kể cả bị ẩn
-      let url = `${API_BASE}products/shop/${encodeURIComponent(shopId)}?includeHidden=true`;
+      let url = `${API_BASE}products/shop/${encodeURIComponent(shopId)}`;
 
       const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -344,6 +344,10 @@ export default function InventoryPage() {
   const normalize = (s: string = "") =>
     s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+  const tokenize = (kw: string) =>
+    normalize(kw).split(/\s+/).filter(Boolean);
+
+
   const loadShopProducts = async () => {
     if (!shopId) return;
     try {
@@ -367,22 +371,29 @@ export default function InventoryPage() {
 
   const applyFilters = (src = allProducts) => {
     const catId = filterChild || selectedChild;
-    const kw = normalize(searchKeyword.trim());
+    const tokens = tokenize(searchKeyword.trim());
 
     let list = src;
 
     if (catId) {
       list = list.filter(p => String(p?.category_id?.categoryId) === String(catId));
     }
-    if (kw) {
-      list = list.filter(p =>
-        normalize(p?.name).includes(kw) || normalize(p?.description).includes(kw)
-      );
+
+    if (tokens.length) {
+      list = list.filter(p => {
+        const text = normalize(
+          `${p?.name || ""} ${p?.description || ""} ${p?.category_id?.categoryName || ""} ${p?.material || ""}`
+        );
+        // tất cả token đều xuất hiện (không cần liền nhau)
+        return tokens.every(t => text.includes(t));
+      });
     }
 
     setProducts(list);
     setNoProduct(list.length === 0);
+    setCurrentPage(1); // về trang đầu khi đổi kết quả
   };
+
 
   useEffect(() => { if (shopId) loadShopProducts(); }, [shopId]);
   useEffect(() => { applyFilters(); }, [filterChild, selectedChild, searchKeyword, allProducts]);
@@ -514,54 +525,90 @@ export default function InventoryPage() {
     setSizes([]);
   };
 
-  // Hàm xử lý lưu thay đổi số lượng nhập hàng
-  async function handleSaveStockChange() {
-    if (!selectedProduct) return;
+function updateProductLocal(productId: string, newVariants: any[]) {
+  // cập nhật list đang hiển thị
+  setProducts(prev =>
+    prev.map(p => (p._id === productId ? { ...p, variants: newVariants } : p))
+  );
 
-    // Biến thể cũ (có thể đã nhập thêm số lượng)
-    const updatedVariants = selectedProduct.variants?.flatMap((vw: any) =>
-      vw.variants.map((v: any) => ({
+  // nếu bạn có allProducts dùng để lọc/ tìm kiếm
+  setAllProducts(prev =>
+    prev.map(p => (p._id === productId ? { ...p, variants: newVariants } : p))
+  );
+
+  // nếu đang mở form chi tiết của sản phẩm
+  setSelectedProduct(prev =>
+    prev && prev._id === productId ? { ...prev, variants: newVariants } : prev
+  );
+
+  // nếu bạn có hàm applyFilters dựa trên allProducts thì gọi lại
+  // applyFilters([...]) // không bắt buộc nếu useEffect đã theo dõi allProducts
+}
+
+
+  // Hàm xử lý lưu thay đổi số lượng nhập hàng
+async function handleSaveStockChange() {
+  if (!selectedProduct) return;
+
+  // 1) GHÉP variants mới từ số lượng thêm
+  const updatedVariants =
+    selectedProduct.variants?.flatMap((vw: any) =>
+      (vw.variants ?? [vw]).map((v: any) => ({
         ...v,
-        sizes: v.sizes.map((s: any) => {
-          const key = `${v._id}-${s._id}`;
+        sizes: (v.sizes ?? []).map((s: any) => {
+          const key = `${v._id ?? v.color}-${s._id ?? s.size}`;
           const add = Number(addedQuantities[key]) || 0;
-          return {
-            ...s,
-            quantity: s.quantity + add
-          };
+          return { ...s, quantity: (s.quantity || 0) + add };
         })
       }))
-    ) || [];
+    ) ?? [];
 
-    // Biến thể mới (từ state variants)
-    const newVariants = variants;
+  // 2) Biến thể mới đang tạo ở state `variants`
+  const newVariants = variants || [];
 
-    // Gộp tất cả lại
-    const allVariants = [...updatedVariants, ...newVariants];
+  // 3) Hợp nhất để gửi lên BE
+  const allVariants = [...updatedVariants, ...newVariants];
+  const payload = { variants: allVariants };
 
-    const payload = { variants: allVariants };
+  try {
+    const res = await fetch(
+      `${API_BASE}products/variants/${selectedProduct._id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
+    if (!res.ok) throw new Error(await res.text());
 
-    console.log("Payload gửi API:", payload);
-
+    // (khuyến nghị) nếu BE trả về sản phẩm/variants mới → dùng luôn
+    let mergedVariants = allVariants;
     try {
-      const res = await fetch(
-        `${API_BASE}products/variants/${selectedProduct._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        }
-      );
-      if (!res.ok) throw new Error(await res.text());
-      alert("Cập nhật thành công!");
-      setShowStockForm(false);
-      setAddedQuantities({});
-      setVariants([]); // reset biến thể mới
-      loadProducts();
-    } catch (err: any) {
-      alert("Lỗi khi cập nhật: " + err.message);
+      const data = await res.json();
+      mergedVariants =
+        data?.product?.variants ??
+        data?.variants ??
+        mergedVariants;
+    } catch (_) {
+      // BE không trả JSON hoặc không có body → giữ mergedVariants như cũ
     }
+
+    // ✅ Cập nhật UI ngay lập tức, không reload
+    updateProductLocal(selectedProduct._id, mergedVariants);
+
+    // reset form
+    setAddedQuantities({});
+    setVariants([]);
+    setShowStockForm(false);
+
+    // (tùy chọn) nếu bạn vẫn muốn đồng bộ lại từ server:
+    // loadShopProducts(); // hoặc loadProducts() của bạn
+    alert("Cập nhật thành công!");
+  } catch (err: any) {
+    alert("Lỗi khi cập nhật: " + err.message);
   }
+}
+
 
   // --- Render ---
   return (
@@ -742,6 +789,7 @@ export default function InventoryPage() {
                 )}
               </tbody>
             </table>
+
 
             <div className={styles.pagination}>
               <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>

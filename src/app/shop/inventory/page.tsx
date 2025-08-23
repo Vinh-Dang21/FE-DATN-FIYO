@@ -16,23 +16,23 @@ interface Product {
   shop_id?: string | { _id?: string };
 }
 
-const API_BASE = "https://fiyo.click";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
 const PLACEHOLDER_IMG =
   "https://via.placeholder.com/64x64?text=No+Img";
 
 export default function InventoryPage() {
   const router = useRouter();
-
+  const [shopId, setShopId] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [timePeriod, setTimePeriod] = useState<"week" | "month" | "year">("week");
   const [error, setError] = useState<string>("");
-  const [shopId, setShopId] = useState<string>("");
 
   // ---- check login & try to infer shopId
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
+
     if (!token || !userStr) {
       router.push("/warning-login");
       return;
@@ -44,22 +44,41 @@ export default function InventoryPage() {
         router.push("/warning-login");
         return;
       }
-
-      // cố gắng suy luận nhiều field phổ biến
-      const sid: string =
-        user?.shop_id ||
-        user?.shopId ||
-        user?.shop?._id ||
-        user?.shop?.id ||
-        user?.store_id ||
-        user?.storeId ||
-        ""; // có thể rỗng → sẽ để BE suy từ token
-
-      setShopId(sid || "");
-    } catch {
+    } catch (err) {
       router.push("/warning-login");
     }
   }, [router]);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return;
+
+    (async () => {
+      try {
+        const user = JSON.parse(userStr);
+        const userId = user?._id;
+        if (!userId) return;
+
+        const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
+        const data = await res.json();
+
+        // Đúng cấu trúc trả về
+        const id =
+          data?.shop?._id   // ✅ trường hợp hiện tại
+          ?? data?.shopId   // fallback nếu BE đổi
+          ?? data?._id;     // fallback khác
+
+        if (id) {
+          setShopId(String(id));
+          console.log("Shop ID:", id);
+        } else {
+          console.warn("Không tìm được shopId trong payload:", data);
+        }
+      } catch (err) {
+        console.error("Lỗi lấy shopId:", err);
+      }
+    })();
+  }, []);
 
   // ---- fetch data (works with or without shop_id)
   useEffect(() => {
@@ -72,7 +91,7 @@ export default function InventoryPage() {
       try {
         const token = localStorage.getItem("token") || "";
 
-        const url = new URL("/api/products/reports/least-sold", API_BASE);
+        const url = new URL(`${API_BASE}products/reports/least-sold`);
         url.searchParams.set("timePeriod", timePeriod);
         if (shopId) url.searchParams.set("shop_id", shopId); // chỉ gắn khi có
 

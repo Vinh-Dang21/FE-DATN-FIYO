@@ -19,74 +19,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { log } from "console";
-
-interface OrderShop {
+// ===== Common =====
+interface Voucher {
   _id: string;
-  order_id: Order | null;     // có thể null
-  shop_id: {
-    _id: string;
-    name: string;
-    // ... các field khác nếu cần
-  };
-  total_price: number;
-  status_order: string;
-  status_history: { status: string; updatedAt: string; note?: string; _id: string }[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Kiểu dòng hiển thị bảng (gộp từ OrderShop + Order nếu có)
-type RowOrder = {
-  _orderShopId: string;             // dùng để đi đến chi tiết
-  _id: string;                      // hiển thị mã (dùng luôn orderShopId cho chắc)
-  createdAt: string;                // ưu tiên OrderShop.createdAt
-  status_order: string;             // trạng thái của OrderShop
-  transaction_status?: string;      // nếu order cha có thì đếm failed
-  user_name: string;
-  user_email: string;
-  address_text: string;
-  user_id?: string;      // <-- thêm dòng này
-  address_id?: string;   // <-- thêm dòng này
-};
-
-
-interface Order {
-  _id: string;
-  total_price: number;
-  status_order: string;
-  createdAt: string;
-  user_id: User | null;
-  address_id: Address | null;
-  address_guess?: {
-    name: string;
-    phone: string;
-    email?: string;
-    province: string;
-    district: string;
-    ward: string;
-    detail: string;
-  };
-
-  voucher_id?: Voucher;
-  payment_method: string;
-  transaction_code: string | null;
-  transaction_status: string;
-}
-
-
-interface Address {
-  _id: string;
-  name: string;
-  phone: string;
-  address: string;
-  detail: string;
+  value: number;
+  voucher_code: string;
   type: string;
-  is_default?: boolean;
-  user_id?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  quantity: number;
+  created_at: string;
+  is_active: boolean;
+  expired_at: string | null;
+  max_total: number | null;
+  max_discount: number;
+  min_total: number;
 }
-
 
 interface User {
   _id: string;
@@ -103,19 +49,126 @@ interface User {
   id?: string;
 }
 
-interface Voucher {
+interface Address {
   _id: string;
-  value: number;
-  voucher_code: string;
-  type: string;
-  quantity: number;
-  created_at: string;
-  is_active: boolean;
-  expired_at: string | null;
-  max_total: number | null;
-  max_discount: number;
-  min_total: number;
+  name: string;
+  phone: string;
+  address: string;   // ví dụ: "Phường 3, Quận 10, TP.HCM"
+  detail: string;    // ví dụ: "Số 12, hẻm 34"
+  type: string;      // "Nhà riêng" | "Cơ quan" ...
+  is_default?: boolean;
+  user_id?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+// ===== Guest address (2 biến thể BE có thể trả) =====
+type GuestAddressBase = {
+  name: string;
+  phone: string;
+  email?: string;
+  type?: string;
+  detail: string;
+};
+
+type GuestAddressV1 = GuestAddressBase & {
+  address: string; // dạng gộp sẵn
+};
+
+type GuestAddressV2 = GuestAddressBase & {
+  province: string;
+  district: string;
+  ward: string;
+};
+
+export type AddressGuess = GuestAddressV1 | GuestAddressV2;
+
+
+// ===== Order (cha) =====
+interface Order {
+  _id: string;
+  total_price: number;
+  status_order: string;           // "unpending" | "pending" | "preparing" | ...
+  createdAt: string;
+  user_id: User | string | null;  // BE có thể trả object hoặc id
+  address_id: Address | string | null;
+  address_guess?: AddressGuess;   // ⬅️ UNION đã sửa
+  voucher_id?: Voucher;
+  payment_method: string;
+  transaction_code: string | null;
+  transaction_status: string;     // "unpaid" | "paid" | "failed" | ...
+  confirmed?: boolean;
+  cancel_reason?: string;
+  status_history?: { status: string; updatedAt: string; note?: string; _id: string }[];
+  updatedAt?: string;
+  __v?: number;
+}
+
+// ===== OrderShop (con theo shop) =====
+interface OrderShop {
+  _id: string;
+  order_id: Order | null; // có thể null
+  shop_id: {
+    _id: string;
+    name: string;
+    // ... bổ sung nếu cần
+  };
+  total_price: number;
+  status_order: string;  // "pending" | "preparing" | "shipping" | ...
+  status_history: { status: string; updatedAt: string; note?: string; _id: string }[];
+  createdAt: string;
+  updatedAt: string;
+  __v?: number;
+}
+
+// ===== Kiểu dòng hiển thị bảng =====
+type RowOrder = {
+  _orderShopId: string; // để đi tới chi tiết
+  _id: string;          // id hiển thị (dùng orderShopId)
+  createdAt: string;    // ưu tiên OrderShop.createdAt
+  status_order: string; // hiển thị (ưu tiên "unpending" nếu order cha unpending)
+  transaction_status?: string;
+
+  user_name: string;
+  user_email: string;
+  address_text: string;
+
+  user_id?: string;     // nếu order trả id (không phải object)
+  address_id?: string;
+
+  // block guest để render nhanh không cần fetch
+  _guest?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string; // "detail, address" hoặc "detail, ward, district, province"
+  };
+};
+
+// ===== (tuỳ chọn) helpers type guard + format address =====
+export function isGuestAddrV1(ag: AddressGuess): ag is GuestAddressV1 {
+  return (ag as GuestAddressV1).address !== undefined;
+}
+
+export function formatGuestAddress(ag?: AddressGuess): string {
+  if (!ag) return "";
+  const parts: string[] = [];
+  if (ag.detail) parts.push(ag.detail);
+
+  if ("address" in ag && ag.address) {
+    // V1: có address
+    parts.push(ag.address);
+  } else {
+    // V2: ghép ward, district, province
+    const ward = "ward" in ag ? ag.ward : undefined;
+    const district = "district" in ag ? ag.district : undefined;
+    const province = "province" in ag ? ag.province : undefined;
+    const tail = [ward, district, province].filter(Boolean).join(", ");
+    if (tail) parts.push(tail);
+  }
+  return parts.join(", ");
+}
+
 
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
@@ -144,7 +197,7 @@ export default function Order() {
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
   const [orders, setOrders] = useState<RowOrder[]>([]);
-  const [filteredStatus, setFilteredStatus] = useState<string>("pending");
+  const [filteredStatus, setFilteredStatus] = useState<string>("all");
   const [statusCounts, setStatusCounts] = useState({
     pending: 0,
     delivered: 0,
@@ -176,36 +229,36 @@ export default function Order() {
     }
   }, [router]);
 
-useEffect(() => {
-  const userStr = localStorage.getItem("user");
-  if (!userStr) return;
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return;
 
-  (async () => {
-    try {
-      const user = JSON.parse(userStr);
-      const userId = user?._id;
-      if (!userId) return;
+    (async () => {
+      try {
+        const user = JSON.parse(userStr);
+        const userId = user?._id;
+        if (!userId) return;
 
-      const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
-      const data = await res.json();
+        const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
+        const data = await res.json();
 
-      // Đúng cấu trúc trả về
-      const id =
-        data?.shop?._id   // ✅ trường hợp hiện tại
-        ?? data?.shopId   // fallback nếu BE đổi
-        ?? data?._id;     // fallback khác
+        // Đúng cấu trúc trả về
+        const id =
+          data?.shop?._id   // ✅ trường hợp hiện tại
+          ?? data?.shopId   // fallback nếu BE đổi
+          ?? data?._id;     // fallback khác
 
-      if (id) {
-        setShopId(String(id));
-        console.log("Shop ID:", id);
-      } else {
-        console.warn("Không tìm được shopId trong payload:", data);
+        if (id) {
+          setShopId(String(id));
+          console.log("Shop ID:", id);
+        } else {
+          console.warn("Không tìm được shopId trong payload:", data);
+        }
+      } catch (err) {
+        console.error("Lỗi lấy shopId:", err);
       }
-    } catch (err) {
-      console.error("Lỗi lấy shopId:", err);
-    }
-  })();
-}, []);
+    })();
+  }, []);
 
   // useEffect(() => {
   //   if (!shopId) return;
@@ -288,60 +341,87 @@ useEffect(() => {
   }, [shopId]);
 
   useEffect(() => {
-    if (!shopId) return;
+  if (!shopId) return;
 
-    const fetchFilteredOrders = async () => {
-      try {
-        const url = new URL(`${API_BASE}orderShop/shop/${shopId}`);
-        if (filteredStatus && filteredStatus !== "all") {
-          url.searchParams.set("status", filteredStatus); // BE đã hỗ trợ ?status
+  const fetchFilteredOrders = async () => {
+    try {
+      const url = new URL(`${API_BASE}orderShop/shop/${shopId}`);
+
+      // BE chỉ lọc được theo status của OrderShop.
+      // Với 'unpending' (thuộc order cha) thì KHÔNG gắn query cho BE.
+      if (filteredStatus && filteredStatus !== "all" && filteredStatus !== "unpending") {
+        url.searchParams.set("status", filteredStatus);
+      }
+
+      const res = await fetch(url.toString());
+      const data = await res.json();
+
+      if (data.status && data.result && Array.isArray(data.result.items)) {
+        let items: OrderShop[] = data.result.items;
+
+        // Lọc 'unpending' theo trạng thái của ORDER CHA
+        if (filteredStatus === "unpending") {
+          items = items.filter(os => os.order_id?.status_order === "unpending");
         }
 
-        const res = await fetch(url.toString());
-        const data = await res.json();
-
-        if (data.status && data.result && Array.isArray(data.result.items)) {
-          let items: OrderShop[] = data.result.items;
-
-          // Lọc ngày theo OrderShop.createdAt (vì order_id có thể null)
-          if (fromDate) {
-            const from = dayjs(fromDate).startOf("day");
-            items = items.filter((os) => dayjs(os.createdAt).isAfter(from) || dayjs(os.createdAt).isSame(from));
-          }
-          if (toDate) {
-            const to = dayjs(toDate).endOf("day");
-            items = items.filter((os) => dayjs(os.createdAt).isBefore(to) || dayjs(os.createdAt).isSame(to));
-          }
-
-          // Map sang RowOrder để bảng render ổn định
-          const rows: RowOrder[] = items.map((os) => {
-            const o = os.order_id;
-            return {
-              _orderShopId: os._id,
-              _id: os._id,
-              createdAt: os.createdAt,
-              status_order: os.status_order,
-              transaction_status: o?.transaction_status,
-              user_name: "", // sẽ lấy sau
-              user_email: "",
-              address_text: "",
-              user_id: typeof o?.user_id === "string" ? o.user_id : undefined,
-              address_id: typeof o?.address_id === "string" ? o.address_id : undefined,
-            };
-          });
-
-          setOrders(rows);
-        } else {
-          setOrders([]);
+        // Lọc ngày theo OrderShop.createdAt
+        if (fromDate) {
+          const from = dayjs(fromDate).startOf("day");
+          items = items.filter(os => dayjs(os.createdAt).isAfter(from) || dayjs(os.createdAt).isSame(from));
         }
-      } catch (error) {
-        console.error("Lỗi khi lọc đơn hàng:", error);
+        if (toDate) {
+          const to = dayjs(toDate).endOf("day");
+          items = items.filter(os => dayjs(os.createdAt).isBefore(to) || dayjs(os.createdAt).isSame(to));
+        }
+
+        // Map sang RowOrder
+        const rows: RowOrder[] = items.map((os) => {
+          const o = os.order_id;
+          const ag = o?.address_guess;               // AddressGuess | undefined
+          const addrText = formatGuestAddress(ag);   // 🔹 dùng helper, KHÔNG gọi ag.address trực tiếp
+          const parentUnpending = o?.status_order === "unpending";
+
+          return {
+            _orderShopId: os._id,
+            _id: os._id,
+            createdAt: os.createdAt,
+            // Ưu tiên hiển thị 'unpending' nếu order cha còn unpending
+            status_order: parentUnpending ? "unpending" : os.status_order,
+            transaction_status: o?.transaction_status,
+
+            // sẽ điền bởi fetch user/address hoặc dùng guest
+            user_name: "",
+            user_email: "",
+            address_text: addrText,   // 🔹 lưu sẵn text địa chỉ để fallback khi render
+
+            user_id: typeof o?.user_id === "string" ? o.user_id : undefined,
+            address_id: typeof o?.address_id === "string" ? o.address_id : undefined,
+
+            // Block guest để render nhanh
+            _guest: ag
+              ? {
+                  name: ag.name,
+                  email: ag.email ?? "",
+                  phone: ag.phone ?? "",
+                  address: addrText,
+                }
+              : undefined,
+          };
+        });
+
+        setOrders(rows);
+      } else {
         setOrders([]);
       }
-    };
+    } catch (error) {
+      console.error("Lỗi khi lọc đơn hàng:", error);
+      setOrders([]);
+    }
+  };
 
-    fetchFilteredOrders();
-  }, [shopId, filteredStatus, fromDate, toDate]);
+  fetchFilteredOrders();
+}, [shopId, filteredStatus, fromDate, toDate]);
+
 
 
   const handleUpdateStatus = async (orderId: string, newStatus: string, showAlert = true) => {
@@ -436,24 +516,24 @@ useEffect(() => {
   };
 
 
-  const getCustomerInfo = (order: Order) => {
-    if (order.user_id) {
-      return {
-        name: order.user_id.name,
-        email: order.user_id.email,
-      };
-    } else if (order.address_guess) {
-      return {
-        name: order.address_guess.name,
-        email: order.address_guess.email || "Không có email",
-      };
-    } else {
-      return {
-        name: "Khách lạ",
-        email: "Không có email",
-      };
-    }
-  };
+  // const getCustomerInfo = (order: Order) => {
+  //   if (order.user_id) {
+  //     return {
+  //       name: order.user_id.name,
+  //       email: order.user_id.email,
+  //     };
+  //   } else if (order.address_guess) {
+  //     return {
+  //       name: order.address_guess.name,
+  //       email: order.address_guess.email || "Không có email",
+  //     };
+  //   } else {
+  //     return {
+  //       name: "Khách lạ",
+  //       email: "Không có email",
+  //     };
+  //   }
+  // };
 
   const handleConfirmOrder = async (orderId: string, showAlert = true) => {
     try {
@@ -482,7 +562,6 @@ useEffect(() => {
 
   // Hàm lấy thông tin người dùng và địa chỉ từ order
   async function fetchUserAndAddressInfo(userId: string, addressId: string) {
-    console.log("Fetching user and address info for:", userId, addressId);
 
     try {
       const [userRes, addressRes] = await Promise.all([
@@ -516,7 +595,7 @@ useEffect(() => {
 
     needFetch.forEach((order) => {
       fetchUserAndAddressInfo(order.user_id!, order.address_id!).then((info) => {
-        console.log("User info:", info.user); // <-- kiểm tra ở đây
+        
         setCustomerInfoMap((prev) => ({
           ...prev,
           [order._id]: {
@@ -631,7 +710,10 @@ useEffect(() => {
             </thead>
             <tbody>
               {orders.map((order) => {
-                const customer = customerInfoMap[order._id] || { name: "Đang tải...", email: "" };
+                const customer =
+                  customerInfoMap[order._id] ||
+                  order._guest ||  // 👈 thêm dòng này
+                  { name: "Khách lạ", email: "", phone: "", address: "" };
                 return (
                   <tr key={order._id}>
                     <td>
@@ -673,80 +755,69 @@ useEffect(() => {
                                     ? styles["status-dahuy"]
                                     : order.status_order === "refund"
                                       ? styles["status-trahang"]
-                                      : ""
+                                      : order.status_order === "unpending"
+                                        ? styles["status-chuaxacthuc"]
+                                        : ""
                           }`}
                       >
-                        {order.status_order === "pending"
-                          ? "Chờ xác nhận"
-                          : order.status_order === "preparing"
-                            ? "Đang soạn hàng"
-                            : order.status_order === "awaiting_shipment"
-                              ? "Chờ gửi hàng"
-                              : order.status_order === "shipping"
-                                ? "Đang giao hàng"
-                                : order.status_order === "delivered"
-                                  ? "Đã giao hàng"
-                                  : order.status_order === "cancelled"
-                                    ? "Đã hủy"
-                                    : order.status_order === "refund"
-                                      ? "Trả hàng / Hoàn tiền"
-                                      : order.status_order}
+                        {order.status_order === "unpending"
+                          ? "Chưa xác thực"
+                          : order.status_order === "pending"
+                            ? "Chờ xác nhận"
+                            : order.status_order === "preparing"
+                              ? "Đang soạn hàng"
+                              : order.status_order === "awaiting_shipment"
+                                ? "Chờ gửi hàng"
+                                : order.status_order === "shipping"
+                                  ? "Đang giao hàng"
+                                  : order.status_order === "delivered"
+                                    ? "Đã giao hàng"
+                                    : order.status_order === "cancelled"
+                                      ? "Đã hủy"
+                                      : order.status_order === "refund"
+                                        ? "Trả hàng / Hoàn tiền"
+
+                                        : order.status_order}
                       </span>
-
-
                     </td>
 
                     <td className={styles.shippingInfo}>
                       {customer.address ? (
                         <>
-                          <div className={styles.userDesc}>
-                            <strong>SĐT:</strong> {customer.phone}
-                          </div>
+                          {customer.phone && (
+                            <div className={styles.userDesc}>
+                              <strong>SĐT:</strong> {customer.phone}
+                            </div>
+                          )}
                           <div className={styles.userDesc}>
                             <strong>Địa chỉ:</strong> {customer.address}
                           </div>
                         </>
-
                       ) : (
                         <div className={styles.userDesc}>Không có địa chỉ</div>
                       )}
                     </td>
-
-                    {/* <td className={styles.shippingInfo}>
-                      {order.address_id ? (
-                        <>
-                          <div className={styles.userDesc}>
-                            <strong>SĐT:</strong> {order.address_id.phone}
-                          </div>
-                          <div className={styles.userDesc}>
-                            <strong>Địa chỉ:</strong> {order.address_id.detail}, {order.address_id.address}
-                          </div>
-                        </>
-                      ) : order.address_guess ? (
-                        <>
-                          <div className={styles.userDesc}>
-                            <strong>SĐT:</strong> {order.address_guess.phone}
-                          </div>
-                          <div className={styles.userDesc}>
-                            <strong>Địa chỉ:</strong>{" "}
-                            {`${order.address_guess.detail}, ${order.address_guess.ward}, ${order.address_guess.district}, ${order.address_guess.province}`}
-                          </div>
-                        </>
-                      ) : (
-                        <div className={styles.userDesc}>Không có địa chỉ</div>
-                      )}
-                    </td> */}
 
                     <td>
                       <div className={styles.actionGroup}>
                         <button className={styles.actionBtn} onClick={() => handleViewOrder(order)}>
                           <Eye size={25} />
                         </button>
+                        {order.status_order === "unpending" && (
+                          <button
+                            className={styles.statusBtn}
+                            // onClick={() => handleConfirmOrder(order._id)}
+                            onClick={() => handleUpdateStatus(order._id, "pending")}
+                          >
+                            Đã xác thực
+                          </button>
+                        )}
+
                         {order.status_order === "pending" && (
                           <button
                             className={styles.statusBtn}
                             onClick={() => handleConfirmOrder(order._id)}
-                            // onClick={() => handleUpdateStatus(order._id, "preparing")}
+                          // onClick={() => handleUpdateStatus(order._id, "preparing")}
                           >
                             Xác nhận
                           </button>

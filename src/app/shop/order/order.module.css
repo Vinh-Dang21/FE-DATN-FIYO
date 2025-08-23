@@ -330,6 +330,11 @@
 }
 
 /* Các trạng thái mới */
+.status-chuaxacthuc {
+  background: #f12828;
+  /* Cam vàng */
+  color: #fff;
+}
 .status-choxacnhan {
   background: #FFA500;
   /* Cam vàng */

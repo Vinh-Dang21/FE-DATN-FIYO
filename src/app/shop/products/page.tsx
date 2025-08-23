@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 
 interface Variant {
   color: string;
@@ -83,6 +84,8 @@ export default function Product() {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [imageWarning, setImageWarning] = useState("");
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 15; // số sản phẩm mỗi trang
 
 
   useEffect(() => {
@@ -105,36 +108,36 @@ export default function Product() {
     }
   }, [router]);
 
-useEffect(() => {
-  const userStr = localStorage.getItem("user");
-  if (!userStr) return;
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return;
 
-  (async () => {
-    try {
-      const user = JSON.parse(userStr);
-      const userId = user?._id;
-      if (!userId) return;
+    (async () => {
+      try {
+        const user = JSON.parse(userStr);
+        const userId = user?._id;
+        if (!userId) return;
 
-      const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
-      const data = await res.json();
+        const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
+        const data = await res.json();
 
-      // Đúng cấu trúc trả về
-      const id =
-        data?.shop?._id   // ✅ trường hợp hiện tại
-        ?? data?.shopId   // fallback nếu BE đổi
-        ?? data?._id;     // fallback khác
+        // Đúng cấu trúc trả về
+        const id =
+          data?.shop?._id   // ✅ trường hợp hiện tại
+          ?? data?.shopId   // fallback nếu BE đổi
+          ?? data?._id;     // fallback khác
 
-      if (id) {
-        setShopId(String(id));
-        console.log("Shop ID:", id);
-      } else {
-        console.warn("Không tìm được shopId trong payload:", data);
+        if (id) {
+          setShopId(String(id));
+          console.log("Shop ID:", id);
+        } else {
+          console.warn("Không tìm được shopId trong payload:", data);
+        }
+      } catch (err) {
+        console.error("Lỗi lấy shopId:", err);
       }
-    } catch (err) {
-      console.error("Lỗi lấy shopId:", err);
-    }
-  })();
-}, []);
+    })();
+  }, []);
 
 
   const handleEditProduct = async (product: Product) => {
@@ -374,52 +377,52 @@ useEffect(() => {
   };
 
   const fetchProducts = async () => {
-  if (!shopId) {
-    setProducts([]);
-    setNoProduct(true);
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    const res = await fetch(
-      `${API_BASE}products/shop/${shopId}`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const data = await res.json();
-
-    // Hỗ trợ 2 format: [ {status:true}, ...items ] HOẶC { products: [...] }
-    let list: Product[] = [];
-    if (Array.isArray(data) && data.length > 1 && data[0]?.status === true) {
-      list = data.slice(1) as Product[];
-    } else if (Array.isArray((data as any)?.products)) {
-      list = (data as any).products as Product[];
-    } else if (Array.isArray(data)) {
-      list = data as Product[];
+    if (!shopId) {
+      setProducts([]);
+      setNoProduct(true);
+      return;
     }
 
-    // Đảm bảo có variants
-    list = list.map(p => ({ ...p, variants: p.variants ?? [] }));
+    try {
+      setLoading(true);
 
-    // Lọc theo danh mục ở FE (nếu cần)
-    const catId = filterChild || selectedChild;
-    if (catId) {
-      list = list.filter(p => String(p?.category_id?.categoryId) === String(catId));
+      const res = await fetch(
+        `${API_BASE}products/shop/${shopId}`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+
+      // Hỗ trợ 2 format: [ {status:true}, ...items ] HOẶC { products: [...] }
+      let list: Product[] = [];
+      if (Array.isArray(data) && data.length > 1 && data[0]?.status === true) {
+        list = data.slice(1) as Product[];
+      } else if (Array.isArray((data as any)?.products)) {
+        list = (data as any).products as Product[];
+      } else if (Array.isArray(data)) {
+        list = data as Product[];
+      }
+
+      // Đảm bảo có variants
+      list = list.map(p => ({ ...p, variants: p.variants ?? [] }));
+
+      // Lọc theo danh mục ở FE (nếu cần)
+      const catId = filterChild || selectedChild;
+      if (catId) {
+        list = list.filter(p => String(p?.category_id?.categoryId) === String(catId));
+      }
+
+      setProducts(list);
+      setNoProduct(list.length === 0);
+    } catch (error) {
+      console.error("Lỗi khi lấy sản phẩm:", error);
+      setProducts([]);
+      setNoProduct(true);
+    } finally {
+      setLoading(false);
     }
-
-    setProducts(list);
-    setNoProduct(list.length === 0);
-  } catch (error) {
-    console.error("Lỗi khi lấy sản phẩm:", error);
-    setProducts([]);
-    setNoProduct(true);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
   useEffect(() => {
@@ -576,7 +579,7 @@ useEffect(() => {
 
     fetchProducts();
   }, [selectedChild]);
- 
+
   const handleChangeVisibility = async (id: string, currentStatus: boolean) => {
     try {
       const res = await fetch(`${API_BASE}products/${id}/visibility`, {
@@ -730,6 +733,10 @@ useEffect(() => {
   const normalize = (s: string = "") =>
     s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+  const tokenize = (kw: string) =>
+    normalize(kw).split(/\s+/).filter(Boolean);
+
+
   const loadShopProducts = async () => {
     if (!shopId) return;
     try {
@@ -753,22 +760,29 @@ useEffect(() => {
 
   const applyFilters = (src = allProducts) => {
     const catId = filterChild || selectedChild;
-    const kw = normalize(searchKeyword.trim());
+    const tokens = tokenize(searchKeyword.trim());
 
     let list = src;
 
     if (catId) {
       list = list.filter(p => String(p?.category_id?.categoryId) === String(catId));
     }
-    if (kw) {
-      list = list.filter(p =>
-        normalize(p?.name).includes(kw) || normalize(p?.description).includes(kw)
-      );
+
+    if (tokens.length) {
+      list = list.filter(p => {
+        const text = normalize(
+          `${p?.name || ""} ${p?.description || ""} ${p?.category_id?.categoryName || ""} ${p?.material || ""}`
+        );
+        // tất cả token đều xuất hiện (không cần liền nhau)
+        return tokens.every(t => text.includes(t));
+      });
     }
 
     setProducts(list);
     setNoProduct(list.length === 0);
+    setCurrentPage(1); // về trang đầu khi đổi kết quả
   };
+
 
   useEffect(() => { if (shopId) loadShopProducts(); }, [shopId]);
   useEffect(() => { applyFilters(); }, [filterChild, selectedChild, searchKeyword, allProducts]);
@@ -790,6 +804,50 @@ useEffect(() => {
       setImageWarning(""); // Xóa cảnh báo khi còn 4 ảnh trở xuống
     }
   };
+
+  // sinh ra danh sách số trang + "..."
+  function getPaginationNumbers(totalPages: number, currentPage: number) {
+    const delta = 1; // số trang hiển thị 2 bên currentPage
+    const range: (number | string)[] = [];
+    const rangeWithDots: (number | string)[] = [];
+
+    let left = currentPage - delta;
+    let right = currentPage + delta;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= left && i <= right)) {
+        range.push(i);
+      }
+    }
+
+    let l: number | undefined;
+    for (let i of range) {
+      if (l) {
+        if (Number(i) - l === 2) {
+          rangeWithDots.push(l + 1);
+        } else if (Number(i) - l > 2) {
+          rangeWithDots.push("...");
+        }
+      }
+      rangeWithDots.push(i);
+      l = Number(i);
+    }
+
+    return rangeWithDots;
+  }
+  const filteredProducts = products.filter((product: any) => {
+    const totalQty = getTotalQuantity(product.variants);
+
+    if (stockFilter === "available") return totalQty >= 50;
+    if (stockFilter === "low") return totalQty > 0 && totalQty < 50;
+    if (stockFilter === "out") return totalQty === 0;
+    return true;
+  });
+
+
+  const totalPages = Math.ceil(filteredProducts.length / limit);
+  const startIndex = (currentPage - 1) * limit;
+  const pagedProducts = filteredProducts.slice(startIndex, startIndex + limit);
 
 
 
@@ -1171,104 +1229,119 @@ useEffect(() => {
               </tr>
             </thead>
             <tbody>
-              {products.filter((product: any) => {
-                const totalQty = getTotalQuantity(product.variants);
-
-                if (stockFilter === "available") return totalQty >= 50;
-                if (stockFilter === "low") return totalQty > 0 && totalQty < 50;
-                if (stockFilter === "out") return totalQty === 0;
-                return true;
-              }).length === 0 ? (
+              {pagedProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>
+                  <td colSpan={7} style={{ textAlign: "center", padding: "1rem" }}>
                     Không có sản phẩm nào trong danh mục này.
                   </td>
                 </tr>
               ) : (
-                products
-                  .filter((product: any) => {
-                    const totalQty = getTotalQuantity(product.variants);
-
-                    if (stockFilter === "available") return totalQty >= 50;
-                    if (stockFilter === "low") return totalQty > 0 && totalQty < 50;
-                    if (stockFilter === "out") return totalQty === 0;
-                    return true;
-                  })
-                  .map((product: any) => (
-                    <tr key={product._id}>
-                      <td>
-                        <div className={styles.productInfo}>
-                          <img
-                            src={product.images?.[0]}
-                            alt={product.name}
-                            className={styles.productImage}
-                          />
-                          <div className={styles.productDetails}>
-                            <div className={styles.productName}>{product.name}</div>
-                            <div className={styles.productDesc}>
-                              {expandedRows.includes(product._id) ? (
-                                <>
-                                  {product.description}
+                pagedProducts.map((product: any) => (
+                  <tr key={product._id}>
+                    <td>
+                      <div className={styles.productInfo}>
+                        <img
+                          src={product.images?.[0]}
+                          alt={product.name}
+                          className={styles.productImage}
+                        />
+                        <div className={styles.productDetails}>
+                          <div className={styles.productName}>{product.name}</div>
+                          <div className={styles.productDesc}>
+                            {expandedRows.includes(product._id) ? (
+                              <>
+                                {product.description}
+                                <button
+                                  className={styles.descBtn}
+                                  onClick={() => handleToggleDesc(product._id)}
+                                >
+                                  Thu gọn
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                {product.description.length > 80
+                                  ? product.description.slice(0, 80) + "..."
+                                  : product.description}
+                                {product.description.length > 80 && (
                                   <button
                                     className={styles.descBtn}
                                     onClick={() => handleToggleDesc(product._id)}
                                   >
-                                    Thu gọn
+                                    Xem thêm
                                   </button>
-                                </>
-                              ) : (
-                                <>
-                                  {product.description.length > 80
-                                    ? product.description.slice(0, 80) + "..."
-                                    : product.description}
-                                  {product.description.length > 80 && (
-                                    <button
-                                      className={styles.descBtn}
-                                      onClick={() => handleToggleDesc(product._id)}
-                                    >
-                                      Xem thêm
-                                    </button>
-                                  )}
-                                </>
-                              )}
-                            </div>
+                                )}
+                              </>
+                            )}
                           </div>
                         </div>
-                      </td>
-                      <td>
-                        <label className={styles.switch}>
-                          <input
-                            type="checkbox"
-                            checked={!product.isHidden}
-                            onChange={() => handleChangeVisibility(product._id, product.isHidden)}
-                          />
-                          <span className={styles.slider}></span>
-                        </label>
-                      </td>
-
-                      <td>{product.category_id?.categoryName}</td>
-                      <td>{product.price.toLocaleString()} VND</td>
-                      <td>{getTotalQuantity(product.variants)}</td>
-                      <td>
-                        <span className={getProductStatusClass(product.variants)}>
-                          {getProductStatus(product.variants)}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className={styles.actionBtn}
-                          title="Sửa"
-                          onClick={() => handleEditProduct(product)}
-                        >
-                          <Pencil size={20} />
-                        </button>
-
-                      </td>
-                    </tr>
-                  ))
+                      </div>
+                    </td>
+                    <td>
+                      <label className={styles.switch}>
+                        <input
+                          type="checkbox"
+                          checked={!product.isHidden}
+                          onChange={() =>
+                            handleChangeVisibility(product._id, product.isHidden)
+                          }
+                        />
+                        <span className={styles.slider}></span>
+                      </label>
+                    </td>
+                    <td>{product.category_id?.categoryName}</td>
+                    <td>{product.price.toLocaleString()} VND</td>
+                    <td>{getTotalQuantity(product.variants)}</td>
+                    <td>
+                      <span className={getProductStatusClass(product.variants)}>
+                        {getProductStatus(product.variants)}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className={styles.actionBtn}
+                        title="Sửa"
+                        onClick={() => handleEditProduct(product)}
+                      >
+                        <Pencil size={20} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
+
           </table>
+          <div className={styles.pagination}>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            >
+              Trang trước
+            </button>
+
+            {getPaginationNumbers(totalPages, currentPage).map((page, idx) =>
+              page === "..." ? (
+                <span key={idx} className={styles.ellipsis}>...</span>
+              ) : (
+                <button
+                  key={idx}
+                  className={currentPage === page ? styles.activePage : ""}
+                  onClick={() => setCurrentPage(page as number)}
+                >
+                  {page}
+                </button>
+              )
+            )}
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            >
+              Trang sau
+            </button>
+          </div>
+
         </div>
       </section>
     </main>
