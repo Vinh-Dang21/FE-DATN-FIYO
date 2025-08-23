@@ -1,28 +1,38 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./inventory.module.css";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
 import { useRouter } from "next/navigation";
+
 interface Product {
+  _id?: string;
   name: string;
   images?: string[];
   image?: string;
   sale_count: number;
   price?: number;
   total_quantity?: number;
+  shop_id?: string | { _id?: string };
 }
+
+const API_BASE = "https://fiyo.click";
+const PLACEHOLDER_IMG =
+  "https://via.placeholder.com/64x64?text=No+Img";
 
 export default function InventoryPage() {
   const router = useRouter();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timePeriod, setTimePeriod] = useState("week");
+  const [timePeriod, setTimePeriod] = useState<"week" | "month" | "year">("week");
+  const [error, setError] = useState<string>("");
+  const [shopId, setShopId] = useState<string>("");
 
+  // ---- check login & try to infer shopId
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
-
     if (!token || !userStr) {
       router.push("/warning-login");
       return;
@@ -34,38 +44,84 @@ export default function InventoryPage() {
         router.push("/warning-login");
         return;
       }
-    } catch (err) {
+
+      // cố gắng suy luận nhiều field phổ biến
+      const sid: string =
+        user?.shop_id ||
+        user?.shopId ||
+        user?.shop?._id ||
+        user?.shop?.id ||
+        user?.store_id ||
+        user?.storeId ||
+        ""; // có thể rỗng → sẽ để BE suy từ token
+
+      setShopId(sid || "");
+    } catch {
       router.push("/warning-login");
     }
   }, [router]);
 
+  // ---- fetch data (works with or without shop_id)
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const response = await fetch(
-          `https://fiyo.click/api/products/reports/least-sold?timePeriod=${timePeriod}`,
-          { method: "GET" }
-        );
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const data = await response.json();
+    let abort = false;
 
-        if (data && Array.isArray(data.result)) {
-          setProducts(data.result);
-        } else {
-          console.error("Unexpected API format:", data);
+    async function fetchProducts() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const token = localStorage.getItem("token") || "";
+
+        const url = new URL("/api/products/reports/least-sold", API_BASE);
+        url.searchParams.set("timePeriod", timePeriod);
+        if (shopId) url.searchParams.set("shop_id", shopId); // chỉ gắn khi có
+
+        const res = await fetch(url.toString(), {
+          method: "GET",
+          cache: "no-store",
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        const data = await res.json();
+
+        const list: Product[] = Array.isArray(data?.result) ? data.result : [];
+
+        // nếu BE chưa lọc theo shop, lọc FE theo p.shop_id
+        const filtered = shopId
+          ? list.filter((p) => {
+            const sid =
+              typeof p.shop_id === "string" ? p.shop_id : p.shop_id?._id;
+            return !sid || sid === shopId;
+          })
+          : list;
+
+        // sort tăng dần theo sale_count
+        const sorted = filtered
+          .slice()
+          .sort((a, b) => (a.sale_count ?? 0) - (b.sale_count ?? 0));
+
+        if (!abort) setProducts(sorted);
+      } catch (e: any) {
+        if (!abort) {
+          setError(e?.message || "Không lấy được báo cáo tồn kho.");
           setProducts([]);
         }
-      } catch (error) {
-        console.error("Error fetching products:", error);
       } finally {
-        setLoading(false);
+        if (!abort) setLoading(false);
       }
     }
 
     fetchProducts();
-  }, [timePeriod]);
+    return () => {
+      abort = true;
+    };
+  }, [timePeriod, shopId]);
+
+  const getImage = (p: Product) =>
+    (Array.isArray(p.images) && p.images[0]) || p.image || PLACEHOLDER_IMG;
+
+  const prettyProducts = useMemo(() => products, [products]);
 
   return (
     <main className={styles.main}>
@@ -73,10 +129,9 @@ export default function InventoryPage() {
       <section className={styles.content}>
         <Topbar />
 
-        {/* Khu vực tìm kiếm và lọc - đồng bộ với trang danh mục */}
         <div className={styles.searchProduct}>
           <div className={styles.spaceBetween}>
-            <h2 className={styles.userListTitle}> Hàng Tồn kho </h2>
+            <h2 className={styles.userListTitle}>Hàng Tồn kho</h2>
             <div className={styles.filterButtons}>
               <button
                 onClick={() => setTimePeriod("week")}
@@ -101,7 +156,9 @@ export default function InventoryPage() {
         </div>
 
         {loading ? (
-          <p>Loading...</p>
+          <p>Đang tải...</p>
+        ) : error ? (
+          <div className={styles.errorBanner}>{error}</div>
         ) : (
           <div className={styles.usertList}>
             <table className={styles.cateTable}>
@@ -109,40 +166,44 @@ export default function InventoryPage() {
                 <tr>
                   <th>Sản phẩm</th>
                   <th>Giá</th>
-                  <th>Số lượng đã bán</th>
-                  <th>Số lượng tồn kho</th>
+                  <th>Đã bán</th>
+                  <th>Tồn kho</th>
                 </tr>
               </thead>
               <tbody>
-                {products.map((product, index) => (
-                  <tr key={index}>
-                    <td>
-                      <div className={styles.productInfo}>
-                        <img
-                          src={
-                            Array.isArray(product.images)
-                              ? product.images[0]
-                              : product.image
-                          }
-                          alt={product.name}
-                          className={styles.productImage}
-                        />
-                        <span className={styles.productName}>
-                          {product.name}
-                        </span>
-                      </div>
+                {prettyProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: "center", padding: 24 }}>
+                      Không có dữ liệu cho khoảng thời gian đã chọn.
                     </td>
-                    <td>
-                      {product.price
-                        ? `${product.price.toLocaleString()}₫`
-                        : "N/A"}
-                    </td>
-                    <td>{product.sale_count}</td>
-                    <td>{product.total_quantity ?? 1}</td>
                   </tr>
-                ))}
+                ) : (
+                  prettyProducts.map((product, index) => (
+                    <tr key={product._id || index}>
+                      <td>
+                        <div className={styles.productInfo}>
+                          <img
+                            src={getImage(product)}
+                            alt={product.name}
+                            className={styles.productImage}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = PLACEHOLDER_IMG;
+                            }}
+                          />
+                          <span className={styles.productName}>{product.name}</span>
+                        </div>
+                      </td>
+                      <td>
+                        {typeof product.price === "number"
+                          ? `${product.price.toLocaleString()}₫`
+                          : "N/A"}
+                      </td>
+                      <td>{product.sale_count ?? 0}</td>
+                      <td>{product.total_quantity ?? 0}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
-
             </table>
           </div>
         )}
