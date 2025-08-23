@@ -33,11 +33,9 @@ function encodePath(path: string) {
     .map((seg, i) => (i === 0 && seg === "" ? "" : encodeURIComponent(seg)))
     .join("/");
 }
-
 function normalizeUrl(u?: string) {
   if (!u) return "";
   let url = u.trim().replace(/\\/g, "/").replace(/\?+.*/, "");
-
   if (/^https?:\/\//i.test(url)) {
     try {
       const obj = new URL(url);
@@ -47,38 +45,29 @@ function normalizeUrl(u?: string) {
       return url;
     }
   }
-
   if (url.startsWith("public/images/")) url = `/api/images/${url.slice(14)}`;
   if (!url.startsWith("/")) url = `/${url}`;
   return `${API_BASE}${encodePath(url)}`;
 }
-
 function buildFallbacks(raw?: string) {
   const out: string[] = [];
   if (!raw) return out;
-
   const clean = raw.trim().replace(/\\/g, "/").replace(/\?+.*/, "");
   const parts = clean.split("/");
   const file = parts.pop() || "";
   const dir = parts.join("/");
   const lowerFile = file.toLowerCase();
   const isBareFile = !dir;
-
   const addAbs = (p: string) => out.push(normalizeUrl(p));
   const addWithPrefixes = (fname: string) => {
-    ["/api/images/", "/images/", "/uploads/", "public/images/"].forEach((pre) =>
-      addAbs(pre + fname)
-    );
+    ["/api/images/", "/images/", "/uploads/", "public/images/"].forEach((pre) => addAbs(pre + fname));
   };
-
   if (dir) addAbs([dir, file].filter(Boolean).join("/"));
   else addAbs(file);
-
   if (lowerFile !== file) {
     if (dir) addAbs([dir, lowerFile].filter(Boolean).join("/"));
     else addAbs(lowerFile);
   }
-
   const exts = ["webp", "jpg", "jpeg", "png"];
   const base = lowerFile.replace(/\.[a-z0-9]+$/i, "");
   exts.forEach((ext) => {
@@ -86,35 +75,25 @@ function buildFallbacks(raw?: string) {
     if (dir) addAbs([dir, candidate].filter(Boolean).join("/"));
     else addAbs(candidate);
   });
-
   if (isBareFile) {
     addWithPrefixes(file);
     if (lowerFile !== file) addWithPrefixes(lowerFile);
     exts.forEach((ext) => addWithPrefixes(`${base}.${ext}`));
   }
-
-  if (clean.startsWith("/uploads/"))
-    addAbs(`/api/images/${clean.slice("/uploads/".length)}`);
-  if (clean.startsWith("public/images/"))
-    addAbs(`/api/images/${clean.slice("public/images/".length)}`);
-
+  if (clean.startsWith("/uploads/")) addAbs(`/api/images/${clean.slice("/uploads/".length)}`);
+  if (clean.startsWith("public/images/")) addAbs(`/api/images/${clean.slice("public/images/".length)}`);
   return Array.from(new Set(out));
 }
-
 function ImgWithFallback({ src, alt, className }: { src?: string; alt: string; className?: string }) {
   const [tries, setTries] = useState<string[]>(() => buildFallbacks(src));
   const [idx, setIdx] = useState(0);
   const cur = tries[idx] || "";
-
   useEffect(() => {
     const list = buildFallbacks(src);
     setTries(list);
     setIdx(0);
-    console.debug("[ImgWithFallback] candidates for", src, list);
   }, [src]);
-
   if (!cur) return null;
-
   return (
     <img
       src={cur}
@@ -123,7 +102,6 @@ function ImgWithFallback({ src, alt, className }: { src?: string; alt: string; c
       onError={() => {
         const next = idx + 1;
         if (next < tries.length) setIdx(next);
-        else console.warn("Ảnh failed sau mọi fallback:", { original: src, tries });
       }}
       loading="lazy"
       referrerPolicy="no-referrer"
@@ -161,12 +139,15 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string>("");
 
+  // ref giữ selectedId mới nhất để dùng trong interval/poll
+  const selectedIdRef = useRef<string>("");
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
   const endRef = useRef<HTMLDivElement>(null);
 
-  const selected = useMemo(
-    () => threads.find((t) => t._id === selectedId) || null,
-    [threads, selectedId]
-  );
+  const selected = useMemo(() => threads.find((t) => t._id === selectedId) || null, [threads, selectedId]);
 
   const sortedThreads = useMemo(() => {
     const copy = [...threads];
@@ -178,6 +159,7 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
     return copy;
   }, [threads]);
 
+  // ===== fetch: thread list for seller (POLL-SAFE + keep unread=0 for opened) =====
   async function fetchThreadsOnce() {
     setError("");
     try {
@@ -193,25 +175,59 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
       if (!res.ok) throw new Error(`Lỗi lấy danh sách hội thoại: ${res.status}`);
       const data = await res.json();
       const list: Thread[] = Array.isArray(data) ? data : (data.result || data.threads || []);
-      setThreads(list || []);
-      if ((list || []).length && !selectedId) setSelectedId(list[0]._id);
+
+      // ép unread=0 cho thread đang mở để badge không "bật" lại khi poll
+      const curId = selectedIdRef.current;
+      const normalized = (list || []).map((t) =>
+        t._id === curId ? { ...t, unread_user: 0 } : t
+      );
+
+      setThreads(normalized || []);
+
+      // giữ lựa chọn hiện tại / khôi phục / fallback
+      if ((normalized || []).length) {
+        setSelectedId((prev) => {
+          if (prev && normalized.some((t) => t._id === prev)) return prev;
+          try {
+            const saved = localStorage.getItem("selected_thread_id") || "";
+            if (saved && normalized.some((t) => t._id === saved)) return saved;
+          } catch { }
+          return normalized[0]._id;
+        });
+      } else {
+        setSelectedId("");
+      }
     } catch (e: any) {
       setError(e?.message || "Không tải được danh sách hội thoại.");
     }
   }
 
+  // init selectedId từ localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("selected_thread_id");
+      if (saved) setSelectedId(saved);
+    } catch { }
+  }, []);
+
   useEffect(() => {
     setLoadingList(true);
     fetchThreadsOnce().finally(() => setLoadingList(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserId]);
 
   useEffect(() => {
     const id = setInterval(fetchThreadsOnce, 10000);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ===== fetch: messages of selected thread =====
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId) {
+      setMessages([]);
+      return;
+    }
     (async () => {
       setLoadingMsgs(true);
       setError("");
@@ -225,6 +241,18 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
         const data = await res.json();
         const list: Msg[] = Array.isArray(data) ? data : (data.result || data.messages || []);
         setMessages(list || []);
+
+        // ✅ mở thread coi như đã đọc → reset badge ở FE
+        setThreads((prev) => prev.map((t) => (t._id === selectedId ? { ...t, unread_user: 0 } : t)));
+
+        // (Optional) Nếu BE có API mark-as-read thì bật gọi thật:
+        // try {
+        //   const token2 = getToken();
+        //   await fetch(`${API_BASE}/api/messeger/threads/${selectedId}/read`, {
+        //     method: "POST",
+        //     headers: token2 ? { Authorization: `Bearer ${token2}` } : undefined,
+        //   });
+        // } catch {}
       } catch (e: any) {
         setError(e?.message || "Không tải được tin nhắn.");
         setMessages([]);
@@ -234,10 +262,12 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
     })();
   }, [selectedId]);
 
+  // Auto scroll
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length]);
 
+  // ===== send message =====
   const handleSend = async () => {
     if (!text.trim() || !selectedId || sending) return;
     setSending(true);
@@ -377,7 +407,12 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
                   <button
                     key={c._id}
                     className={`${styles.convItem} ${selectedId === c._id ? styles.active : ""}`}
-                    onClick={() => setSelectedId(c._id)}
+                    onClick={() => {
+                      setSelectedId(c._id);
+                      // ✅ lưu và reset badge ngay
+                      try { localStorage.setItem("selected_thread_id", c._id); } catch { }
+                      setThreads((prev) => prev.map((t) => (t._id === c._id ? { ...t, unread_user: 0 } : t)));
+                    }}
                   >
                     <div className={styles.avatar}>
                       {avatarSrc ? (
