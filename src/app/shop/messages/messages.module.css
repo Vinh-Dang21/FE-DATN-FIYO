@@ -1,7 +1,9 @@
+/* ===== Shell ===== */
 .main {
   display: flex;
   height: 100vh;
-  background: #f6f7f9;
+  background: linear-gradient(180deg, #f7f8fb 0%, #f2f4f7 100%);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 .content {
@@ -10,43 +12,48 @@
   flex-direction: column;
 }
 
-/* NEW: bọc Topbar bằng <div className={styles.toolbarPad}> trong TSX
-   để mép trái/phải của ô tìm kiếm thẳng với khối chat */
 .toolbarPad {
   padding: 0 16px;
 }
 
+/* ===== Wrapper ===== */
 .chatWrapper {
   flex: 1;
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 20px;
+  grid-template-columns: 300px 1fr;
+  gap: 16px;
   padding: 16px;
 }
 
-/* LEFT SIDEBAR */
+/* ===== Left: Sidebar ===== */
 .chatSidebar {
   background: #fff;
-  border: 1px solid #eee;
-  border-radius: 10px;
+  border: 1px solid #e9eef5;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 6px 16px rgba(17, 24, 39, 0.06);
 }
 
 .searchBox {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
+  padding: 12px;
+  border-bottom: 1px solid #eef2f7;
 }
 
 .searchBox input {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #e3e8ef;
+  border-radius: 10px;
   outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  background: #fbfcfe;
 }
+
 .searchBox input:focus {
-  border-color: #ef4444;     /* touch: viền đỏ khi focus cho đồng bộ */
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, .08);
 }
 
 .convList {
@@ -54,77 +61,136 @@
   overflow-y: auto;
 }
 
+/* item */
 .convItem {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 48px 1fr;
   gap: 10px;
   width: 100%;
-  padding: 10px;
-  border: none;
+  padding: 12px;
+  border: 0;
   background: transparent;
   cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f3f5f7;
   text-align: left;
+  transition: background .15s ease;
+}
+
+.convItem:last-child {
+  border-bottom: 0;
 }
 
 .convItem:hover {
-  background: #f9f9f9;
+  background: #fafbfc;
 }
 
 .convItem.active {
-  background: #f0f0f0;
+  background: #f5f7fb;
+  box-shadow: inset 0 0 0 1px #eef2f7;
+  position: relative;
 }
 
+/* unread highlight */
+.convItem.unread .convName {
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.convItem.unread .convLast {
+  color: #111827;
+  font-weight: 600;
+}
+
+/* avatar + badge */
 .avatar {
-  width: 40px;
-  height: 40px;
+  position: relative;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: #eee;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  background: #eef1f6;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  /* quan trọng: để badge không bị cắt */
+  z-index: 1;
+  /* đảm bảo không bị che */
 }
 
 .avatar img {
   width: 100%;
   height: 100%;
+  border-radius: 50%;
   object-fit: cover;
 }
 
+.badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+  box-shadow: 0 0 0 2px #fff;
+  /* viền trắng cho nổi bật */
+}
+
+/* text block */
 .convMain {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
 }
 
 .convTop {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.convName {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.convTime {
+  font-size: 12px;
+  color: #9aa4b2;
 }
 
 .convLast {
   font-size: 13px;
-  color: #666;
-  margin-top: 2px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* RIGHT CHAT PANE */
+/* ===== Right: Chat pane ===== */
 .chatPane {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   background: #fff;
-  border: 1px solid #eee;
-  border-radius: 10px;
+  border: 1px solid #e9eef5;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.06);
 }
 
 .chatHeader {
-  padding: 12px 16px;
-  border-bottom: 1px solid #eee;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef2f7;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -137,14 +203,13 @@
 }
 
 .headerAvatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: #eee;
+  background: #eef1f6;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
 }
 
 .headerAvatar img {
@@ -158,28 +223,27 @@
 }
 
 .headerName {
-  font-weight: 600;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 .headerStatus {
   font-size: 12px;
-  color: #888;
+  color: #94a3b8;
 }
 
-/* Chat body */
+/* messages */
 .chatBody {
-  flex: 1;
-  padding: 16px;
-  background: #fafafa;
+  padding: 18px;
+  background: #f7f8fb;
   overflow-y: auto;
 }
 
 .msgRow {
-  margin-bottom: 12px;
+  margin: 10px 0;
   display: flex;
 }
 
-/* khách bên trái */
 .msgRow.left {
   justify-content: flex-start;
 }
@@ -188,31 +252,31 @@
   justify-content: flex-end;
 }
 
-/* bubble mặc định (khách) */
+/* bubble */
 .msgBubble {
-  background: #fff;
+  max-width: min(72%, 640px);
   padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid #eee;
-  max-width: 70%;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  border-radius: 14px;
+  border: 1px solid #eef2f7;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.06);
 }
 
-/* admin bubble đỏ bên phải */
 .msgRow.right .msgBubble {
   background: #ef4444;
   color: #fff;
   border: none;
+  box-shadow: 0 6px 14px rgba(239, 68, 68, .35);
 }
 
 .msgMeta {
   font-size: 12px;
-  color: #666;
+  color: #6b7280;
   margin-bottom: 4px;
 }
 
 .msgRow.right .msgMeta {
-  color: #fcdada;
+  color: #ffe1e1;
 }
 
 .msgText {
@@ -220,48 +284,78 @@
   white-space: pre-wrap;
 }
 
-/* Input bar */
+/* input */
 .chatInputBar {
   padding: 12px;
-  border-top: 1px solid #eee;
-  display: flex;
+  border-top: 1px solid #eef2f7;
+  display: grid;
+  grid-template-columns: 1fr 44px;
   gap: 10px;
+  background: #fff;
 }
 
 .chatInput {
-  flex: 1;
+  height: 42px;
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
   padding: 0 12px;
-  height: 40px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
   outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  background: #fbfcfe;
 }
+
 .chatInput:focus {
-  border-color: #ef4444;      /* touch: đồng bộ focus */
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, .08);
 }
 
 .sendBtn {
-  width: 40px;
-  height: 40px;
+  height: 42px;
+  border: 0;
+  border-radius: 12px;
   background: #ef4444;
-  border: none;
-  border-radius: 8px;
   color: #fff;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform .08s ease, background .15s ease;
 }
 
 .sendBtn:hover {
-  background: #dc2626;
+  background: #e11d48;
 }
 
-/* Responsive */
+.sendBtn:active {
+  transform: translateY(1px);
+}
+
+/* scrollbars (optional đẹp hơn) */
+.convList::-webkit-scrollbar,
+.chatBody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.convList::-webkit-scrollbar-thumb,
+.chatBody::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 999px;
+}
+
+.convList::-webkit-scrollbar-thumb:hover,
+.chatBody::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+/* responsive */
 @media (max-width: 1024px) {
   .chatWrapper {
     grid-template-columns: 1fr;
   }
+
   .chatSidebar {
     order: 2;
   }
+
   .chatPane {
     order: 1;
   }
