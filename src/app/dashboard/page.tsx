@@ -10,11 +10,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
 
-interface MonthlyRevenueItem {
-  name: string;
-  revenue: number;
-}
-
+interface MonthlyRevenueItem { name: string; revenue: number; }
 type Category = { _id: string; name: string };
 type Product = {
   _id: string;
@@ -28,80 +24,45 @@ type Voucher = {
   is_active?: boolean;
   quantity?: number;
   used_count?: number;
-  start_date?: string;
-  end_date?: string;
+  expired_at?: string;
 };
 
 export default function Dashboard() {
   const router = useRouter();
 
-  // Doanh thu / Đơn hàng
-  const [weeklyRevenue, setWeeklyRevenue] = useState(0);
-  const [lastWeekRevenue, setLastWeekRevenue] = useState(0);
-  const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
-  const [currentMonthOrders, setCurrentMonthOrders] = useState(0);
-  const [lastMonthRevenue, setLastMonthRevenue] = useState(0);
-  const [lastMonthOrders, setLastMonthOrders] = useState(0);
-  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenueItem[]>([]);
+  // === 1) Đơn đã giao (THÁNG) – ĐẾM SỐ LƯỢNG ===
+  const [deliveredCountMonth, setDeliveredCountMonth] = useState(0);
+  const [deliveredCountLastMonth, setDeliveredCountLastMonth] = useState(0);
 
-  // Danh mục / Sản phẩm / Voucher
+  // === 2) Doanh thu theo người mua (THÁNG) ===
+  const [userMonthRevenue, setUserMonthRevenue] = useState(0);      // hội viên
+  const [userLastMonthRevenue, setUserLastMonthRevenue] = useState(0);
+  const [guestMonthRevenue, setGuestMonthRevenue] = useState(0);    // vãng lai
+  const [guestLastMonthRevenue, setGuestLastMonthRevenue] = useState(0);
+
+  // === 3) Chart & danh mục / voucher ===
+  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenueItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
-
-  // Pie danh mục
   const [categoryPieData, setCategoryPieData] = useState<{ name: string; value: number }[]>([]);
 
   // User (admin)
   const [user, setUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
 
-  // ==== Guard + lấy user ====
+  // ---- Guard ----
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
-    if (!token || !userStr) {
-      router.push("/warning-login");
-      return;
-    }
+    if (!token || !userStr) { router.push("/warning-login"); return; }
     try {
       const u = JSON.parse(userStr);
-      if (u.role !== 0) {
-        router.push("/warning-login");
-        return;
-      }
+      if (u.role !== 0) { router.push("/warning-login"); return; }
       setUser({ id: u._id, name: u.name, avatar: u.avatar });
-    } catch {
-      router.push("/warning-login");
-    }
+    } catch { router.push("/warning-login"); }
   }, [router]);
 
-  // ==== Helpers thời gian ====
-  const getStartAndEndOfCurrentWeek = () => {
-    const today = new Date();
-    const day = today.getDay();
-    const diffToMonday = day === 0 ? 6 : day - 1;
-    const start = new Date(today);
-    start.setDate(today.getDate() - diffToMonday);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
-    return { fromDate: start.toISOString(), toDate: end.toISOString() };
-  };
-
-  const getStartAndEndOfLastWeek = () => {
-    const today = new Date();
-    const day = today.getDay();
-    const diffToMonday = day === 0 ? 6 : day - 1;
-    const start = new Date(today);
-    start.setDate(today.getDate() - diffToMonday - 7);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
-    return { fromDate: start.toISOString(), toDate: end.toISOString() };
-  };
-
+  // ---- Helpers thời gian ----
   const getStartAndEndOfCurrentMonth = () => {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -109,7 +70,6 @@ export default function Dashboard() {
     end.setHours(23, 59, 59, 999);
     return { fromDate: start.toISOString(), toDate: end.toISOString() };
   };
-
   const getStartAndEndOfLastMonth = () => {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -118,85 +78,52 @@ export default function Dashboard() {
     return { fromDate: start.toISOString(), toDate: end.toISOString() };
   };
 
-  // ==== Orders (admin sàn) ====
-  const fetchWeeklyRevenue = async () => {
-    const { fromDate, toDate } = getStartAndEndOfCurrentWeek();
+  // ---- Fetch helpers ----
+  const fetchOrdersInRange = async (fromDate: string, toDate: string) => {
+    const res = await fetch(`https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`);
+    const data = await res.json();
+    return Array.isArray(data?.result) ? data.result : [];
+  };
+
+  // ---- Tính: Đơn đã giao + Doanh thu hội viên & vãng lai (THÁNG) ----
+  const calcMonthlyKPIs = async () => {
+    const cur = getStartAndEndOfCurrentMonth();
+    const prev = getStartAndEndOfLastMonth();
+
     try {
-      const res = await fetch(`https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`);
-      const data = await res.json();
-      const total = (data.result || []).reduce((sum: number, order: any) => {
-        const d = new Date(order.createdAt);
-        const inRange = d >= new Date(fromDate) && d <= new Date(toDate);
-        const delivered = order.status_order === "delivered";
-        return inRange && delivered ? sum + (order.total_price || 0) : sum;
-      }, 0);
-      setWeeklyRevenue(total);
+      const [curOrders, prevOrders] = await Promise.all([
+        fetchOrdersInRange(cur.fromDate, cur.toDate),
+        fetchOrdersInRange(prev.fromDate, prev.toDate),
+      ]);
+
+      const deliveredCur = curOrders.filter((o: any) => o.status_order === "delivered");
+      const deliveredPrev = prevOrders.filter((o: any) => o.status_order === "delivered");
+
+      // 1) Đơn đã giao – ĐẾM
+      setDeliveredCountMonth(deliveredCur.length);
+      setDeliveredCountLastMonth(deliveredPrev.length);
+
+      // 2) Doanh thu hội viên & vãng lai
+      const memberCur = deliveredCur.reduce(
+        (s: number, o: any) => (o.user_id ? s + (o.total_price || 0) : s), 0);
+      const memberPrev = deliveredPrev.reduce(
+        (s: number, o: any) => (o.user_id ? s + (o.total_price || 0) : s), 0);
+
+      const guestCur = deliveredCur.reduce(
+        (s: number, o: any) => (!o.user_id && o.address_guess ? s + (o.total_price || 0) : s), 0);
+      const guestPrev = deliveredPrev.reduce(
+        (s: number, o: any) => (!o.user_id && o.address_guess ? s + (o.total_price || 0) : s), 0);
+
+      setUserMonthRevenue(memberCur);
+      setUserLastMonthRevenue(memberPrev);
+      setGuestMonthRevenue(guestCur);
+      setGuestLastMonthRevenue(guestPrev);
     } catch (e) {
-      console.error("Lỗi doanh thu tuần:", e);
+      console.error("Lỗi tính KPI tháng:", e);
     }
   };
 
-  const fetchLastWeekRevenue = async () => {
-    const { fromDate, toDate } = getStartAndEndOfLastWeek();
-    try {
-      const res = await fetch(`https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`);
-      const data = await res.json();
-      const total = (data.result || []).reduce((sum: number, order: any) => {
-        const d = new Date(order.createdAt);
-        const inRange = d >= new Date(fromDate) && d <= new Date(toDate);
-        const delivered = order.status_order === "delivered";
-        return inRange && delivered ? sum + (order.total_price || 0) : sum;
-      }, 0);
-      setLastWeekRevenue(total);
-    } catch (e) {
-      console.error("Lỗi doanh thu tuần trước:", e);
-    }
-  };
-
-  const fetchCurrentMonthRevenue = async () => {
-    const { fromDate, toDate } = getStartAndEndOfCurrentMonth();
-    try {
-      const res = await fetch(`https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`);
-      const data = await res.json();
-      let total = 0;
-      let count = 0;
-      (data.result || []).forEach((order: any) => {
-        const d = new Date(order.createdAt);
-        const inRange = d >= new Date(fromDate) && d <= new Date(toDate);
-        if (inRange && order.status_order === "delivered") {
-          total += order.total_price || 0;
-          count += 1;
-        }
-      });
-      setCurrentMonthRevenue(total);
-      setCurrentMonthOrders(count);
-    } catch (e) {
-      console.error("Lỗi doanh thu tháng:", e);
-    }
-  };
-
-  const fetchLastMonthRevenue = async () => {
-    const { fromDate, toDate } = getStartAndEndOfLastMonth();
-    try {
-      const res = await fetch(`https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`);
-      const data = await res.json();
-      let total = 0;
-      let count = 0;
-      (data.result || []).forEach((order: any) => {
-        const d = new Date(order.createdAt);
-        const inRange = d >= new Date(fromDate) && d <= new Date(toDate);
-        if (inRange && order.status_order === "delivered") {
-          total += order.total_price || 0;
-          count += 1;
-        }
-      });
-      setLastMonthRevenue(total);
-      setLastMonthOrders(count);
-    } catch (e) {
-      console.error("Lỗi doanh thu tháng trước:", e);
-    }
-  };
-
+  // ---- Biểu đồ doanh thu theo 12 tháng ----
   const fetchMonthlyRevenue = async () => {
     try {
       const res = await fetch("https://fiyo.click/api/orders");
@@ -213,57 +140,38 @@ export default function Dashboard() {
         revenue: monthlyTotals[i] || 0,
       }));
       setMonthlyRevenue(result);
-    } catch (e) {
-      console.error("Lỗi tổng hợp doanh thu theo tháng:", e);
-    }
+    } catch (e) { console.error("Lỗi tổng hợp doanh thu theo tháng:", e); }
   };
 
-  // ==== Category / Product / Voucher ====
+  // ---- Category / Product / Voucher ----
   const fetchCategories = async () => {
     try {
       const res = await fetch("https://fiyo.click/api/category");
       const data = await res.json();
-      const list: Category[] =
-        Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
+      const list: Category[] = Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
       setCategories(list);
-    } catch (e) {
-      console.error("Lỗi lấy category:", e);
-      setCategories([]);
-    }
+    } catch (e) { console.error("Lỗi lấy category:", e); setCategories([]); }
   };
-
   const fetchProducts = async () => {
     try {
       const res = await fetch("https://fiyo.click/api/products");
       const data = await res.json();
-      const list: Product[] =
-        Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
+      const list: Product[] = Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
       setProducts(list);
-    } catch (e) {
-      console.error("Lỗi lấy products:", e);
-      setProducts([]);
-    }
+    } catch (e) { console.error("Lỗi lấy products:", e); setProducts([]); }
   };
-
   const fetchVouchers = async () => {
     try {
       const res = await fetch("https://fiyo.click/api/voucher");
       const data = await res.json();
-      const list: Voucher[] =
-        Array.isArray(data?.vouchers) ? data.vouchers : Array.isArray(data) ? data : [];
+      const list: Voucher[] = Array.isArray(data?.vouchers) ? data.vouchers : Array.isArray(data) ? data : [];
       setVouchers(list);
-    } catch (e) {
-      console.error("Lỗi lấy voucher:", e);
-      setVouchers([]);
-    }
+    } catch (e) { console.error("Lỗi lấy voucher:", e); setVouchers([]); }
   };
 
-  // Gom dữ liệu Pie theo danh mục từ products
-  const buildCategoryPie = () => {
-    if (!products.length) {
-      setCategoryPieData([]);
-      return;
-    }
+  // Gom dữ liệu Pie từ products
+  useEffect(() => {
+    if (!products.length) { setCategoryPieData([]); return; }
     const counter = new Map<string, number>();
     products.forEach((p) => {
       const nameFromPopulate = p.category_id?.categoryId?.name;
@@ -277,60 +185,38 @@ export default function Dashboard() {
       .sort((a, b) => b.value - a.value)
       .slice(0, 6);
     setCategoryPieData(arr);
-  };
+  }, [products]);
 
-  // Tổng danh mục & voucher đang bật
   const totalCategories = categories.length;
-  const activeVouchers = useMemo(
-    () => vouchers.filter(v => v.is_active).length,
-    [vouchers]
-  );
+  const activeVouchers = useMemo(() => vouchers.filter(v => v.is_active).length, [vouchers]);
 
-  // Safe % helper
-  const pct = (current: number, previous: number) => {
-    if (previous === 0) return "—";
-    const v = Math.round(((current - previous) / previous) * 100);
-    return `${v}% ${current >= previous ? "↑" : "↓"}`;
+  const pct = (cur: number, prev: number) => {
+    if (prev === 0) return cur === 0 ? "—" : "100% ↑";
+    const p = Math.round(((cur - prev) / prev) * 100);
+    return `${p}% ${cur >= prev ? "↑" : "↓"}`;
   };
 
-  // ==== FIRST LOAD ====
+  // Pie palette
+  const PIE_COLORS = ["#6366F1","#22C55E","#F59E0B","#EF4444","#06B6D4","#A855F7","#84CC16","#F97316","#14B8A6","#EC4899"];
+  const colorFor = (name: string) => {
+    let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    return PIE_COLORS[h % PIE_COLORS.length];
+  };
+
+  // Voucher hiệu lực theo expired_at
+  const formatVoucherRange = (expired_at?: string) => {
+    if (!expired_at) return "Không giới hạn";
+    return `Đến ${new Date(expired_at).toLocaleDateString("vi-VN")}`;
+  };
+
+  // First load
   useEffect(() => {
-    fetchWeeklyRevenue();
-    fetchLastWeekRevenue();
-    fetchCurrentMonthRevenue();
-    fetchLastMonthRevenue();
+    calcMonthlyKPIs();
     fetchMonthlyRevenue();
     fetchCategories();
     fetchProducts();
     fetchVouchers();
   }, []);
-
-  useEffect(() => {
-    buildCategoryPie();
-  }, [products]);
-
-  // ==== Palette & color mapping cho Pie ====
-  const PIE_COLORS = [
-    "#6366F1", "#22C55E", "#F59E0B", "#EF4444", "#06B6D4",
-    "#A855F7", "#84CC16", "#F97316", "#14B8A6", "#EC4899",
-  ];
-  const colorFor = (name: string) => {
-    let h = 0;
-    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-    return PIE_COLORS[h % PIE_COLORS.length];
-  };
-
-  // ==== Format hiệu lực voucher (FE) ====
-  const formatVoucherRange = (start?: string, end?: string) => {
-    const parse = (v?: string) => (v ? new Date(v) : null);
-    const s = parse(start);
-    const e = parse(end);
-    const toVN = (d: Date) => d.toLocaleDateString("vi-VN");
-    if (s && e) return `${toVN(s)} – ${toVN(e)}`;
-    if (s) return `Từ ${toVN(s)}`;
-    if (e) return `Đến ${toVN(e)}`;
-    return "Không giới hạn";
-  };
 
   return (
     <main className={styles.main}>
@@ -340,65 +226,63 @@ export default function Dashboard() {
 
         <div className={styles.greetingBox}>
           Xin chào {user?.name || "admin"} -{" "}
-          <span style={{ fontWeight: 400, fontSize: 16 }}>
-            Tình hình các shop trên sàn hôm nay
-          </span>
+          <span style={{ fontWeight: 400, fontSize: 16 }}>Tình hình các shop trên sàn hôm nay</span>
         </div>
 
         {/* SUMMARY */}
         <div className={styles.summaryGrid}>
+          {/* 1) ĐƠN HÀNG ĐÃ GIAO (THÁNG) – ĐẾM */}
           <div className={styles.summaryCard}>
-            <h4 className={styles.cardTitle}>DOANH THU TUẦN NÀY</h4>
+            <h4 className={styles.cardTitle}>ĐƠN HÀNG ĐÃ GIAO (THÁNG)</h4>
             <div className={styles.cardContent}>
-              <span className={styles.cardValue}>
-                {weeklyRevenue.toLocaleString("vi-VN")} đ
-              </span>
-              <span className={
-                weeklyRevenue > lastWeekRevenue ? styles.cardStatusUp :
-                  weeklyRevenue < lastWeekRevenue ? styles.cardStatusDown :
-                    styles.cardStatusDown}
-              >
-                {lastWeekRevenue === 0
-                  ? "—"
-                  : `${Math.abs(((weeklyRevenue - lastWeekRevenue) / lastWeekRevenue) * 100).toFixed(1)}% ${weeklyRevenue >= lastWeekRevenue ? "↑" : "↓"}`}
+              <span className={styles.cardValue}>{deliveredCountMonth.toLocaleString("vi-VN")}</span>
+              <span className={deliveredCountMonth >= deliveredCountLastMonth ? styles.cardStatusUp : styles.cardStatusDown}>
+                Tháng trước: {pct(deliveredCountMonth, deliveredCountLastMonth)}
               </span>
             </div>
           </div>
 
+          {/* 2) Doanh thu HỘI VIÊN (THÁNG) */}
           <div className={styles.summaryCard}>
-            <h4 className={styles.cardTitle}>DOANH THU THÁNG</h4>
+            <h4 className={styles.cardTitle}>DOANH THU HỘI VIÊN (THÁNG)</h4>
             <div className={styles.cardContent}>
-              <span className={styles.cardValue}>
-                {currentMonthRevenue.toLocaleString("vi-VN")} đ
-              </span>
-              <span className={currentMonthRevenue >= lastMonthRevenue ? styles.cardStatusUp : styles.cardStatusDown}>
-                Tháng trước: {pct(currentMonthRevenue, lastMonthRevenue)}
+              <span className={styles.cardValue}>{userMonthRevenue.toLocaleString("vi-VN")} đ</span>
+              <span className={userMonthRevenue >= userLastMonthRevenue ? styles.cardStatusUp : styles.cardStatusDown}>
+                Tháng trước: {pct(userMonthRevenue, userLastMonthRevenue)}
               </span>
             </div>
           </div>
 
+          {/* 3) Doanh thu VÃNG LAI (THÁNG) */}
+          <div className={styles.summaryCard}>
+            <h4 className={styles.cardTitle}>DOANH THU VÃNG LAI (THÁNG)</h4>
+            <div className={styles.cardContent}>
+              <span className={styles.cardValue}>{guestMonthRevenue.toLocaleString("vi-VN")} đ</span>
+              <span className={guestMonthRevenue >= guestLastMonthRevenue ? styles.cardStatusUp : styles.cardStatusDown}>
+                Tháng trước: {pct(guestMonthRevenue, guestLastMonthRevenue)}
+              </span>
+            </div>
+          </div>
+
+          {/* 4) Tổng danh mục */}
           <div className={styles.summaryCard}>
             <h4 className={styles.cardTitle}>TỔNG DANH MỤC</h4>
             <div className={styles.cardContent}>
-              <span className={styles.cardValue}>
-                {totalCategories.toLocaleString("vi-VN")}
-              </span>
+              <span className={styles.cardValue}>{totalCategories.toLocaleString("vi-VN")}</span>
             </div>
           </div>
 
+          {/* 5) Voucher đang bật */}
           <div className={styles.summaryCard}>
             <h4 className={styles.cardTitle}>VOUCHER ĐANG BẬT</h4>
             <div className={styles.cardContent}>
-              <span className={styles.cardValue}>
-                {activeVouchers.toLocaleString("vi-VN")}
-              </span>
+              <span className={styles.cardValue}>{activeVouchers.toLocaleString("vi-VN")}</span>
             </div>
           </div>
         </div>
 
         {/* CHARTS */}
         <div className={styles.splitSection}>
-          {/* Bar revenue */}
           <div className={styles.placeholderLeft}>
             <div style={{ width: "100%", height: 350 }}>
               <h2 className={styles.sectionTitle}>THỐNG KÊ DOANH THU</h2>
@@ -410,7 +294,7 @@ export default function Dashboard() {
                     allowDecimals={false}
                     tickFormatter={(v) =>
                       v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` :
-                        v >= 1_000 ? `${(v / 1_000).toFixed(0)}k` : v
+                      v >= 1_000 ? `${(v / 1_000).toFixed(0)}k` : v
                     }
                   />
                   <Tooltip
@@ -424,7 +308,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Pie theo danh mục – bỏ box lồng, tắt label trên lát */}
           <div className={styles.placeholderRight} style={{ width: "100%", height: 350 }}>
             <h2 className={styles.sectionTitle}>PHÂN BỐ SẢN PHẨM THEO DANH MỤC</h2>
             <p className={styles.sectionSubTitle}>Tỷ lệ sản phẩm trên các danh mục</p>
@@ -435,25 +318,19 @@ export default function Dashboard() {
                   data={categoryPieData}
                   dataKey="value"
                   nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={105}
-                  innerRadius={42}
-                  labelLine={false}
-                  label={false}
+                  cx="50%" cy="50%"
+                  outerRadius={105} innerRadius={42}
+                  labelLine={false} label={false}
                 >
                   {categoryPieData.map((d, i) => (
                     <Cell key={`${d.name}-${i}`} fill={colorFor(d.name)} />
                   ))}
                 </Pie>
-
                 <Legend
-                  verticalAlign="bottom"
-                  iconType="circle"
+                  verticalAlign="bottom" iconType="circle"
                   wrapperStyle={{ paddingTop: 4, lineHeight: "16px" }}
                   formatter={(value) => <span style={{ color: "#4b5563", fontSize: 13 }}>{value}</span>}
                 />
-
                 <Tooltip
                   formatter={(v: number, _k: string, item: any) => [
                     `${Number(v ?? 0).toLocaleString("vi-VN")} SP`,
@@ -468,7 +345,6 @@ export default function Dashboard() {
 
         {/* VOUCHER + TOP DANH MỤC */}
         <div className={styles.splitSection}>
-          {/* BẢNG VOUCHER */}
           <div className={styles.placeholderLeft}>
             <h2 className={styles.sectionTitle}>VOUCHER HIỆN CÓ</h2>
             <p className={styles.sectionSubTitle}>Danh sách voucher đang dùng cho sàn</p>
@@ -484,7 +360,7 @@ export default function Dashboard() {
               <tbody>
                 {vouchers.slice(0, 10).map((v) => {
                   const left = (v.quantity ?? 0) - (v.used_count ?? 0);
-                  const isExpired = v.end_date ? new Date(v.end_date) < new Date() : false;
+                  const isExpired = v.expired_at ? new Date(v.expired_at) < new Date() : false;
                   return (
                     <tr key={v._id}>
                       <td>{v.voucher_code}</td>
@@ -497,7 +373,7 @@ export default function Dashboard() {
                         </span>
                       </td>
                       <td>{isFinite(left) ? left : (v.quantity ?? "—")}</td>
-                      <td>{formatVoucherRange(v.start_date as any, v.end_date as any)}</td>
+                      <td>{formatVoucherRange(v.expired_at)}</td>
                     </tr>
                   );
                 })}
@@ -505,11 +381,9 @@ export default function Dashboard() {
             </table>
           </div>
 
-          {/* TOP DANH MỤC */}
           <div className={styles.placeholderRight}>
             <h2 className={styles.sectionTitle}>TOP DANH MỤC</h2>
             <p className={styles.sectionSubTitle}>Nhiều sản phẩm nhất</p>
-
             <div className={styles.userList}>
               {categoryPieData
                 .slice()
@@ -537,7 +411,6 @@ export default function Dashboard() {
                   </div>
                 ))}
             </div>
-
             <div className={styles.viewAll}>
               <a href="/categories">QUẢN LÝ DANH MỤC →</a>
             </div>
