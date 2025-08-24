@@ -128,6 +128,59 @@ function getFallbackUserId(): string {
   }
 }
 
+/* ===================== READ STATE (persist) ===================== */
+type LastSeenMap = Record<string, number>;
+const LS_KEY_LAST_SEEN = "msg_last_seen";
+const LS_KEY_SELECTED = "selected_thread_id";
+
+function loadLastSeen(): LastSeenMap {
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY_LAST_SEEN) || "{}");
+  } catch {
+    return {};
+  }
+}
+function saveLastSeen(map: LastSeenMap) {
+  try {
+    localStorage.setItem(LS_KEY_LAST_SEEN, JSON.stringify(map));
+  } catch {}
+}
+function markSeen(threadId: string, time = Date.now()) {
+  const map = loadLastSeen();
+  map[threadId] = time;
+  saveLastSeen(map);
+}
+
+/** FE quyết định badge: chỉ hiện nếu lastMessage.from === "user" và mới hơn lastSeen */
+function unreadFromLastMessage(t: Thread): number {
+  const fromUser = t?.lastMessage?.from === "user";
+  if (!fromUser) return 0;
+
+  const at = t?.lastMessage?.at ? new Date(t.lastMessage.at).getTime() : 0;
+  const seen = loadLastSeen()[t._id] || 0;
+
+  // FE đã đánh dấu đã xem >= thời điểm tin mới nhất => chắc chắn 0
+  if (at && seen && seen >= at) return 0;
+
+  // Nếu BE có số nhưng FE chưa seen, có thể dùng (vẫn chỉ hiện khi from === "user")
+  if (typeof t.unread_user === "number") return t.unread_user;
+
+  // Mặc định: 0/1 theo so sánh at với seen
+  return at > seen ? 1 : 0;
+}
+
+/* (Optional) Gọi BE đánh dấu đã đọc nếu có route này; không có cũng ok */
+async function apiMarkRead(threadId: string) {
+  const token = getToken();
+  try {
+    await fetch(`${API_BASE}/api/messeger/threads/${threadId}/read`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+  } catch {}
+}
+/* =================== /READ STATE ====================== */
+
 export default function Messages({ currentUserId }: { currentUserId?: string }) {
   const [search, setSearch] = useState("");
   const [text, setText] = useState("");
@@ -139,7 +192,6 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string>("");
 
-  // ref giữ selectedId mới nhất để dùng trong interval/poll
   const selectedIdRef = useRef<string>("");
   useEffect(() => {
     selectedIdRef.current = selectedId;
@@ -159,7 +211,7 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
     return copy;
   }, [threads]);
 
-  // ===== fetch: thread list for seller (POLL-SAFE + keep unread=0 for opened) =====
+  // ===== fetch: thread list for seller (poll + unread compute) =====
   async function fetchThreadsOnce() {
     setError("");
     try {
@@ -176,22 +228,24 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
       const data = await res.json();
       const list: Thread[] = Array.isArray(data) ? data : (data.result || data.threads || []);
 
-      // ép unread=0 cho thread đang mở để badge không "bật" lại khi poll
+      // FE quyết định unread; thread đang mở thì luôn 0
       const curId = selectedIdRef.current;
-      const normalized = (list || []).map((t) =>
-        t._id === curId ? { ...t, unread_user: 0 } : t
-      );
+      const normalized = (list || []).map((t) => {
+        if (t._id === curId) return { ...t, unread_user: 0 };
+        const unread = unreadFromLastMessage(t); // chỉ đếm khi lastMessage.from === 'user'
+        return { ...t, unread_user: unread };
+      });
 
       setThreads(normalized || []);
 
-      // giữ lựa chọn hiện tại / khôi phục / fallback
+      // Khôi phục lựa chọn
       if ((normalized || []).length) {
         setSelectedId((prev) => {
           if (prev && normalized.some((t) => t._id === prev)) return prev;
           try {
-            const saved = localStorage.getItem("selected_thread_id") || "";
+            const saved = localStorage.getItem(LS_KEY_SELECTED) || "";
             if (saved && normalized.some((t) => t._id === saved)) return saved;
-          } catch { }
+          } catch {}
           return normalized[0]._id;
         });
       } else {
@@ -205,9 +259,9 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
   // init selectedId từ localStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("selected_thread_id");
+      const saved = localStorage.getItem(LS_KEY_SELECTED);
       if (saved) setSelectedId(saved);
-    } catch { }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -216,6 +270,7 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserId]);
 
+  // Poll 10s để phát hiện tin mới → badge
   useEffect(() => {
     const id = setInterval(fetchThreadsOnce, 10000);
     return () => clearInterval(id);
@@ -242,17 +297,10 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
         const list: Msg[] = Array.isArray(data) ? data : (data.result || data.messages || []);
         setMessages(list || []);
 
-        // ✅ mở thread coi như đã đọc → reset badge ở FE
+        // Đánh dấu đã đọc (persist + optimistic)
+        markSeen(selectedId);
         setThreads((prev) => prev.map((t) => (t._id === selectedId ? { ...t, unread_user: 0 } : t)));
-
-        // (Optional) Nếu BE có API mark-as-read thì bật gọi thật:
-        // try {
-        //   const token2 = getToken();
-        //   await fetch(`${API_BASE}/api/messeger/threads/${selectedId}/read`, {
-        //     method: "POST",
-        //     headers: token2 ? { Authorization: `Bearer ${token2}` } : undefined,
-        //   });
-        // } catch {}
+        apiMarkRead(selectedId); // có cũng được, không có cũng không sao
       } catch (e: any) {
         setError(e?.message || "Không tải được tin nhắn.");
         setMessages([]);
@@ -321,6 +369,23 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
       const data = await res.json();
       const saved: Msg = (data?.message || data?.result || data) as Msg;
       setMessages((prev) => (saved && saved._id ? prev.map((m) => (m._id === tempId ? saved : m)) : prev));
+
+      // Vừa trả lời → coi như đã đọc; nâng mốc lên 1s để thắng race
+      const now = Date.now();
+      markSeen(selectedId, now + 1000);
+      setThreads((prev) =>
+        prev.map((t) =>
+          t._id === selectedId
+            ? {
+                ...t,
+                unread_user: 0,
+                lastMessage: { text: content, at: new Date(now).toISOString(), from: "seller" },
+                updatedAt: new Date(now).toISOString(),
+              }
+            : t
+        )
+      );
+      apiMarkRead(selectedId);
     } catch (e: any) {
       setMessages((prev) => prev.filter((m) => m._id !== tempId));
       setError(e?.message || "Gửi tin nhắn thất bại.");
@@ -400,18 +465,26 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
                   c?.lastMessage?.at
                     ? new Date(c.lastMessage.at).toLocaleString()
                     : c?.updatedAt
-                      ? new Date(c.updatedAt).toLocaleString()
-                      : "";
-                const last = c?.lastMessage?.text || "";
+                    ? new Date(c.updatedAt).toLocaleString()
+                    : "";
+                const last = c?.lastMessage?.text || "—";
+                const isUnread = (c.unread_user ?? 0) > 0;
+
                 return (
                   <button
                     key={c._id}
-                    className={`${styles.convItem} ${selectedId === c._id ? styles.active : ""}`}
+                    className={`${styles.convItem} ${selectedId === c._id ? styles.active : ""} ${
+                      isUnread ? styles.unread : ""
+                    }`}
                     onClick={() => {
                       setSelectedId(c._id);
-                      // ✅ lưu và reset badge ngay
-                      try { localStorage.setItem("selected_thread_id", c._id); } catch { }
+                      try {
+                        localStorage.setItem(LS_KEY_SELECTED, c._id);
+                      } catch {}
+                      // mở → mark read ngay, lưu persist
+                      markSeen(c._id);
                       setThreads((prev) => prev.map((t) => (t._id === c._id ? { ...t, unread_user: 0 } : t)));
+                      apiMarkRead(c._id);
                     }}
                   >
                     <div className={styles.avatar}>
@@ -420,8 +493,8 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
                       ) : (
                         <span>M</span>
                       )}
-                      {!!c.unread_user && c.unread_user > 0 && (
-                        <span className={styles.badge}>{c.unread_user > 99 ? "99+" : c.unread_user}</span>
+                      {isUnread && (
+                        <span className={styles.badge}>{c.unread_user! > 99 ? "99+" : c.unread_user}</span>
                       )}
                     </div>
                     <div className={styles.convMain}>
@@ -429,7 +502,7 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
                         <span className={styles.convName}>{name}</span>
                         <span className={styles.convTime}>{time}</span>
                       </div>
-                      <div className={styles.convLast}>{last ? last : "—"}</div>
+                      <div className={styles.convLast}>{last}</div>
                     </div>
                   </button>
                 );
