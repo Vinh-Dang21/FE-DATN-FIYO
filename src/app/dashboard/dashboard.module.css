@@ -199,7 +199,7 @@
   color: #888;
   margin-bottom: 20px;
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .cardContent {
@@ -207,6 +207,52 @@
   justify-content: space-between;
   align-items: baseline;
 }
+.cardContents {
+  display: flex;
+  justify-content: space-between;
+  gap: 7px;
+}
+
+
+/* Typography */
+.shoptitle {
+  font-size: 14px;          /* yêu cầu */
+  font-weight: 500;
+  margin: 0 0 6px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.shopvalue {
+  font-size: 18px;          /* yêu cầu */
+  font-weight: 600;
+  color: #444;   
+  display: flex;
+  justify-content: center;
+}
+.cateTitle {
+  font-size: 14px;          /* yêu cầu */
+  font-weight: 500;
+  margin: 0 0 6px 0;
+  display: flex;
+  justify-content: center;
+  color: #888;
+}
+
+.cateValue {
+  font-size: 18px;          /* yêu cầu */
+  font-weight: 600;
+  color: #444;   
+  display: flex;
+  justify-content: center;
+}
+
+/* Màu theo trạng thái chỉ áp cho title */
+.pending .shoptitle { color: #d89f0d; }  /* vàng đậm (amber-700) */
+.active  .shoptitle { color: #0dd158; }  /* xanh lá đậm (green-700) */
+.blocked .shoptitle { color: #e90d0d; }  /* đỏ đậm (red-700) */
+
+
 
 .cardValue { font-size: 20px; font-weight: 600; color: #000; }
 

@@ -11,7 +11,6 @@ import Sidebar from "../component/Sidebar";
 import Topbar from "../component/Topbar";
 
 interface MonthlyRevenueItem { name: string; revenue: number; }
-type Category = { _id: string; name: string };
 type Product = {
   _id: string;
   name: string;
@@ -26,13 +25,48 @@ type Voucher = {
   used_count?: number;
   expired_at?: string;
 };
+interface Shop {
+  _id: string;
+  name: string;
+  status: "active" | "pending" | "locked" | "inactive";
+  // ... có thể thêm field khác nếu cần
+}
+type Category = {
+  _id: string;
+  name: string;
+  slug?: string;
+  parentId: string | null;
+  images?: string[];
+};
+
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/";
 
 export default function Dashboard() {
   const router = useRouter();
+  const [counts, setCounts] = useState({ pending: 0, active: 0, blocked: 0 });
 
   // === 1) Đơn đã giao (THÁNG) – ĐẾM SỐ LƯỢNG ===
-  const [deliveredCountMonth, setDeliveredCountMonth] = useState(0);
-  const [deliveredCountLastMonth, setDeliveredCountLastMonth] = useState(0);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}shop`, { cache: "no-store" });
+        const data = await res.json();
+        const list: Shop[] = Array.isArray(data) ? data : data.result || [];
+
+        let pending = 0, active = 0, blocked = 0;
+        list.forEach((s) => {
+          if (s.status === "pending") pending++;
+          if (s.status === "active") active++;
+          if (s.status === "locked" || s.status === "inactive") blocked++;
+        });
+
+        setCounts({ pending, active, blocked });
+      } catch (e) {
+        console.error("Lỗi fetch shop:", e);
+      }
+    })();
+  }, []);
 
   // === 2) Doanh thu theo người mua (THÁNG) ===
   const [userMonthRevenue, setUserMonthRevenue] = useState(0);      // hội viên
@@ -80,7 +114,7 @@ export default function Dashboard() {
 
   // ---- Fetch helpers ----
   const fetchOrdersInRange = async (fromDate: string, toDate: string) => {
-    const res = await fetch(`https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`);
+    const res = await fetch(`${API_BASE}orders?fromDate=${fromDate}&toDate=${toDate}`);
     const data = await res.json();
     return Array.isArray(data?.result) ? data.result : [];
   };
@@ -100,8 +134,6 @@ export default function Dashboard() {
       const deliveredPrev = prevOrders.filter((o: any) => o.status_order === "delivered");
 
       // 1) Đơn đã giao – ĐẾM
-      setDeliveredCountMonth(deliveredCur.length);
-      setDeliveredCountLastMonth(deliveredPrev.length);
 
       // 2) Doanh thu hội viên & vãng lai
       const memberCur = deliveredCur.reduce(
@@ -126,7 +158,7 @@ export default function Dashboard() {
   // ---- Biểu đồ doanh thu theo 12 tháng ----
   const fetchMonthlyRevenue = async () => {
     try {
-      const res = await fetch("https://fiyo.click/api/orders");
+      const res = await fetch(`${API_BASE}orderShop`);
       const data = await res.json();
       const orders = data.result || [];
       const monthlyTotals: Record<number, number> = {};
@@ -144,17 +176,36 @@ export default function Dashboard() {
   };
 
   // ---- Category / Product / Voucher ----
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch("https://fiyo.click/api/category");
-      const data = await res.json();
-      const list: Category[] = Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
-      setCategories(list);
-    } catch (e) { console.error("Lỗi lấy category:", e); setCategories([]); }
-  };
+  const [parentCategories, setParentCategories] = useState(0);
+  const [childCategories, setChildCategories] = useState(0);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(`${API_BASE}category`, { cache: "no-store" });
+        const data = await res.json();
+
+        // nếu BE trả {result: []} thì lấy ra, còn không thì lấy thẳng mảng
+        const list: any[] = Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
+
+        const parents = list.filter(c => !c.parentId || c.parentId === null);
+        const children = list.filter(c => c.parentId);
+
+        setParentCategories(parents.length);
+        setChildCategories(children.length);
+      } catch (e) {
+        console.error("Lỗi lấy category:", e);
+        setParentCategories(0);
+        setChildCategories(0);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+
   const fetchProducts = async () => {
     try {
-      const res = await fetch("https://fiyo.click/api/products");
+      const res = await fetch(`${API_BASE}products`);
       const data = await res.json();
       const list: Product[] = Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
       setProducts(list);
@@ -162,7 +213,7 @@ export default function Dashboard() {
   };
   const fetchVouchers = async () => {
     try {
-      const res = await fetch("https://fiyo.click/api/voucher");
+      const res = await fetch(`${API_BASE}voucher`);
       const data = await res.json();
       const list: Voucher[] = Array.isArray(data?.vouchers) ? data.vouchers : Array.isArray(data) ? data : [];
       setVouchers(list);
@@ -197,7 +248,7 @@ export default function Dashboard() {
   };
 
   // Pie palette
-  const PIE_COLORS = ["#6366F1","#22C55E","#F59E0B","#EF4444","#06B6D4","#A855F7","#84CC16","#F97316","#14B8A6","#EC4899"];
+  const PIE_COLORS = ["#6366F1", "#22C55E", "#F59E0B", "#EF4444", "#06B6D4", "#A855F7", "#84CC16", "#F97316", "#14B8A6", "#EC4899"];
   const colorFor = (name: string) => {
     let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
     return PIE_COLORS[h % PIE_COLORS.length];
@@ -213,7 +264,6 @@ export default function Dashboard() {
   useEffect(() => {
     calcMonthlyKPIs();
     fetchMonthlyRevenue();
-    fetchCategories();
     fetchProducts();
     fetchVouchers();
   }, []);
@@ -233,13 +283,22 @@ export default function Dashboard() {
         <div className={styles.summaryGrid}>
           {/* 1) ĐƠN HÀNG ĐÃ GIAO (THÁNG) – ĐẾM */}
           <div className={styles.summaryCard}>
-            <h4 className={styles.cardTitle}>ĐƠN HÀNG ĐÃ GIAO (THÁNG)</h4>
-            <div className={styles.cardContent}>
-              <span className={styles.cardValue}>{deliveredCountMonth.toLocaleString("vi-VN")}</span>
-              <span className={deliveredCountMonth >= deliveredCountLastMonth ? styles.cardStatusUp : styles.cardStatusDown}>
-                Tháng trước: {pct(deliveredCountMonth, deliveredCountLastMonth)}
-              </span>
+            <h4 className={styles.cardTitle}>THỐNG KÊ CỬA HÀNG</h4>
+            <div className={styles.cardContents}>
+              <div className={styles.pending}>
+                <h2 className={styles.shoptitle}>Chờ duyệt</h2>
+                <span className={styles.shopvalue}>{counts.pending}</span>
+              </div>
+              <div className={styles.active}>
+                <h2 className={styles.shoptitle}>Hoạt động</h2>
+                <span className={styles.shopvalue}>{counts.active}</span>
+              </div>
+              <div className={styles.blocked}>
+                <h2 className={styles.shoptitle}>Bị khóa</h2>
+                <span className={styles.shopvalue}>{counts.blocked}</span>
+              </div>
             </div>
+
           </div>
 
           {/* 2) Doanh thu HỘI VIÊN (THÁNG) */}
@@ -267,17 +326,21 @@ export default function Dashboard() {
           {/* 4) Tổng danh mục */}
           <div className={styles.summaryCard}>
             <h4 className={styles.cardTitle}>TỔNG DANH MỤC</h4>
-            <div className={styles.cardContent}>
-              <span className={styles.cardValue}>{totalCategories.toLocaleString("vi-VN")}</span>
+            <div className={styles.cardContents}>
+              <div className={styles.cardBox}>
+                <h3 className={styles.cateTitle}>Danh mục cha</h3>
+                <span className={styles.cateValue}>
+                  {parentCategories}
+                </span>
+              </div>
+              <div className={styles.cardBox}>
+                <h3 className={styles.cateTitle}>Danh mục con</h3>
+                <span className={styles.cateValue}>
+                  {childCategories}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* 5) Voucher đang bật */}
-          <div className={styles.summaryCard}>
-            <h4 className={styles.cardTitle}>VOUCHER ĐANG BẬT</h4>
-            <div className={styles.cardContent}>
-              <span className={styles.cardValue}>{activeVouchers.toLocaleString("vi-VN")}</span>
-            </div>
           </div>
         </div>
 
@@ -294,7 +357,7 @@ export default function Dashboard() {
                     allowDecimals={false}
                     tickFormatter={(v) =>
                       v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` :
-                      v >= 1_000 ? `${(v / 1_000).toFixed(0)}k` : v
+                        v >= 1_000 ? `${(v / 1_000).toFixed(0)}k` : v
                     }
                   />
                   <Tooltip
