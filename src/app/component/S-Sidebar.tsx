@@ -25,7 +25,8 @@ const menuItems = [
     { label: "Tồn kho", href: "/shop/inventory", icon: Box },
     { label: "Nhập hàng", href: "/shop/stockentry", icon: ArrowDown },
     { label: "Tin nhắn", href: "/shop/messages", icon: MessageCircle },
-    { label: "Cài đặt", href: "/shop/settings", icon:  Settings }
+    { label: "Cài đặt", href: "/shop/settings", icon:  Settings },
+    { label: "Người theo dõi", href: "/shop/followers", icon: Users }
 ];
 
 export default function Sidebar() {
