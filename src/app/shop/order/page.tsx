@@ -260,44 +260,6 @@ export default function Order() {
     })();
   }, []);
 
-  // useEffect(() => {
-  //   if (!shopId) return;
-  //   const fetchAllOrders = async () => {
-  //     try {
-  //       const res = await fetch(`http://localhost:3000/orderShop/${shopId}/confirm`);
-  //       const data = await res.json();
-
-  //       if (data.status && Array.isArray(data.result)) {
-  //         const counts = {
-  //           pending: 0,
-  //           delivered: 0,
-  //           refunded: 0,
-  //           failed: 0,
-  //           shipping: 0,
-  //         };
-
-  //         data.result.forEach((order: Order) => {
-  //           if (order.status_order === "pending") counts.pending++;
-  //           if (order.status_order === "delivered") counts.delivered++;
-  //           if (order.status_order === "refund") counts.refunded++;
-  //           if (order.transaction_status === "failed") counts.failed++;
-  //           if (order.status_order === "shipping") counts.shipping++;
-  //         });
-
-  //         setStatusCounts(counts);
-  //       }
-  //     } catch (error) {
-  //       console.error("Lỗi khi đếm đơn hàng theo trạng thái:", error);
-  //     }
-  //   };
-
-  //   fetchAllOrders();
-  //   const interval = setInterval(fetchAllOrders, 5000);
-
-  //   return () => clearInterval(interval);
-  // }, [shopId]);
-
-
   useEffect(() => {
     if (!shopId) return;
 

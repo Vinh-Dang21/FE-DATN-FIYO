@@ -28,6 +28,30 @@ interface Product {
     variants: Variant[]; // 👈 Thêm dòng này
 }
 
+type RowOrder = {
+    _orderShopId: string; // để đi tới chi tiết
+    _id: string;          // id hiển thị (dùng orderShopId)
+    createdAt: string;    // ưu tiên OrderShop.createdAt
+    status_order: string; // hiển thị (ưu tiên "unpending" nếu order cha unpending)
+    transaction_status?: string;
+
+    user_name: string;
+    user_email: string;
+    address_text: string;
+
+    user_id?: string;     // nếu order trả id (không phải object)
+    address_id?: string;
+
+    // block guest để render nhanh không cần fetch
+    _guest?: {
+        name?: string;
+        email?: string;
+        phone?: string;
+        address?: string; // "detail, address" hoặc "detail, ward, district, province"
+    };
+};
+
+
 interface Variant {
     color: string;
     sizes: {
@@ -120,6 +144,7 @@ export default function Order() {
     const [items, setItems] = useState<OrderItem[]>([]);
     const [shippingAddress, setShippingAddress] = useState<ShippingAddress>(null);
     const [user, setUser] = useState<UserInfo | null>(null);
+    const [orders, setOrders] = useState<RowOrder[]>([]);
 
 
     useEffect(() => {
@@ -163,24 +188,18 @@ export default function Order() {
 
     const getStatusLabel = (status: string) => {
         switch (status) {
-            case "pending":
-                return "Chờ xác nhận";
-            case "preparing":
-                return "Đang soạn";
-            case "awaiting_shipment":
-                return "Chờ gửi";
-            case "shipping":
-                return "Đang giao";
-            case "delivered":
-                return "Đã giao";
-            case "cancelled":
-                return "Đã hủy";
-            case "refund":
-                return "Trả hàng / Hoàn tiền";
-            default:
-                return "Không xác định";
+            case "unpending": return "Chưa xác thực";
+            case "pending": return "Chờ xác nhận";
+            case "preparing": return "Đang soạn";
+            case "awaiting_shipment": return "Chờ gửi";
+            case "shipping": return "Đang giao";
+            case "delivered": return "Đã giao";
+            case "cancelled": return "Đã hủy";
+            case "refund": return "Trả hàng / Hoàn tiền";
+            default: return "Không xác định";
         }
     };
+
 
     const orderSubtotal = orderProducts.reduce((total, item) => {
         return total + item.product.price * item.quantity;
@@ -228,6 +247,10 @@ export default function Order() {
     const code = orderShop?._id || order?._id || orderProducts?.[0]?.order_id || "Đang tải...";
     const statusValue = (orderShop?.status || order?.status_order || "") as string;
     const createdAt = order?.createdAt || orderShop?.createdAt || null;
+    // Cho phép hủy khi đơn còn ở các trạng thái này
+    const ALLOW_CANCEL = new Set(["unpending", "pending", "preparing", "awaiting_shipment"]);
+    const canCancel = ALLOW_CANCEL.has(statusValue);
+
 
 
     // Ưu tiên order (order_parent), fallback sang orderShop.order_id nếu bạn có gọi /orderShop/:id
@@ -276,6 +299,31 @@ export default function Order() {
         return fromShop || fromParentDirect || fromParentHistory || "";
     }, [orderShop, order]);
 
+    const handleCancelOrder = async (id: string) => {
+        const note = prompt("Nhập lý do huỷ (có thể để trống):", "");
+        if (note === null) return;
+
+        try {
+            setIsUpdating(true);
+            const res = await fetch(`${API_BASE}orderShop/${id}/cancel`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ note }),
+            });
+            const data = await res.json();
+
+            if (!res.ok || !data.status) throw new Error(data?.message || `HTTP ${res.status}`);
+
+            alert("Đã huỷ đơn.");
+            await reload(); // tải lại để cập nhật status + lý do hủy
+        } catch (e: any) {
+            console.error("Huỷ đơn thất bại:", e);
+            alert(e?.message || "Huỷ đơn thất bại");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
 
 
     return (
@@ -291,7 +339,7 @@ export default function Order() {
                         <p className={styles.statusLine}>
                             Trạng thái:
                             <span
-                                className={`${styles.badge} ${statusValue === "pending" ? styles["status-choxacnhan"] :
+                                className={`${styles.methodDelivered} ${statusValue === "pending" ? styles["status-choxacnhan"] :
                                     statusValue === "preparing" ? styles["status-dangsoan"] :
                                         statusValue === "awaiting_shipment" ? styles["status-chogui"] :
                                             statusValue === "shipping" ? styles["status-danggiao"] :
@@ -303,7 +351,7 @@ export default function Order() {
                                 {getStatusLabel(statusValue)}
                             </span>
                         </p>
-                        
+
                         <p className={styles.orderDate}>
                             Ngày đặt: {createdAt ? dayjs(createdAt).format("DD/MM/YYYY HH:mm") : "..."}
                         </p>
@@ -396,6 +444,15 @@ export default function Order() {
 
                             {/* Nút chuyển trạng thái đơn hàng */}
                             <div className={styles.actionButtons}>
+                                {canCancel && (
+                                    <button
+                                        className={styles.cancelBtn}
+                                        disabled={isUpdating}
+                                        onClick={() => handleCancelOrder(orderShopId)}
+                                    >
+                                        {isUpdating ? "Đang huỷ..." : "Huỷ đơn"}
+                                    </button>
+                                )}
                                 {statusValue === "pending" && (
                                     <button className={styles.statusBtn} disabled={isUpdating}
                                         onClick={() => handleUpdateStatus("preparing")}>
@@ -423,6 +480,7 @@ export default function Order() {
                                         {isUpdating ? "Đang cập nhật..." : "Đã giao hàng"}
                                     </button>
                                 )}
+                                
                             </div>
 
 

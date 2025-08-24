@@ -11,37 +11,153 @@ import {
   Pie,
   Cell,
   Legend,
-  LabelList
+  CartesianGrid
 } from "recharts";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
 
+type TopFollowerRow = {
+  userId: string;
+  name: string;
+  email: string;
+  avatar: string;
+};
+
+// ---- Entities từ BE ----
+interface UserMini {
+  _id?: string;
+  name?: string;
+  email?: string;
+  avatar?: string;
+  phone?: string;
+}
+
+interface AddressMini {
+  address?: string;
+  province?: string;
+  district?: string;
+  ward?: string;
+  detail?: string;
+}
+
+interface StatusHist {
+  status: string;
+  updatedAt: string;
+  note?: string;
+  _id: string;
+}
+
+interface ParentOrder {
+  _id: string;
+  total_price: number;
+  status_order: string;
+  payment_method?: string;
+  transaction_method?: string;
+  address_id?: string | AddressMini;
+  user_id?: string | UserMini | null;
+  address_guess?: {
+    name?: string; phone?: string; email?: string;
+    address?: string; type?: string; detail?: string;
+  } | null;
+  status_history?: StatusHist[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface OrderShop {
+  _id: string;
+  createdAt: string;
+  updatedAt?: string;
+  total_price: number;
+  status_order: string;
+  status_history?: StatusHist[];
+  order_id?: ParentOrder | null;
+  shop_id?: any;
+}
+
+// ---- Hàng hiển thị trong bảng (đÃ CHUẨN HÓA) ----
+type PendingRow = {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  status: string;            // key trạng thái để map class
+  payment_method: string;
+};
+
+interface SizeMini { _id: string; size?: string; quantity?: number; sku?: string }
+interface VariantMini { _id: string; color?: string; sizes?: SizeMini[] }
+interface ProductMini { _id: string; name: string; images?: string[]; variants?: VariantMini[]; isHidden?: boolean }
+
+type LowStockItem = { id: string; name: string; sku: string; qty: number; image: string };
 
 interface MonthlyRevenueItem {
   name: string;
   revenue: number;
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
+
 export default function Dashboard() {
-    const router = useRouter();
+  const router = useRouter();
   const [weeklyRevenue, setWeeklyRevenue] = useState(0);
   const [lastWeekRevenue, setLastWeekRevenue] = useState(0);
   const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
   const [currentMonthOrders, setCurrentMonthOrders] = useState(0);
   const [lastMonthRevenue, setLastMonthRevenue] = useState(0);
   const [lastMonthOrders, setLastMonthOrders] = useState(0);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [pendingOrders, setPendingOrders] = useState([]);
-  const [topUsers, setTopUsers] = useState<any[]>([]);
-  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenueItem[]>(
-    []
-  );
-  const [customerPieData, setCustomerPieData] = useState<
-    { name: string; value: number }[]
-  >([]);
+  const [shopId, setShopId] = useState<string | null>(null);
+  const [pendingOrders, setPendingOrders] = useState<PendingRow[]>([]);
+  const [topUsers, setTopUsers] = useState<TopFollowerRow[]>([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenueItem[]>([]);
+  const [customerPieData, setCustomerPieData] = useState<{ name: string; value: number }[]>([]);
+  const [lowStock, setLowStock] = useState<LowStockItem[]>([]);
 
+  const extractOrderShops = (json: any): OrderShop[] => {
+    if (Array.isArray(json?.result?.items)) return json.result.items;
+    if (Array.isArray(json?.order_shops)) return json.order_shops;
+    if (Array.isArray(json?.result)) return json.result;
+    if (Array.isArray(json?.data)) return json.data;
+    if (Array.isArray(json)) return json;
+    return [];
+  };
+
+  const extractProducts = (json: any): ProductMini[] => {
+    if (Array.isArray(json?.products)) return json.products;
+    if (Array.isArray(json?.result?.products)) return json.result.products;
+    if (Array.isArray(json?.result?.items)) return json.result.items;
+    if (Array.isArray(json?.data)) return json.data;
+    return [];
+  };
+
+  const totalQty = (p: ProductMini): number => {
+    const variants: VariantMini[] = p.variants ?? [];
+    let sum = 0;
+    for (const v of variants) {
+      const sizes: SizeMini[] = v.sizes ?? [];
+      for (const s of sizes) sum += s.quantity ?? 0;
+    }
+    return sum;
+  };
+
+  const pickMinQtySku = (p: ProductMini): string => {
+    const variants: VariantMini[] = p.variants ?? [];
+    let chosen: SizeMini | null = null;
+
+    for (const v of variants) {
+      const sizes: SizeMini[] = v.sizes ?? [];
+      for (const sz of sizes) {
+        if (!chosen || (sz.quantity ?? 0) < (chosen.quantity ?? 0)) chosen = sz;
+      }
+    }
+    return chosen?.sku ?? "";
+  };
+
+  const firstImage = (p: ProductMini): string => p.images?.[0] ?? "/placeholder.png";
+
+  // Guard login/role
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
@@ -62,7 +178,33 @@ export default function Dashboard() {
     }
   }, [router]);
 
+  // Lấy shopId từ user
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return;
 
+    (async () => {
+      try {
+        const user = JSON.parse(userStr);
+        const userId = user?._id;
+        if (!userId) return;
+
+        const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
+        const data = await res.json();
+
+        const id = data?.shop?._id ?? data?.shopId ?? data?._id;
+        if (id) {
+          setShopId(String(id));
+        } else {
+          console.warn("Không tìm được shopId trong payload:", data);
+        }
+      } catch (err) {
+        console.error("Lỗi lấy shopId:", err);
+      }
+    })();
+  }, []);
+
+  // === Helpers thời gian theo tuần/tháng ===
   const getStartAndEndOfCurrentWeek = () => {
     const today = new Date();
     const day = today.getDay(); // 0 (CN) đến 6 (T7)
@@ -125,236 +267,157 @@ export default function Dashboard() {
     };
   };
 
+  const fetchShopOrders = async (
+    shopId: string,
+    range?: { fromDate?: string; toDate?: string }
+  ): Promise<OrderShop[]> => {
+    const params = new URLSearchParams();
+    if (range?.fromDate) params.set("fromDate", range.fromDate);
+    if (range?.toDate) params.set("toDate", range.toDate);
+
+    const url = `${API_BASE}orderShop/shop/${shopId}${params.toString() ? `?${params.toString()}` : ""}`;
+    const res = await fetch(url, { cache: "no-store" });
+    const json = await res.json();
+    return extractOrderShops(json);
+  };
+
+  // tính tổng delivered trong khoảng
+  const sumDeliveredInRange = (orders: OrderShop[], fromISO?: string, toISO?: string) => {
+    const from = fromISO ? new Date(fromISO) : null;
+    const to = toISO ? new Date(toISO) : null;
+    return orders.reduce((sum, o) => {
+      const d = new Date(o.createdAt);
+      const inRange = (!from || d >= from) && (!to || d <= to);
+      const delivered = o.status_order === "delivered";
+      return inRange && delivered ? sum + (o.total_price || 0) : sum;
+    }, 0);
+  };
+
   const fetchWeeklyRevenue = async () => {
-    const { fromDate, toDate } = getStartAndEndOfCurrentWeek();
-
+    if (!shopId) return;
     try {
-      const res = await fetch(
-        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
-      );
-      const data = await res.json();
-
-      const totalRevenue = data.result.reduce((sum: number, order: any) => {
-        const orderDate = new Date(order.createdAt);
-        const isInRange =
-          orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
-        const isDelivered = order.status_order === "delivered";
-        return isInRange && isDelivered ? sum + order.total_price : sum;
-      }, 0);
-
-      console.log("💰 Doanh thu tuần này:", totalRevenue);
-      setWeeklyRevenue(totalRevenue);
-    } catch (error) {
-      console.error("🔥 Lỗi khi tính doanh thu tuần:", error);
+      const { fromDate, toDate } = getStartAndEndOfCurrentWeek();
+      const orders = await fetchShopOrders(shopId, { fromDate, toDate });
+      const total = sumDeliveredInRange(orders, fromDate, toDate);
+      setWeeklyRevenue(total);
+    } catch (err) {
+      console.error("🔥 Lỗi khi tính doanh thu tuần:", err);
+      setWeeklyRevenue(0);
     }
   };
 
   const fetchLastWeekRevenue = async () => {
-    const { fromDate, toDate } = getStartAndEndOfLastWeek();
-
+    if (!shopId) return;
     try {
-      const res = await fetch(
-        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
-      );
-      const data = await res.json();
-
-      const total = data.result.reduce((sum: number, order: any) => {
-        const orderDate = new Date(order.createdAt);
-        const isInRange =
-          orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
-        const isDelivered = order.status_order === "delivered";
-        return isInRange && isDelivered ? sum + order.total_price : sum;
-      }, 0);
-
-      console.log("💸 Doanh thu tuần trước:", total);
+      const { fromDate, toDate } = getStartAndEndOfLastWeek();
+      const orders = await fetchShopOrders(shopId, { fromDate, toDate });
+      const total = sumDeliveredInRange(orders, fromDate, toDate);
       setLastWeekRevenue(total);
-    } catch (error) {
-      console.error("Lỗi khi lấy doanh thu tuần trước:", error);
+    } catch (err) {
+      console.error("Lỗi khi lấy doanh thu tuần trước:", err);
+      setLastWeekRevenue(0);
     }
   };
 
   const fetchCurrentMonthRevenue = async () => {
-    const { fromDate, toDate } = getStartAndEndOfCurrentMonth();
-
+    if (!shopId) return;
     try {
-      const res = await fetch(
-        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
-      );
-      const data = await res.json();
+      const { fromDate, toDate } = getStartAndEndOfCurrentMonth();
+      const orders = await fetchShopOrders(shopId, { fromDate, toDate });
 
       let total = 0;
       let count = 0;
+      const from = new Date(fromDate), to = new Date(toDate);
 
-      data.result.forEach((order: any) => {
-        const orderDate = new Date(order.createdAt);
-        const isInRange =
-          orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
-        const isDelivered = order.status_order === "delivered";
-
-        if (isInRange && isDelivered) {
-          total += order.total_price;
+      orders.forEach(o => {
+        const d = new Date(o.createdAt);
+        if (o.status_order === "delivered" && d >= from && d <= to) {
+          total += o.total_price || 0;
           count += 1;
         }
       });
 
       setCurrentMonthRevenue(total);
       setCurrentMonthOrders(count);
-
-      console.log("🟢 Doanh thu tháng này:", total);
-      console.log("📦 Số đơn tháng này:", count);
-    } catch (error) {
-      console.error("Lỗi khi lấy doanh thu tháng này:", error);
+    } catch (err) {
+      console.error("Lỗi khi lấy doanh thu tháng này:", err);
+      setCurrentMonthRevenue(0);
+      setCurrentMonthOrders(0);
     }
   };
 
   const fetchLastMonthRevenue = async () => {
-    const { fromDate, toDate } = getStartAndEndOfLastMonth();
-
+    if (!shopId) return;
     try {
-      const res = await fetch(
-        `https://fiyo.click/api/orders?fromDate=${fromDate}&toDate=${toDate}`
-      );
-      const data = await res.json();
+      const { fromDate, toDate } = getStartAndEndOfLastMonth();
+      const orders = await fetchShopOrders(shopId, { fromDate, toDate });
 
       let total = 0;
       let count = 0;
+      const from = new Date(fromDate), to = new Date(toDate);
 
-      data.result.forEach((order: any) => {
-        const orderDate = new Date(order.createdAt);
-        const isInRange =
-          orderDate >= new Date(fromDate) && orderDate <= new Date(toDate);
-        const isDelivered = order.status_order === "delivered";
-
-        if (isInRange && isDelivered) {
-          total += order.total_price;
+      orders.forEach(o => {
+        const d = new Date(o.createdAt);
+        if (o.status_order === "delivered" && d >= from && d <= to) {
+          total += o.total_price || 0;
           count += 1;
         }
       });
 
       setLastMonthRevenue(total);
       setLastMonthOrders(count);
-
-      console.log("🟡 Doanh thu tháng trước:", total);
-      console.log("🟡 Đơn hàng tháng trước:", count);
-    } catch (error) {
-      console.error("Lỗi khi lấy doanh thu tháng trước:", error);
-    }
-  };
-
-  const fetchTotalUsers = async () => {
-    try {
-      const res = await fetch("https://fiyo.click/api/user/");
-      const data = await res.json();
-
-      if (Array.isArray(data.result)) {
-        setTotalUsers(data.result.length);
-        console.log("🟢 Tổng số người dùng:", data.result.length);
-      } else {
-        console.error("❌ Không phải mảng user:", data);
-      }
-    } catch (error) {
-      console.error("🔴 Lỗi khi fetch user:", error);
-    }
-  };
-
-  const fetchPendingOrders = async () => {
-    try {
-      const res = await fetch("https://fiyo.click/api/orders");
-      const data = await res.json();
-
-      if (data.status && Array.isArray(data.result)) {
-        const pendingOrders = data.result
-          .filter((order: any) => order.status_order === "pending")
-          .slice(0, 10);
-
-        console.log("🟡 Đơn hàng pending:", pendingOrders);
-        return pendingOrders;
-      } else {
-        console.error("Dữ liệu không hợp lệ:", data);
-        return [];
-      }
     } catch (err) {
-      console.error("❌ Lỗi khi fetch đơn hàng:", err);
-      return [];
+      console.error("Lỗi khi lấy doanh thu tháng trước:", err);
+      setLastMonthRevenue(0);
+      setLastMonthOrders(0);
     }
+  };
+
+  const fetchPendingOrders = async (): Promise<PendingRow[]> => {
+    if (!shopId) return [];
+    const orders = await fetchShopOrders(shopId);
+
+    const candidates = orders
+      .filter(o => (o.status_order === "pending" || o.status_order === "confirmed"))
+      .slice(0, 10);
+
+    const userIds: string[] = [];
+    const addrIds: string[] = [];
+    for (const o of candidates) {
+      const p = o.order_id;
+      if (!p) continue;
+      if (typeof p.user_id === "string") userIds.push(p.user_id);
+      if (typeof p.address_id === "string") addrIds.push(p.address_id);
+    }
+
+    const [userMap, addressMap] = await Promise.all([
+      fetchUsersByIds(userIds),
+      fetchAddressesByIds(addrIds),
+    ]);
+
+    const rows = candidates.map(o => toPendingRow(o, userMap, addressMap));
+    return rows;
   };
 
   useEffect(() => {
-    const loadPendingOrders = async () => {
-      const orders = await fetchPendingOrders();
-      setPendingOrders(orders);
-    };
-    loadPendingOrders();
-  }, []);
-
-  const fetchTopUsers = async () => {
-    try {
-      const resUser = await fetch("https://fiyo.click/api/user/");
-      const dataUser = await resUser.json();
-      const users = dataUser.result;
-
-      const spendingList = await Promise.all(
-        users.map(async (user: any) => {
-          const resOrder = await fetch(
-            `https://fiyo.click/api/orders/user/${user._id}`
-          );
-          const orders = await resOrder.json();
-
-          const totalSpent = orders.reduce(
-            (sum: number, order: any) =>
-              order.status_order === "delivered"
-                ? sum + (order.total_price || 0)
-                : sum,
-            0
-          );
-
-          return {
-            name: user.name,
-            email: user.email,
-            avatar:
-              user.avatar && user.avatar.trim() !== ""
-                ? user.avatar
-                : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  user.name
-                )}&background=random`,
-            total: totalSpent,
-          };
-        })
-      );
-
-      const top10 = spendingList
-        .filter((u) => u.total > 0)
-        .sort((a, b) => b.total - a.total)
-        .slice(0, 10);
-
-      setTopUsers(top10);
-    } catch (error) {
-      console.error("❌ Lỗi khi lấy top người dùng:", error);
-    }
-  };
+    if (!shopId) return;
+    (async () => {
+      const rows = await fetchPendingOrders();
+      setPendingOrders(rows);
+    })();
+  }, [shopId]);
 
   const fetchMonthlyRevenue = async () => {
+    if (!shopId) return;
     try {
-      const res = await fetch("https://fiyo.click/api/orders");
-      const data = await res.json(); // ✅ cần khai báo dòng này
+      const orders = await fetchShopOrders(shopId);
 
-      const orders = data.result || [];
-
-      if (!Array.isArray(orders)) {
-        console.error("orders không phải là mảng:", orders);
-        return;
-      }
-
-      const monthlyTotals: { [key: number]: number } = {};
-
-      orders.forEach((order) => {
-        if (order.status_order !== "delivered") return;
-
-        const createdAt = new Date(order.createdAt);
-        const month = createdAt.getMonth(); // tháng từ 0 đến 11
-
-        const total = order.total_price || 0;
-        monthlyTotals[month] = (monthlyTotals[month] || 0) + total;
+      const monthlyTotals: Record<number, number> = {};
+      orders.forEach(o => {
+        if (o.status_order !== "delivered") return;
+        const d = new Date(o.createdAt);
+        const m = d.getMonth(); // 0..11
+        monthlyTotals[m] = (monthlyTotals[m] || 0) + (o.total_price || 0);
       });
 
       const result = Array.from({ length: 12 }, (_, i) => ({
@@ -363,52 +426,284 @@ export default function Dashboard() {
       }));
 
       setMonthlyRevenue(result);
-    } catch (error) {
-      console.error("Lỗi khi fetch đơn hàng:", error);
+    } catch (err) {
+      console.error("Lỗi khi fetch doanh thu theo tháng:", err);
+      setMonthlyRevenue(Array.from({ length: 12 }, (_, i) => ({
+        name: `Tháng ${i + 1}`,
+        revenue: 0,
+      })));
     }
   };
 
   const fetchCustomerTypeStats = async () => {
+    if (!shopId) return [];
     try {
-      const res = await fetch("https://fiyo.click/api/orders");
-      const data = await res.json();
-      const orders = data.result || [];
+      const orders = await fetchShopOrders(shopId);
 
       let guestCount = 0;
       let memberCount = 0;
 
-      orders.forEach((order: any) => {
-        // Không cần lọc theo trạng thái nữa
+      orders.forEach(o => {
+        const isMember = !!o.order_id?.user_id;
+        const isGuest = !!o.order_id?.address_guess;
 
-        if (order.user_id) {
-          memberCount += 1;
-        } else if (order.address_guess) {
-          guestCount += 1;
-        }
+        if (isMember) memberCount += 1;
+        else if (isGuest) guestCount += 1;
       });
 
       return [
         { name: "Hội viên", value: memberCount },
         { name: "Khách vãng lai", value: guestCount },
       ];
-    } catch (error) {
-      console.error("❌ Lỗi khi thống kê hội viên vs khách:", error);
+    } catch (err) {
+      console.error("❌ Lỗi khi thống kê hội viên vs khách:", err);
       return [];
     }
   };
 
+  const authHeaders = (): Headers => {
+    const h = new Headers();
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token");
+      if (token) h.set("Authorization", `Bearer ${token}`);
+    }
+    return h;
+  };
 
+  const fetchUsersByIds = async (ids: string[]) => {
+    const uniq = Array.from(new Set(ids.filter(Boolean)));
+    const entries = await Promise.all(
+      uniq.map(async (id) => {
+        try {
+          const res = await fetch(`${API_BASE}user/${id}`, {
+            cache: "no-store",
+            headers: authHeaders(),
+          });
+
+          if (!res.ok) {
+            console.warn("⚠️ /user/:id fail", id, res.status);
+            return [id, null] as const;
+          }
+          const json = await res.json();
+
+          const u =
+            json?.user ??
+            json?.findUser ??
+            json?.result?.user ??
+            json?.result ??
+            json?.data ??
+            (Array.isArray(json?.users) ? json.users[0] : undefined) ??
+            (typeof json === "object" ? json : undefined);
+
+          if (!u) {
+            console.warn("⚠️ /user/:id payload lạ", id, json);
+            return [id, null] as const;
+          }
+
+          return [
+            id,
+            {
+              name: u.name || "Người dùng",
+              email: u.email || "",
+              phone: u.phone || "",
+              avatar: u.avatar || "",
+            },
+          ] as const;
+        } catch (e) {
+          console.warn("⚠️ /user/:id error", id, e);
+          return [id, null] as const;
+        }
+      })
+    );
+    return new Map<string, { name: string; email: string; phone: string; avatar: string } | null>(entries);
+  };
+
+  const fetchAddressesByIds = async (ids: string[]) => {
+    const uniq = Array.from(new Set(ids.filter(Boolean)));
+
+    const entries = await Promise.all(
+      uniq.map(async (id) => {
+        try {
+          const res = await fetch(`${API_BASE}address/${id}`, {
+            cache: "no-store",
+            headers: authHeaders(),
+          });
+
+          if (!res.ok) {
+            console.warn("⚠️ /address/:id fail", id, res.status);
+            return [id, null] as const;
+          }
+
+          const json = await res.json();
+
+          const a =
+            json?.address ??
+            json?.findAddress ??
+            json?.result ??
+            json?.data ??
+            (typeof json === "object" ? json : undefined);
+
+          if (!a) {
+            console.warn("⚠️ /address/:id payload lạ", id, json);
+            return [id, null] as const;
+          }
+
+          const address =
+            a.address ||
+            [a.detail, a.ward, a.district, a.province].filter(Boolean).join(", ");
+
+          return [id, {
+            address,
+            name: a.name || "",
+            phone: a.phone || ""
+          }] as const;
+        } catch (e) {
+          console.warn("⚠️ /address/:id error", id, e);
+          return [id, null] as const;
+        }
+      })
+    );
+
+    return new Map<
+      string,
+      { address: string; name: string; phone: string } | null
+    >(entries);
+  };
+
+  const toPendingRow = (
+    o: OrderShop,
+    userMap: Map<string, { name: string; email: string; phone: string; avatar: string } | null>,
+    addressMap: Map<string, { address: string; name: string; phone: string } | null>
+  ): PendingRow => {
+    const parent = o.order_id as ParentOrder | undefined;
+
+    // member
+    let member: UserMini | null = null;
+    if (typeof parent?.user_id === "string") {
+      const u = userMap.get(parent.user_id);
+      if (u) member = { name: u.name, email: u.email, phone: u.phone };
+      else console.warn("⚠️ Không lấy được user", parent.user_id);
+    } else if (parent?.user_id && typeof parent.user_id === "object") {
+      member = parent.user_id;
+    }
+
+    // address
+    let addrText = "—", addrName = "", addrPhone = "";
+    if (parent?.address_guess?.address) {
+      addrText = parent.address_guess.address;
+      addrName = parent.address_guess.name || "";
+      addrPhone = parent.address_guess.phone || "";
+    } else if (typeof parent?.address_id === "string") {
+      const a = addressMap.get(parent.address_id);
+      addrText = a?.address || "—";
+      addrName = a?.name || "";
+      addrPhone = a?.phone || "";
+    } else if (parent?.address_id && typeof parent.address_id === "object") {
+      const a = parent.address_id as AddressMini & { name?: string; phone?: string };
+      addrText =
+        a.address ||
+        [a.detail, a.ward, a.district, a.province].filter(Boolean).join(", ") ||
+        "—";
+      addrName = a.name || "";
+      addrPhone = a.phone || "";
+    }
+
+    const isGuest = !member && !!parent?.address_guess;
+
+    const name = isGuest ? (parent?.address_guess?.name ?? "—") : (member?.name || addrName || "Người dùng");
+    const email = isGuest ? (parent?.address_guess?.email ?? "—") : (member?.email || "—");
+    const phone = isGuest ? (parent?.address_guess?.phone ?? "—") : (member?.phone || addrPhone || "—");
+
+    const parentStatus = parent?.status_order;
+    const childStatus = o.status_order;
+    const status = parentStatus === "unpending" ? "unpending" : (childStatus || parentStatus || "unknown");
+
+    const payment_method = String(parent?.payment_method ?? parent?.transaction_method ?? "—");
+
+    return { name, email, phone, address: addrText, status, payment_method };
+  };
+
+  const LOW_STOCK_THRESHOLD = 50;
+
+  const fetchLowStock = async () => {
+    if (!shopId) return;
+    try {
+      const res = await fetch(`${API_BASE}products/shop/${shopId}`, {
+        cache: "no-store",
+        headers: authHeaders(),
+      });
+      const json = await res.json();
+      const products = extractProducts(json);
+
+      const items: LowStockItem[] = products
+        .filter(p => !p.isHidden)
+        .map((p) => ({
+          id: p._id,
+          name: p.name,
+          sku: pickMinQtySku(p),
+          qty: totalQty(p),
+          image: firstImage(p),
+        }));
+
+      const warned = items
+        .filter(i => i.qty < LOW_STOCK_THRESHOLD)
+        .sort((a, b) => a.qty - b.qty);
+
+      setLowStock(warned);
+    } catch (e) {
+      console.error("❌ Lỗi fetchLowStock:", e);
+      setLowStock([]);
+    }
+  };
+
+  // Followers cho ô bên phải
+  const fetchFollowersForTopCard = async () => {
+    if (!shopId) return;
+    try {
+      const res = await fetch(`${API_BASE}shop/${shopId}/followers?all=true`, { cache: "no-store" });
+      const data = await res.json();
+      const items = data?.items ?? data?.followers ?? [];
+
+      const rows: TopFollowerRow[] = items.map((u: any) => ({
+        userId: String(u._id || ""),
+        name: u.name || "Người dùng",
+        email: u.email || "",
+        avatar:
+          u?.avatar && String(u.avatar).trim() !== ""
+            ? (String(u.avatar).startsWith("http") ? u.avatar : `${API_BASE}images/${u.avatar}`)
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(u?.name || "User")}&background=random`,
+      }));
+
+      setTopUsers(rows);
+    } catch (err) {
+      console.error("❌ Lỗi khi lấy followers:", err);
+      setTopUsers([]);
+    }
+  };
 
   useEffect(() => {
+    if (!shopId) return;
     fetchWeeklyRevenue();
     fetchLastWeekRevenue();
     fetchCurrentMonthRevenue();
     fetchLastMonthRevenue();
-    fetchTotalUsers();
     fetchMonthlyRevenue();
-    fetchTopUsers();
+    fetchLowStock();
     fetchCustomerTypeStats().then(setCustomerPieData);
-  }, []);
+    fetchFollowersForTopCard(); // dùng followers thay vì top theo số đơn
+  }, [shopId]);
+
+  // ===== Helpers format =====
+  const fmtVND = (n: number) =>
+    (Number.isFinite(n) ? n : 0).toLocaleString("vi-VN") + " ₫";
+
+  const pctChange = (curr: number, prev: number) => {
+    if (!prev) return curr ? 100 : 0;
+    return ((curr - prev) / prev) * 100;
+  };
+  const arrow = (d: number) => (d > 0 ? "↑" : d < 0 ? "↓" : "");
+  const trendClass = (d: number) =>
+    d > 0 ? styles.cardStatusUp : d < 0 ? styles.cardStatusDown : styles.cardStatusNeutral;
 
   return (
     <main className={styles.main}>
@@ -422,85 +717,76 @@ export default function Dashboard() {
           </span>
         </div>
         <div className={styles.summaryGrid}>
-          <div className={styles.summaryCard}>
+          {/* 1. Doanh thu tuần này */}
+          <div className={`${styles.summaryCard} ${styles.kpiEmerald}`}>
             <h4 className={styles.cardTitle}>DOANH THU TUẦN NÀY</h4>
             <div className={styles.cardContent}>
-              <span className={styles.cardValue}>
-                {weeklyRevenue.toLocaleString("vi-VN")} ₫
-              </span>
-              <span
-                className={
-                  weeklyRevenue > lastWeekRevenue
-                    ? styles.cardStatusUp
-                    : weeklyRevenue < lastWeekRevenue
-                      ? styles.cardStatusDown
-                      : styles.cardStatusNeutral // nếu muốn xử lý thêm cho bằng nhau
-                }
-              >
-                {Math.abs(
-                  ((weeklyRevenue - lastWeekRevenue) / (lastWeekRevenue || 1)) * 100
-                ).toFixed(1)}
-                % {weeklyRevenue > lastWeekRevenue ? "↑" : weeklyRevenue < lastWeekRevenue ? "↓" : ""}
-              </span>
-
+              <span className={styles.cardValue}>{fmtVND(weeklyRevenue)}</span>
+              {(() => {
+                const diff = pctChange(weeklyRevenue, lastWeekRevenue);
+                return (
+                  <span className={trendClass(diff)}>
+                    {Math.abs(diff).toFixed(1)}% {arrow(diff)}
+                  </span>
+                );
+              })()}
             </div>
+            <div className={styles.cardSubnote}>So với tuần trước</div>
           </div>
 
-          <div className={styles.summaryCard}>
+          {/* 2. Doanh thu tháng này */}
+          <div className={`${styles.summaryCard} ${styles.kpiIndigo}`}>
             <h4 className={styles.cardTitle}>DOANH THU THÁNG</h4>
             <div className={styles.cardContent}>
-              <span className={styles.cardValue}>
-                {currentMonthRevenue.toLocaleString("vi-VN")} ₫
-              </span>
-
-              <span
-                className={
-                  weeklyRevenue >= lastWeekRevenue
-                    ? styles.cardStatusUp
-                    : styles.cardStatusDown
-                }
-              >
-                Tháng trước:{" "}
-                {Math.round(
-                  ((currentMonthRevenue - lastMonthRevenue) /
-                    (lastMonthRevenue || 1)) *
-                  100
-                )}
-                %{currentMonthRevenue >= lastMonthRevenue ? " ↑" : " ↓"}
-              </span>
+              <span className={styles.cardValue}>{fmtVND(currentMonthRevenue)}</span>
+              {(() => {
+                const diff = pctChange(currentMonthRevenue, lastMonthRevenue);
+                return (
+                  <span className={trendClass(diff)}>
+                    {Math.round(Math.abs(diff))}% {arrow(diff)}
+                  </span>
+                );
+              })()}
+            </div>
+            <div className={styles.cardSubnote}>
+              Tháng trước: {fmtVND(lastMonthRevenue)}
             </div>
           </div>
 
-          <div className={styles.summaryCard}>
+          {/* 3. Tổng đơn hàng (tháng) */}
+          <div className={`${styles.summaryCard} ${styles.kpiAmber}`}>
             <h4 className={styles.cardTitle}>TỔNG ĐƠN HÀNG</h4>
             <div className={styles.cardContent}>
               <span className={styles.cardValue}>
-                {currentMonthOrders.toLocaleString("vi-VN")}
+                {Number(currentMonthOrders || 0).toLocaleString("vi-VN")}
               </span>
-
-              <span
-                className={
-                  currentMonthOrders >= lastMonthOrders
-                    ? styles.cardStatusUp
-                    : styles.cardStatusDown
-                }
-              >
-                Tháng trước:&nbsp;
-                {Number(
-                  (
-                    ((currentMonthOrders - lastMonthOrders) / lastMonthOrders) *
-                    100
-                  ).toFixed(1)
-                )}
-                % {currentMonthOrders >= lastMonthOrders ? "↑" : "↓"}
-              </span>
+              {(() => {
+                const diff = pctChange(currentMonthOrders, lastMonthOrders);
+                return (
+                  <span className={trendClass(diff)}>
+                    {Math.abs(diff).toFixed(1)}% {arrow(diff)}
+                  </span>
+                );
+              })()}
+            </div>
+            <div className={styles.cardSubnote}>
+              Tháng trước: {Number(lastMonthOrders || 0).toLocaleString("vi-VN")}
             </div>
           </div>
 
-          <div className={styles.summaryCard}>
-            <h4 className={styles.cardTitle}>TỔNG NGƯỜI DÙNG</h4>
+          {/* 4. Giá trị đơn trung bình (AOV) */}
+          <div className={`${styles.summaryCard} ${styles.kpiRose}`}>
+            <h4 className={styles.cardTitle}>GIÁ TRỊ ĐƠN TRUNG BÌNH</h4>
             <div className={styles.cardContent}>
-              <span className={styles.cardValue}>{totalUsers}</span>
+              {(() => {
+                const aovThis =
+                  currentMonthOrders > 0 ? currentMonthRevenue / currentMonthOrders : 0;
+                return (
+                  <>
+                    <span className={styles.cardValue}>{fmtVND(aovThis)}</span>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -513,53 +799,85 @@ export default function Dashboard() {
                 Biểu đồ thống kê doanh thu theo từng tháng
               </p>
               <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={monthlyRevenue} margin={{ left: 10, }} barCategoryGap={10}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value: number) => `${value.toLocaleString()} đ`}
-                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc", color: "#444" }}
-                    labelStyle={{ color: "#888" }}
+                <BarChart
+                  data={monthlyRevenue}
+                  barCategoryGap="30%"
+                  barGap={4}
+                  maxBarSize={50}
+                >
+                  <CartesianGrid vertical={false} stroke="#EEF2F7" strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={{ stroke: "#CBD5E1", strokeWidth: 1 }}
+                    tickLine={{ stroke: "#CBD5E1", strokeWidth: 1 }}
+                    tick={{ fill: "#6B7280", fontSize: 12 }}
                   />
-
-                  <Bar dataKey="revenue" fill="#7367F0" radius={[5, 5, 0, 0]}>
-
-                  </Bar>
+                  <YAxis
+                    axisLine={{ stroke: "#CBD5E1", strokeWidth: 1 }}
+                    tickLine={{ stroke: "#CBD5E1", strokeWidth: 1 }}
+                    tick={{ fill: "#6B7280", fontSize: 12 }}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => `${value.toLocaleString("vi-VN")} ₫`}
+                    labelStyle={{ color: "#111", fontWeight: 600 }}
+                    itemStyle={{ color: "#444", fontSize: 13, fontWeight: 600 }}
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 8,
+                      boxShadow: "0 4px 12px rgba(0,0,0,.08)",
+                    }}
+                  />
+                  <Bar
+                    dataKey="revenue"
+                    name="Doanh thu"
+                    radius={[8, 8, 0, 0]}
+                    barSize={35}
+                    minPointSize={3}
+                    fill="url(#gradRevenue)"
+                    activeBar={{ fill: "url(#gradRevenue)", opacity: 1 }}
+                  />
+                  <defs>
+                    <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#22C55E" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#22C55E" stopOpacity={0.5} />
+                    </linearGradient>
+                  </defs>
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Bên phải: Người theo dõi */}
           <div className={styles.placeholderRight}>
-            <div style={{ width: "100%", height: 350 }}>
-              <h2 className={styles.sectionTitle}>Thống kê bán hàng</h2>
-              <p className={styles.sectionSubTitle}>
-                Tỷ lệ đơn hàng: Đăng nhập vs Mua nhanh
-              </p>
-
-              <ResponsiveContainer width="100%" height="80%">
-                <PieChart>
-                  <Pie
-                    data={customerPieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={90}
-                    label
-                  >
-                    <Cell fill="#7367F0" /> {/* Hội viên */}
-                    <Cell fill="#FF9F43" /> {/* Khách vãng lai */}
-                  </Pie>
-                  <Legend />
-                  <Tooltip
-                    formatter={(value: number) => `${value.toLocaleString()} đơn`}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-
+            <h2 className={styles.sectionTitle}>Người theo dõi</h2>
+            <p className={styles.sectionSubTitle}>
+              Danh sách followers của shop
+            </p>
+            <div className={styles.userList}>
+              {topUsers.map((user) => (
+                <div className={styles.userRow} key={user.userId}>
+                  <div className={styles.userInfo}>
+                    <img
+                      src={user.avatar}
+                      alt="avatar"
+                      style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover" }}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/placeholder-user.png"; }}
+                    />
+                    <div>
+                      <div className={styles.name}>{user.name}</div>
+                      <div className={styles.email}>{user.email || "—"}</div>
+                    </div>
+                  </div>
+                  <div className={styles.money}>
+                    Follower
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+
         <div className={styles.splitSection}>
           {/* BẢNG ĐƠN HÀNG */}
           <div className={styles.placeholderLeft}>
@@ -578,47 +896,45 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {pendingOrders.map((order: any, index: number) => {
-                  const isGuest = !order.user_id && order.address_guess;
+                {pendingOrders.map((row, index) => {
+                  const statusClass =
+                    row.status === "pending" ? styles["status-choxacnhan"] :
+                    row.status === "preparing" ? styles["status-dangsoan"] :
+                    row.status === "awaiting_shipment" ? styles["status-chogui"] :
+                    row.status === "shipping" ? styles["status-danggiao"] :
+                    row.status === "delivered" ? styles["status-dagiao"] :
+                    row.status === "cancelled" ? styles["status-dahuy"] :
+                    row.status === "refund" ? styles["status-trahang"] :
+                    row.status === "unpending" ? styles["status-chuaxacthuc"] : "";
 
-                  const name = isGuest
-                    ? order.address_guess.name
-                    : order.user_id?.name || "—";
-                  const email = isGuest
-                    ? order.address_guess.email
-                    : order.user_id?.email || "—";
-                  const phone = isGuest
-                    ? order.address_guess.phone
-                    : order.user_id?.phone || "—";
-                  const address = isGuest
-                    ? order.address_guess.address
-                    : order.address_id?.address || "—";
-                  const status =
-                    order.status_order ||
-                    order.status_history?.[order.status_history.length - 1]
-                      ?.status ||
-                    "unknown";
+                  const statusText =
+                    row.status === "unpending" ? "Chưa xác thực" :
+                    row.status === "pending" ? "Chờ xác nhận" :
+                    row.status === "preparing" ? "Đang soạn hàng" :
+                    row.status === "awaiting_shipment" ? "Chờ gửi hàng" :
+                    row.status === "shipping" ? "Đang giao" :
+                    row.status === "delivered" ? "Đã giao" :
+                    row.status === "cancelled" ? "Đã hủy" :
+                    row.status === "refund" ? "Trả hàng" : row.status;
 
                   return (
                     <tr key={index}>
                       <td>
                         <div className={styles.userInfo}>
                           <div>
-                            <div className={styles.name}>{name}</div>
-                            <div className={styles.email}>{email}</div>
+                            <div className={styles.name}>{row.name}</div>
+                            <div className={styles.email}>{row.email}</div>
                           </div>
                         </div>
                       </td>
-                      <td>{phone}</td>
-                      <td>{address}</td>
+                      <td>{row.phone}</td>
+                      <td>{row.address}</td>
                       <td>
-                        <span
-                          className={`${styles.methodDelivered} ${styles["status-choxacnhan"]}`}
-                        >
-                          Chờ xác nhận
+                        <span className={`${styles.methodDelivered} ${statusClass}`}>
+                          {statusText}
                         </span>
                       </td>
-                      <td>{order.payment_method?.toUpperCase()}</td>
+                      <td>{row.payment_method?.toUpperCase?.() || "—"}</td>
                     </tr>
                   );
                 })}
@@ -626,31 +942,53 @@ export default function Dashboard() {
             </table>
           </div>
 
-          {/* TOP NGƯỜI DÙNG */}
+          {/* Cảnh báo tồn kho thấp */}
           <div className={styles.placeholderRight}>
-            <h2 className={styles.sectionTitle}>Top Người Dùng</h2>
-            <p className={styles.sectionSubTitle}>
-              Người dùng tiêu tiền nhiều nhất tháng này
-            </p>
-            <div className={styles.userList}>
-              {topUsers.map((user, index) => (
-                <div className={styles.userRow} key={index}>
-                  <div className={styles.userInfo}>
-                    <img src={user.avatar} alt="avatar" />
-                    <div>
-                      <div className={styles.name}>{user.name}</div>
-                      <div className={styles.email}>{user.email}</div>
-                    </div>
-                  </div>
-                  <div className={styles.money}>
-                    {user.total.toLocaleString("vi-VN")} đ
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div className={styles.lowStockCard}>
+              <h2 className={styles.sectionTitle}>Cảnh báo tồn kho thấp</h2>
 
-            <div className={styles.viewAll}>
-              <a href="#">XEM TẤT CẢ NGƯỜI DÙNG →</a>
+              <div className={styles.sectionSubTitle}>
+                <span>Sản phẩm hết hoặc sắp hết hàng</span>
+                <span className={styles.lowStockIcon}>!</span>
+              </div>
+
+              <div className={styles.lowStockList}>
+                {lowStock.length === 0 ? (
+                  <div className={styles.lowStockItem}>
+                    <div className={styles.lowStockInfo}>
+                      <div className={styles.lowStockName}>Tồn kho ổn định ✅</div>
+                      <div className={styles.lowStockSku}>Không có sản phẩm dưới 50</div>
+                    </div>
+                    <div className={styles.lowStockQty}>—</div>
+                  </div>
+                ) : (
+                  lowStock.map((item: LowStockItem) => (
+                    <div className={styles.lowStockItem} key={item.id}>
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, marginRight: 12 }}
+                      />
+                      <div className={styles.lowStockInfo}>
+                        <div className={styles.lowStockName}>{item.name}</div>
+                      </div>
+                      <div
+                        className={`${styles.lowStockQty} ${item.qty === 0
+                          ? styles.qtyZero
+                          : item.qty < LOW_STOCK_THRESHOLD
+                            ? styles.qtyLow
+                            : ""
+                          }`}
+                      >
+                        {item.qty} cái
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className={styles.viewAll}>
+                <a href="/shop/stockentry">XEM VÀ NHẬP SẢN PHẨM →</a>
+              </div>
             </div>
           </div>
         </div>

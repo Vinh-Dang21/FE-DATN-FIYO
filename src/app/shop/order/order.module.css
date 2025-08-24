@@ -317,65 +317,80 @@
 }
 
 /* Style cho status */
+/* Base pill */
 .methodDelivered {
+  --bg: #f3f4f6;
+  --fg: #374151;
+  --bd: #e5e7eb;
+
   display: inline-block;
-  padding: 4px 0;
-  border-radius: 16px;
-  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 999px;
   font-weight: 600;
-  color: #fff;
-  min-width: 120px;
-  width: 120px;
-  text-align: center;
+  font-size: 12px;
+  line-height: 1;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--bd);
 }
 
-/* Các trạng thái mới */
+/* Chưa xác thực */
 .status-chuaxacthuc {
-  background: #f12828;
-  /* Cam vàng */
-  color: #fff;
+  --bg: #fdecec;   /* đỏ nhạt */
+  --fg: #b42318;   /* đỏ sẫm */
+  --bd: #f5b5b8;   /* viền nhạt */
 }
+
+/* Chờ xác nhận */
 .status-choxacnhan {
-  background: #FFA500;
-  /* Cam vàng */
-  color: #fff;
+  --bg: #fff2d8;
+  --fg: #FF6A00;
+  --bd: #FFA53B;
 }
 
+/* Đang soạn hàng */
 .status-dangsoan {
-  background: #17C3CE;
-  /* Cyan sáng */
-  color: #fff;
+  --bg: #e6f7fb;   /* cyan nhạt */
+  --fg: #0e7490;   /* teal sẫm */
+  --bd: #a5e3f3;
 }
 
+/* Chờ gửi hàng */
 .status-chogui {
-  background-color: #FFD93D;
-  /* Vàng sáng */
-  color: #fff;
+  --bg: #fff9db;   /* vàng nhạt */
+  --fg: #92400e;   /* nâu vàng */
+  --bd: #fde68a;
 }
 
+/* Đang giao */
 .status-danggiao {
-  background: #3B82F6;
-  /* Xanh dương vừa */
-  color: #fff;
+  --bg: #e8f1fe;   /* xanh dương nhạt */
+  --fg: #1e40af;   /* xanh dương sẫm */
+  --bd: #bed6fb;
 }
 
+/* Đã giao */
 .status-dagiao {
-  background: #28A745;
-  /* Xanh lá */
-  color: #fff;
+  --bg: #e8f5e9;   /* xanh lá nhạt */
+  --fg: #1b5e20;   /* xanh lá sẫm */
+  --bd: #c7e6c9;
 }
 
+/* Đã hủy */
 .status-dahuy {
-  background: #DC3545;
-  /* Đỏ */
-  color: #fff;
+    --bg: #f3f4f6;   /* xám nhạt */
+  --fg: #374151;   /* xám sẫm */
+  --bd: #e5e7eb;
+
 }
 
+/* Trả hàng */
 .status-trahang {
-  background: #6C757D;
-  /* Xám */
-  color: #fff;
+  --bg: #fdecec;
+  --fg: #b42318;
+  --bd: #f5b5b8;
 }
+
 
 .statusAvailable {
   color: #fff;
@@ -568,6 +583,7 @@
   align-items: center;
   justify-content: center;
   background: #fff;
+  color: #444;
   border: none;
   cursor: pointer;
 }
