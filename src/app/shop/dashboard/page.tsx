@@ -18,12 +18,11 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
 
-type TopUserRow = {
+type TopFollowerRow = {
   userId: string;
   name: string;
   email: string;
   avatar: string;
-  count: number;   // số đơn
 };
 
 // ---- Entities từ BE ----
@@ -36,7 +35,7 @@ interface UserMini {
 }
 
 interface AddressMini {
-  address?: string;          // nếu BE trả plain address
+  address?: string;
   province?: string;
   district?: string;
   ward?: string;
@@ -53,11 +52,11 @@ interface StatusHist {
 interface ParentOrder {
   _id: string;
   total_price: number;
-  status_order: string;                // << quan trọng
+  status_order: string;
   payment_method?: string;
-  transaction_method?: string;         // << thêm vào để TS biết
-  address_id?: string | AddressMini;   // << có thể là ID string hoặc object
-  user_id?: string | UserMini | null;  // << có thể là ID string hoặc object
+  transaction_method?: string;
+  address_id?: string | AddressMini;
+  user_id?: string | UserMini | null;
   address_guess?: {
     name?: string; phone?: string; email?: string;
     address?: string; type?: string; detail?: string;
@@ -94,15 +93,10 @@ interface ProductMini { _id: string; name: string; images?: string[]; variants?:
 
 type LowStockItem = { id: string; name: string; sku: string; qty: number; image: string };
 
-
-
 interface MonthlyRevenueItem {
   name: string;
   revenue: number;
 }
-
-
-
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
 
@@ -116,31 +110,24 @@ export default function Dashboard() {
   const [lastMonthOrders, setLastMonthOrders] = useState(0);
   const [shopId, setShopId] = useState<string | null>(null);
   const [pendingOrders, setPendingOrders] = useState<PendingRow[]>([]);
-  const [topUsers, setTopUsers] = useState<any[]>([]);
-  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenueItem[]>(
-    []
-  );
-  const [customerPieData, setCustomerPieData] = useState<
-    { name: string; value: number }[]
-  >([]);
+  const [topUsers, setTopUsers] = useState<TopFollowerRow[]>([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenueItem[]>([]);
+  const [customerPieData, setCustomerPieData] = useState<{ name: string; value: number }[]>([]);
   const [lowStock, setLowStock] = useState<LowStockItem[]>([]);
 
-
-
   const extractOrderShops = (json: any): OrderShop[] => {
-    if (Array.isArray(json?.result?.items)) return json.result.items; // << API hiện tại
+    if (Array.isArray(json?.result?.items)) return json.result.items;
     if (Array.isArray(json?.order_shops)) return json.order_shops;
     if (Array.isArray(json?.result)) return json.result;
     if (Array.isArray(json?.data)) return json.data;
     if (Array.isArray(json)) return json;
     return [];
-
   };
 
   const extractProducts = (json: any): ProductMini[] => {
-    if (Array.isArray(json?.products)) return json.products;          // đúng theo payload bạn gửi
+    if (Array.isArray(json?.products)) return json.products;
     if (Array.isArray(json?.result?.products)) return json.result.products;
-    if (Array.isArray(json?.result?.items)) return json.result.items; // fallback
+    if (Array.isArray(json?.result?.items)) return json.result.items;
     if (Array.isArray(json?.data)) return json.data;
     return [];
   };
@@ -170,7 +157,7 @@ export default function Dashboard() {
 
   const firstImage = (p: ProductMini): string => p.images?.[0] ?? "/placeholder.png";
 
-
+  // Guard login/role
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
@@ -191,6 +178,7 @@ export default function Dashboard() {
     }
   }, [router]);
 
+  // Lấy shopId từ user
   useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (!userStr) return;
@@ -204,15 +192,9 @@ export default function Dashboard() {
         const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
         const data = await res.json();
 
-        // Đúng cấu trúc trả về
-        const id =
-          data?.shop?._id   // ✅ trường hợp hiện tại
-          ?? data?.shopId   // fallback nếu BE đổi
-          ?? data?._id;     // fallback khác
-
+        const id = data?.shop?._id ?? data?.shopId ?? data?._id;
         if (id) {
           setShopId(String(id));
-          console.log("Shop ID:", id);
         } else {
           console.warn("Không tìm được shopId trong payload:", data);
         }
@@ -222,9 +204,7 @@ export default function Dashboard() {
     })();
   }, []);
 
-  // === Helpers chung cho dashboard theo SHOP ===
-  type WeekRange = { fromDate: string; toDate: string };
-
+  // === Helpers thời gian theo tuần/tháng ===
   const getStartAndEndOfCurrentWeek = () => {
     const today = new Date();
     const day = today.getDay(); // 0 (CN) đến 6 (T7)
@@ -242,8 +222,6 @@ export default function Dashboard() {
       fromDate: startOfWeek.toISOString(),
       toDate: endOfWeek.toISOString(),
     };
-
-
   };
 
   const getStartAndEndOfLastWeek = () => {
@@ -303,7 +281,7 @@ export default function Dashboard() {
     return extractOrderShops(json);
   };
 
-  // tính tổng delivered trong khoảng (đề phòng backend chưa filter)
+  // tính tổng delivered trong khoảng
   const sumDeliveredInRange = (orders: OrderShop[], fromISO?: string, toISO?: string) => {
     const from = fromISO ? new Date(fromISO) : null;
     const to = toISO ? new Date(toISO) : null;
@@ -321,7 +299,6 @@ export default function Dashboard() {
       const { fromDate, toDate } = getStartAndEndOfCurrentWeek();
       const orders = await fetchShopOrders(shopId, { fromDate, toDate });
       const total = sumDeliveredInRange(orders, fromDate, toDate);
-      console.log("💰 Doanh thu tuần này:", total);
       setWeeklyRevenue(total);
     } catch (err) {
       console.error("🔥 Lỗi khi tính doanh thu tuần:", err);
@@ -335,14 +312,12 @@ export default function Dashboard() {
       const { fromDate, toDate } = getStartAndEndOfLastWeek();
       const orders = await fetchShopOrders(shopId, { fromDate, toDate });
       const total = sumDeliveredInRange(orders, fromDate, toDate);
-      console.log("💸 Doanh thu tuần trước:", total);
       setLastWeekRevenue(total);
     } catch (err) {
       console.error("Lỗi khi lấy doanh thu tuần trước:", err);
       setLastWeekRevenue(0);
     }
   };
-
 
   const fetchCurrentMonthRevenue = async () => {
     if (!shopId) return;
@@ -364,7 +339,6 @@ export default function Dashboard() {
 
       setCurrentMonthRevenue(total);
       setCurrentMonthOrders(count);
-      console.log("🟢 Doanh thu tháng này:", total, " | 📦 Đơn:", count);
     } catch (err) {
       console.error("Lỗi khi lấy doanh thu tháng này:", err);
       setCurrentMonthRevenue(0);
@@ -392,14 +366,12 @@ export default function Dashboard() {
 
       setLastMonthRevenue(total);
       setLastMonthOrders(count);
-      console.log("🟡 Doanh thu tháng trước:", total, " | 🟡 Đơn:", count);
     } catch (err) {
       console.error("Lỗi khi lấy doanh thu tháng trước:", err);
       setLastMonthRevenue(0);
       setLastMonthOrders(0);
     }
   };
-
 
   const fetchPendingOrders = async (): Promise<PendingRow[]> => {
     if (!shopId) return [];
@@ -427,9 +399,6 @@ export default function Dashboard() {
     return rows;
   };
 
-
-  // gọi sau khi có shopId
-
   useEffect(() => {
     if (!shopId) return;
     (async () => {
@@ -438,68 +407,12 @@ export default function Dashboard() {
     })();
   }, [shopId]);
 
-
-  // const fetchTopUsers = async () => {
-  //   if (!shopId) return;
-  //   try {
-  //     // lấy tất cả đơn của shop (có thể cân nhắc thêm khoảng thời gian nếu dữ liệu lớn)
-  //     const orders = await fetchShopOrders(shopId);
-
-  //     // gom theo user_id trên parent order_id
-  //     const spentMap = new Map<
-  //       string,
-  //       { total: number; name: string; email?: string; avatar?: string }
-  //     >();
-
-  //     orders.forEach(o => {
-  //       if (o.status_order !== "delivered") return;
-
-  //       const user = o.order_id?.user_id;
-  //       if (!user?._id) return; // bỏ khách vãng lai
-
-  //       const key = user._id!;
-  //       const prev = spentMap.get(key) || {
-  //         total: 0,
-  //         name: user.name || "Người dùng",
-  //         email: user.email,
-  //         avatar: (user as any).avatar
-  //       };
-  //       prev.total += o.total_price || 0;
-  //       spentMap.set(key, prev);
-  //     });
-
-  //     // build list + avatar fallback
-  //     const list = Array.from(spentMap.entries()).map(([_, v]) => ({
-  //       name: v.name,
-  //       email: v.email,
-  //       avatar:
-  //         v.avatar && v.avatar.trim() !== ""
-  //           ? v.avatar
-  //           : `https://ui-avatars.com/api/?name=${encodeURIComponent(v.name)}&background=random`,
-  //       total: v.total
-  //     }));
-
-  //     const top10 = list
-  //       .filter(u => u.total > 0)
-  //       .sort((a, b) => b.total - a.total)
-  //       .slice(0, 10);
-
-  //     setTopUsers(top10);
-  //   } catch (err) {
-  //     console.error("❌ Lỗi khi lấy top người dùng:", err);
-  //     setTopUsers([]);
-  //   }
-  // };
-
-
   const fetchMonthlyRevenue = async () => {
     if (!shopId) return;
     try {
-      // lấy toàn bộ đơn của shop (có thể tối ưu bằng năm hiện tại nếu BE hỗ trợ)
       const orders = await fetchShopOrders(shopId);
 
       const monthlyTotals: Record<number, number> = {};
-
       orders.forEach(o => {
         if (o.status_order !== "delivered") return;
         const d = new Date(o.createdAt);
@@ -521,7 +434,6 @@ export default function Dashboard() {
       })));
     }
   };
-
 
   const fetchCustomerTypeStats = async () => {
     if (!shopId) return [];
@@ -558,7 +470,6 @@ export default function Dashboard() {
     return h;
   };
 
-
   const fetchUsersByIds = async (ids: string[]) => {
     const uniq = Array.from(new Set(ids.filter(Boolean)));
     const entries = await Promise.all(
@@ -566,7 +477,7 @@ export default function Dashboard() {
         try {
           const res = await fetch(`${API_BASE}user/${id}`, {
             cache: "no-store",
-            headers: authHeaders(),   // ✅ không spread
+            headers: authHeaders(),
           });
 
           if (!res.ok) {
@@ -575,7 +486,6 @@ export default function Dashboard() {
           }
           const json = await res.json();
 
-          // hỗ trợ nhiều biến thể response
           const u =
             json?.user ??
             json?.findUser ??
@@ -608,7 +518,6 @@ export default function Dashboard() {
     return new Map<string, { name: string; email: string; phone: string; avatar: string } | null>(entries);
   };
 
-
   const fetchAddressesByIds = async (ids: string[]) => {
     const uniq = Array.from(new Set(ids.filter(Boolean)));
 
@@ -633,7 +542,6 @@ export default function Dashboard() {
             json?.result ??
             json?.data ??
             (typeof json === "object" ? json : undefined);
-
 
           if (!a) {
             console.warn("⚠️ /address/:id payload lạ", id, json);
@@ -662,8 +570,6 @@ export default function Dashboard() {
     >(entries);
   };
 
-
-
   const toPendingRow = (
     o: OrderShop,
     userMap: Map<string, { name: string; email: string; phone: string; avatar: string } | null>,
@@ -671,7 +577,7 @@ export default function Dashboard() {
   ): PendingRow => {
     const parent = o.order_id as ParentOrder | undefined;
 
-    // ---- member
+    // member
     let member: UserMini | null = null;
     if (typeof parent?.user_id === "string") {
       const u = userMap.get(parent.user_id);
@@ -681,7 +587,7 @@ export default function Dashboard() {
       member = parent.user_id;
     }
 
-    // ---- address
+    // address
     let addrText = "—", addrName = "", addrPhone = "";
     if (parent?.address_guess?.address) {
       addrText = parent.address_guess.address;
@@ -717,8 +623,7 @@ export default function Dashboard() {
     return { name, email, phone, address: addrText, status, payment_method };
   };
 
-
-  const LOW_STOCK_THRESHOLD = 50; // tuỳ bạn
+  const LOW_STOCK_THRESHOLD = 50;
 
   const fetchLowStock = async () => {
     if (!shopId) return;
@@ -728,7 +633,7 @@ export default function Dashboard() {
         headers: authHeaders(),
       });
       const json = await res.json();
-      const products = extractProducts(json); // giờ mới có product
+      const products = extractProducts(json);
 
       const items: LowStockItem[] = products
         .filter(p => !p.isHidden)
@@ -744,8 +649,6 @@ export default function Dashboard() {
         .filter(i => i.qty < LOW_STOCK_THRESHOLD)
         .sort((a, b) => a.qty - b.qty);
 
-      console.log("👉 Tổng sản phẩm:", items.length);
-      console.log("👉 Sản phẩm tồn kho thấp:", warned);
       setLowStock(warned);
     } catch (e) {
       console.error("❌ Lỗi fetchLowStock:", e);
@@ -753,76 +656,30 @@ export default function Dashboard() {
     }
   };
 
-
-  // Lấy userId dạng string từ parent.user_id (có thể là string hoặc object)
-  const normalizeUserId = (val: ParentOrder["user_id"]): string | null => {
-    if (!val) return null;
-    if (typeof val === "string") return val;
-    if (typeof val === "object" && val._id) return String(val._id);
-    return null;
-  };
-
-  // Đếm số đơn theo user; có thể truyền danh sách trạng thái muốn tính
-  const countOrdersByUser = (
-    orders: OrderShop[],
-    allowStatuses?: string[]
-  ): Map<string, number> => {
-    const m = new Map<string, number>();
-    for (const o of orders) {
-      if (allowStatuses && !allowStatuses.includes(o.status_order)) continue;
-      const uid = normalizeUserId(o.order_id?.user_id);
-      if (!uid) continue;
-      m.set(uid, (m.get(uid) ?? 0) + 1);
-    }
-    return m;
-  };
-
-  const fetchTopUsersByOrderCount = async () => {
+  // Followers cho ô bên phải
+  const fetchFollowersForTopCard = async () => {
     if (!shopId) return;
+    try {
+      const res = await fetch(`${API_BASE}shop/${shopId}/followers?all=true`, { cache: "no-store" });
+      const data = await res.json();
+      const items = data?.items ?? data?.followers ?? [];
 
-    // lấy TẤT CẢ đơn của shop (tuỳ bạn có thể lọc theo thời gian/tháng)
-    const orders = await fetchShopOrders(shopId);
-
-    // chỉ tính các trạng thái bạn muốn (bỏ cancelled/refund). Tuỳ nghiệp vụ bạn chỉnh mảng này.
-    const allow = [
-      "pending",
-      "confirmed",
-      "preparing",
-      "awaiting_shipment",
-      "shipping",
-      "delivered",
-    ];
-
-    const counts = countOrdersByUser(orders, allow);
-    const ids = Array.from(counts.keys());
-
-    // dùng hàm bạn đã có để lấy thông tin user
-    const userMap = await fetchUsersByIds(ids);
-
-    // build rows
-    const rows: TopUserRow[] = ids.map((id) => {
-      const u = userMap.get(id);
-      return {
-        userId: id,
-        name: u?.name || "Người dùng",
-        email: u?.email || "",
+      const rows: TopFollowerRow[] = items.map((u: any) => ({
+        userId: String(u._id || ""),
+        name: u.name || "Người dùng",
+        email: u.email || "",
         avatar:
-          (u?.avatar && u.avatar.trim() !== "")
-            ? u.avatar
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              u?.name || "User"
-            )}&background=random`,
-        count: counts.get(id)!,
-      };
-    });
+          u?.avatar && String(u.avatar).trim() !== ""
+            ? (String(u.avatar).startsWith("http") ? u.avatar : `${API_BASE}images/${u.avatar}`)
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(u?.name || "User")}&background=random`,
+      }));
 
-    // sắp xếp giảm dần theo số đơn, lấy top 10
-    rows.sort((a, b) => b.count - a.count);
-    setTopUsers(rows.slice(0, 10));
+      setTopUsers(rows);
+    } catch (err) {
+      console.error("❌ Lỗi khi lấy followers:", err);
+      setTopUsers([]);
+    }
   };
-
-
-
 
   useEffect(() => {
     if (!shopId) return;
@@ -833,16 +690,15 @@ export default function Dashboard() {
     fetchMonthlyRevenue();
     fetchLowStock();
     fetchCustomerTypeStats().then(setCustomerPieData);
-    fetchTopUsersByOrderCount();
+    fetchFollowersForTopCard(); // dùng followers thay vì top theo số đơn
   }, [shopId]);
 
-
-  {/* ===== Helpers ===== */ }
+  // ===== Helpers format =====
   const fmtVND = (n: number) =>
     (Number.isFinite(n) ? n : 0).toLocaleString("vi-VN") + " ₫";
 
   const pctChange = (curr: number, prev: number) => {
-    if (!prev) return curr ? 100 : 0; // tránh chia 0
+    if (!prev) return curr ? 100 : 0;
     return ((curr - prev) / prev) * 100;
   };
   const arrow = (d: number) => (d > 0 ? "↑" : d < 0 ? "↓" : "");
@@ -925,9 +781,6 @@ export default function Dashboard() {
               {(() => {
                 const aovThis =
                   currentMonthOrders > 0 ? currentMonthRevenue / currentMonthOrders : 0;
-                const aovPrev =
-                  lastMonthOrders > 0 ? lastMonthRevenue / lastMonthOrders : 0;
-                const diff = pctChange(aovThis, aovPrev);
                 return (
                   <>
                     <span className={styles.cardValue}>{fmtVND(aovThis)}</span>
@@ -935,7 +788,6 @@ export default function Dashboard() {
                 );
               })()}
             </div>
-
           </div>
         </div>
 
@@ -949,30 +801,26 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="80%">
                 <BarChart
                   data={monthlyRevenue}
-                  barCategoryGap="30%"     // GIẢM khoảng cách giữa các cột
+                  barCategoryGap="30%"
                   barGap={4}
-                  maxBarSize={50}          // KHÔNG cho cột vượt quá 40px
+                  maxBarSize={50}
                 >
-                  {/* Lưới mảnh, giúp định hướng mắt */}
                   <CartesianGrid vertical={false} stroke="#EEF2F7" strokeDasharray="3 3" />
-
-                  {/* Trục X/Y rõ ràng hơn */}
                   <XAxis
                     dataKey="name"
-                    axisLine={{ stroke: "#CBD5E1", strokeWidth: 1 }}   // MÀU + ĐỘ DÀY TRỤC X
+                    axisLine={{ stroke: "#CBD5E1", strokeWidth: 1 }}
                     tickLine={{ stroke: "#CBD5E1", strokeWidth: 1 }}
                     tick={{ fill: "#6B7280", fontSize: 12 }}
                   />
                   <YAxis
-                    axisLine={{ stroke: "#CBD5E1", strokeWidth: 1 }}   // MÀU + ĐỘ DÀY TRỤC Y
+                    axisLine={{ stroke: "#CBD5E1", strokeWidth: 1 }}
                     tickLine={{ stroke: "#CBD5E1", strokeWidth: 1 }}
                     tick={{ fill: "#6B7280", fontSize: 12 }}
                   />
-
                   <Tooltip
                     formatter={(value: number) => `${value.toLocaleString("vi-VN")} ₫`}
                     labelStyle={{ color: "#111", fontWeight: 600 }}
-                    itemStyle={{ color: "#444", fontSize: 13, fontWeight: 600 }}  // 👈 đổi màu & đậm hơn
+                    itemStyle={{ color: "#444", fontSize: 13, fontWeight: 600 }}
                     contentStyle={{
                       backgroundColor: "#fff",
                       border: "1px solid #e5e7eb",
@@ -980,18 +828,15 @@ export default function Dashboard() {
                       boxShadow: "0 4px 12px rgba(0,0,0,.08)",
                     }}
                   />
-
-                  {/* Cột rõ nét hơn: barSize + minPointSize để luôn thấy cột */}
                   <Bar
                     dataKey="revenue"
-                    name="Doanh thu"       // 👈 đổi tên field hiện ra trong tooltip
+                    name="Doanh thu"
                     radius={[8, 8, 0, 0]}
                     barSize={35}
                     minPointSize={3}
                     fill="url(#gradRevenue)"
                     activeBar={{ fill: "url(#gradRevenue)", opacity: 1 }}
                   />
-
                   <defs>
                     <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#22C55E" stopOpacity={0.9} />
@@ -1000,13 +845,14 @@ export default function Dashboard() {
                   </defs>
                 </BarChart>
               </ResponsiveContainer>
-
             </div>
           </div>
+
+          {/* Bên phải: Người theo dõi */}
           <div className={styles.placeholderRight}>
-            <h2 className={styles.sectionTitle}>Top Người Dùng</h2>
+            <h2 className={styles.sectionTitle}>Người theo dõi</h2>
             <p className={styles.sectionSubTitle}>
-              Người dùng mua hàng nhiều nhất tháng này
+              Danh sách followers của shop
             </p>
             <div className={styles.userList}>
               {topUsers.map((user) => (
@@ -1016,24 +862,22 @@ export default function Dashboard() {
                       src={user.avatar}
                       alt="avatar"
                       style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover" }}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/placeholder-user.png"; }}
                     />
                     <div>
                       <div className={styles.name}>{user.name}</div>
-                      <div className={styles.email}>{user.email}</div>
+                      <div className={styles.email}>{user.email || "—"}</div>
                     </div>
                   </div>
                   <div className={styles.money}>
-                    {user.count} đơn
+                    Follower
                   </div>
                 </div>
               ))}
             </div>
-
           </div>
-
-
-
         </div>
+
         <div className={styles.splitSection}>
           {/* BẢNG ĐƠN HÀNG */}
           <div className={styles.placeholderLeft}>
@@ -1055,23 +899,23 @@ export default function Dashboard() {
                 {pendingOrders.map((row, index) => {
                   const statusClass =
                     row.status === "pending" ? styles["status-choxacnhan"] :
-                      row.status === "preparing" ? styles["status-dangsoan"] :
-                        row.status === "awaiting_shipment" ? styles["status-chogui"] :
-                          row.status === "shipping" ? styles["status-danggiao"] :
-                            row.status === "delivered" ? styles["status-dagiao"] :
-                              row.status === "cancelled" ? styles["status-dahuy"] :
-                                row.status === "refund" ? styles["status-trahang"] :
-                                  row.status === "unpending" ? styles["status-chuaxacthuc"] : "";
+                    row.status === "preparing" ? styles["status-dangsoan"] :
+                    row.status === "awaiting_shipment" ? styles["status-chogui"] :
+                    row.status === "shipping" ? styles["status-danggiao"] :
+                    row.status === "delivered" ? styles["status-dagiao"] :
+                    row.status === "cancelled" ? styles["status-dahuy"] :
+                    row.status === "refund" ? styles["status-trahang"] :
+                    row.status === "unpending" ? styles["status-chuaxacthuc"] : "";
 
                   const statusText =
                     row.status === "unpending" ? "Chưa xác thực" :
-                      row.status === "pending" ? "Chờ xác nhận" :
-                        row.status === "preparing" ? "Đang soạn hàng" :
-                          row.status === "awaiting_shipment" ? "Chờ gửi hàng" :
-                            row.status === "shipping" ? "Đang giao" :
-                              row.status === "delivered" ? "Đã giao" :
-                                row.status === "cancelled" ? "Đã hủy" :
-                                  row.status === "refund" ? "Trả hàng" : row.status;
+                    row.status === "pending" ? "Chờ xác nhận" :
+                    row.status === "preparing" ? "Đang soạn hàng" :
+                    row.status === "awaiting_shipment" ? "Chờ gửi hàng" :
+                    row.status === "shipping" ? "Đang giao" :
+                    row.status === "delivered" ? "Đã giao" :
+                    row.status === "cancelled" ? "Đã hủy" :
+                    row.status === "refund" ? "Trả hàng" : row.status;
 
                   return (
                     <tr key={index}>
@@ -1098,7 +942,7 @@ export default function Dashboard() {
             </table>
           </div>
 
-          {/* TOP NGƯỜI DÙNG */}
+          {/* Cảnh báo tồn kho thấp */}
           <div className={styles.placeholderRight}>
             <div className={styles.lowStockCard}>
               <h2 className={styles.sectionTitle}>Cảnh báo tồn kho thấp</h2>
@@ -1138,7 +982,6 @@ export default function Dashboard() {
                       >
                         {item.qty} cái
                       </div>
-
                     </div>
                   ))
                 )}
@@ -1148,7 +991,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
         </div>
       </section>
     </main>
