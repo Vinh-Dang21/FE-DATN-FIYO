@@ -308,7 +308,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className={styles.placeholderRight} style={{ width: "100%", height: 350 }}>
+          <div className={styles.placeholderRight} style={{ width: "100%", height: 400 }}>
             <h2 className={styles.sectionTitle}>PHÂN BỐ SẢN PHẨM THEO DANH MỤC</h2>
             <p className={styles.sectionSubTitle}>Tỷ lệ sản phẩm trên các danh mục</p>
 
