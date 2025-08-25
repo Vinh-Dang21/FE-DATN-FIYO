@@ -71,7 +71,7 @@ export default function CommentsPage() {
         const userId = user?._id;
         if (!userId) return;
 
-        const res = await fetch(`${API_BASE}  shop/user/${userId}`, { cache: "no-store" });
+        const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
         const data = await res.json();
 
         // Đúng cấu trúc trả về
