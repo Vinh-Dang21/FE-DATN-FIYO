@@ -7,8 +7,7 @@ import Topbar from "@/app/component/Topbar";
 
 /* ===== Consts ===== */
 const DESC_MAX = 300;
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click";
 
 /* ===== Types ===== */
 type Shop = {

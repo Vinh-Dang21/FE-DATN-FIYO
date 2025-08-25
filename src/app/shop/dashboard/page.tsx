@@ -104,7 +104,7 @@ interface MonthlyRevenueItem {
 
 
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click/api/";
 
 export default function Dashboard() {
   const router = useRouter();
