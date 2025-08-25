@@ -22,22 +22,17 @@
   flex: 1;
   display: flex;
   align-items: stretch;
-  /* 👈 giữ 2 box cao bằng nhau */
   gap: 16px;
   padding: 16px;
   overflow-x: hidden;
-  /* tránh tràn ngang */
 }
 
 /* ===== Left: Sidebar (STICKY) ===== */
 .chatSidebar {
   flex: 0 0 300px;
-  /* luôn 300px */
   position: sticky;
   top: 16px;
-  /* bám theo padding trên */
   height: calc(100vh - 32px);
-  /* full cao trừ padding trên/dưới */
   background: #fff;
   border: 1px solid #e9eef5;
   border-radius: 14px;
@@ -45,7 +40,6 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* chặn tràn nội dung */
 }
 
 .searchBox {
@@ -73,11 +67,9 @@
 .convList {
   flex: 1 1 auto;
   min-height: 0;
-  /* cho phép vùng này scroll */
   overflow-y: auto;
 }
 
-/* item */
 .convItem {
   display: grid;
   grid-template-columns: 48px 1fr;
@@ -106,7 +98,6 @@
   position: relative
 }
 
-/* unread highlight */
 .convItem.unread .convName {
   font-weight: 800;
   color: #1f2937
@@ -117,7 +108,6 @@
   font-weight: 600
 }
 
-/* avatar + badge */
 .avatar {
   position: relative;
   width: 48px;
@@ -153,7 +143,6 @@
   box-shadow: 0 0 0 2px #fff;
 }
 
-/* text block */
 .convMain {
   min-width: 0;
   display: grid;
@@ -194,7 +183,6 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  /* cho body scroll */
   display: grid;
   grid-template-rows: auto 1fr auto;
   background: #fff;
@@ -204,19 +192,16 @@
   box-shadow: 0 10px 22px rgba(17, 24, 39, .06);
 }
 
-/* Header bên phải (STICKY TRONG PANE) */
 .chatHeader {
   position: sticky;
   top: 0;
   z-index: 5;
-  /* đứng im khi cuộn chat */
   padding: 14px 16px;
   border-bottom: 1px solid #eef2f7;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  /* cần cho sticky */
 }
 
 .headerLeft {
@@ -255,12 +240,11 @@
   color: #94a3b8
 }
 
-/* messages (PHẦN NÀY CUỘN) */
+/* messages */
 .chatBody {
   padding: 18px;
   background: #f7f8fb;
   min-height: 0;
-  /* quan trọng để scroll */
   overflow-y: auto;
 }
 
@@ -277,7 +261,6 @@
   justify-content: flex-end
 }
 
-/* bubble */
 .msgBubble {
   max-width: min(72%, 640px);
   padding: 10px 12px;
@@ -311,36 +294,41 @@
   word-wrap: break-word
 }
 
-/* ===== Media in bubble ===== */
+/* ===== Media in bubble (FULL BOX FIX) ===== */
 .attachWrap {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   margin-top: 6px;
 }
 
 .attachItem {
   position: relative;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   background: #f3f5f8;
-  border: 1px solid #eef2f7
+  border: 1px solid #eef2f7;
+  width: 100%;
+  max-width: 420px;        /* ảnh không quá rộng */
+  aspect-ratio: 16/9;      /* box cân đối */
 }
 
 .attachImage {
   display: block;
   width: 100%;
-  height: 180px;
-  object-fit: cover
+  height: 100%;
+  object-fit: cover;       /* phủ kín khung */
+  object-position: center;
+  border-radius: 12px;
 }
 
 .attachVideo {
   display: block;
   width: 100%;
-  max-height: 360px;
+  height: 100%;
   aspect-ratio: 16/9;
   background: #000;
-  border-radius: 10px
+  border-radius: 12px;
 }
 
 .attachFile {
@@ -350,6 +338,15 @@
   background: #f1f5f9;
   color: #0f172a;
   font-size: 13px
+}
+
+.msgRow.right .attachItem {
+  border: none;
+  box-shadow: none;
+}
+.msgRow.right .attachFile {
+  background: rgba(255,255,255,.15);
+  color: #fff;
 }
 
 /* input */
@@ -430,7 +427,7 @@
     max-width: 92vw
   }
 
-  .attachImage {
-    height: 150px
+  .attachItem {
+    aspect-ratio: 4/3;
   }
 }
