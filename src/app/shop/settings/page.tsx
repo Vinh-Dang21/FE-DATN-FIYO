@@ -5,9 +5,11 @@ import styles from "./settings.module.css";
 import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
 
+/* ===== Consts ===== */
 const DESC_MAX = 300;
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click";
 
+/* ===== Types ===== */
 type Shop = {
   _id: string;
   name: string;
@@ -15,10 +17,13 @@ type Shop = {
   email: string;
   description: string;
   avatar?: string;
+  banner?: string;
   address?: string;
   status?: "active" | "inactive" | "pending";
+  updated_at?: string;
 };
 
+/* ===== Helpers ===== */
 function getFallbackUserId(): string {
   try {
     const raw = localStorage.getItem("user");
@@ -30,32 +35,58 @@ function getFallbackUserId(): string {
   }
 }
 
+/** Chuẩn hoá URL ảnh (logo & banner) luôn dùng API_BASE */
+function toAbsoluteImage(url?: string) {
+  if (!url) return "";
+  const fname = url.includes("/api/images/")
+    ? url.split("/api/images/")[1]
+    : (url.split("/").pop() || "");
+  return `${API_BASE.replace(/\/$/, "")}/api/images/${encodeURIComponent(
+    fname.replace(/^\/+/, "")
+  )}`;
+}
+
+/** Bust cache để thấy ảnh mới ngay */
+const bust = (url?: string, tag?: string | number) =>
+  url ? `${url}${url.includes("?") ? "&" : "?"}v=${tag ?? Date.now()}` : "";
+
+/* ===== Page ===== */
 export default function Setting() {
-  // ====== UI state ======
+  // UI
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
 
-  // ====== Form state ======
+  // Form
   const [shopId, setShopId] = useState<string>("");
-  const [logoPreview, setLogoPreview] = useState<string>("");     // preview (URL hoặc dataURL)
-  const [logoFile, setLogoFile] = useState<File | null>(null);    // file gửi lên khi cập nhật
+
+  // Logo
+  const [logoPreview, setLogoPreview] = useState<string>("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+
+  // Banner (giống hệt logo)
+  const [bannerPreview, setBannerPreview] = useState<string>("");
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const bannerInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Fields
   const [shopName, setShopName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [desc, setDesc] = useState("");
-  const [success, setSuccess] = useState<string>("");
 
-  // Lưu giá trị ban đầu để check isDirty
+  // initial để check isDirty
   const initialRef = useRef<{
     logoPreview: string;
+    bannerPreview: string;
     shopName: string;
     phone: string;
     email: string;
     desc: string;
   } | null>(null);
 
-  // ====== validators ======
+  // Validators
   const phoneValid = /^0\d{9,10}$/.test(phone.trim());
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const nameValid = shopName.trim().length > 0;
@@ -65,55 +96,81 @@ export default function Setting() {
     const init = initialRef.current;
     if (!init) return false;
     return (
-      logoFile !== null || // có chọn file mới
+      logoFile !== null ||
+      bannerFile !== null ||
       logoPreview !== init.logoPreview ||
+      bannerPreview !== init.bannerPreview ||
       shopName !== init.shopName ||
       phone !== init.phone ||
       email !== init.email ||
       desc !== init.desc
     );
-  }, [logoFile, logoPreview, shopName, phone, email, desc]);
+  }, [logoFile, bannerFile, logoPreview, bannerPreview, shopName, phone, email, desc]);
 
-  const canSubmit = nameValid && phoneValid && emailValid && descValid && isDirty && !!shopId;
+  const canSubmit =
+    nameValid && phoneValid && emailValid && descValid && isDirty && !!shopId;
 
-  // ====== pick file ======
-  const pickFile = (file?: File) => {
-    if (!file || !file.type.startsWith("image/")) return;
+  // Pickers
+  const validateImage = (file?: File) => {
+    if (!file) return "Không có file.";
+    if (!file.type.startsWith("image/")) return "File phải là hình ảnh.";
+    if (file.size > MAX_IMAGE_BYTES) return "Ảnh quá lớn (tối đa 5MB).";
+    return "";
+  };
+
+  const pickLogo = (file?: File) => {
+    const msg = validateImage(file);
+    if (msg) return setError(msg);
+    if (!file) return;
     setLogoFile(file);
     const reader = new FileReader();
     reader.onload = () => setLogoPreview(String(reader.result || ""));
     reader.readAsDataURL(file);
   };
 
-  // ====== Load shop by user id ======
+  const pickBanner = (file?: File) => {
+    const msg = validateImage(file);
+    if (msg) return setError(msg);
+    if (!file) return;
+    setBannerFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setBannerPreview(String(reader.result || ""));
+    reader.readAsDataURL(file);
+    if (bannerInputRef.current) bannerInputRef.current.value = ""; // cho phép chọn lại cùng file
+  };
+
+  // Load shop
   useEffect(() => {
     (async () => {
       setLoading(true);
       setError("");
       try {
         const uid = getFallbackUserId();
-        if (!uid) throw new Error("Không tìm thấy userId (hãy đăng nhập để có thông tin user trong localStorage).");
+        if (!uid) throw new Error("Không tìm thấy userId.");
 
-        const res = await fetch(`${API_BASE}/api/shop/user/${uid}`, { cache: "no-store" });
-        if (!res.ok) {
-          const txt = await res.text();
-          throw new Error(`Lỗi tải shop: ${res.status} - ${txt}`);
-        }
+        const res = await fetch(
+          `${API_BASE}/api/shop/user/${uid}?t=${Date.now()}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) throw new Error(`Lỗi tải shop: ${res.status}`);
         const data = await res.json();
         const shop: Shop = data?.shop || data;
 
-        // Đổ dữ liệu
         setShopId(shop._id);
         setShopName(shop.name || "");
         setPhone(shop.phone || "");
         setEmail(shop.email || "");
         setDesc(shop.description || "");
-        setLogoPreview(shop.avatar || "");
 
-        // reset file & initial
+        // DÙNG CÙNG LOGIC CHO LOGO & BANNER
+        setLogoPreview(toAbsoluteImage(shop.avatar) || "");
+        setBannerPreview(shop.banner ? bust(toAbsoluteImage(shop.banner)) : "");
+
         setLogoFile(null);
+        setBannerFile(null);
         initialRef.current = {
-          logoPreview: shop.avatar || "",
+          logoPreview: toAbsoluteImage(shop.avatar) || "",
+          bannerPreview: toAbsoluteImage(shop.banner) || "",
           shopName: shop.name || "",
           phone: shop.phone || "",
           email: shop.email || "",
@@ -125,9 +182,9 @@ export default function Setting() {
         setLoading(false);
       }
     })();
-  }, []); // ⬅️ bỏ currentUserId khỏi deps vì page không nhận props
+  }, []);
 
-  // ====== Submit update ======
+  // Submit
   const handleSubmit = async () => {
     if (!canSubmit || !shopId) return;
     setSaving(true);
@@ -138,29 +195,73 @@ export default function Setting() {
       fd.append("phone", phone.trim());
       fd.append("email", email.trim());
       fd.append("description", desc.trim());
-      if (logoFile) fd.append("avatar", logoFile); // chỉ gửi khi có file mới
+      if (logoFile) fd.append("avatar", logoFile);
+      if (bannerFile) fd.append("banner", bannerFile);
 
-      const res = await fetch(`${API_BASE}/api/shop/${shopId}`, { method: "PUT", body: fd });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`Cập nhật thất bại: ${res.status} - ${txt}`);
+      // log để chắc có part banner/avatar
+      for (const [k, v] of fd.entries()) {
+        console.log(
+          "[FD]",
+          k,
+          v instanceof File ? `File(${v.name}, ${v.type}, ${v.size}B)` : v
+        );
       }
+
+      const res = await fetch(`${API_BASE}/api/shop/${shopId}`, {
+        method: "PUT",
+        body: fd, // KHÔNG tự set Content-Type
+      });
+      if (!res.ok) throw new Error(`Cập nhật thất bại: ${res.status}`);
+
       const updated: Shop = await res.json();
 
-      // cập nhật state + initial
+      // Áp lại y như logo
       setShopName(updated.name || "");
       setPhone(updated.phone || "");
       setEmail(updated.email || "");
       setDesc(updated.description || "");
-      setLogoPreview(updated.avatar || "");
+      setLogoPreview(toAbsoluteImage(updated.avatar) || "");
+      setBannerPreview(updated.banner ? bust(toAbsoluteImage(updated.banner)) : "");
       setLogoFile(null);
-      initialRef.current = {
-        logoPreview: updated.avatar || "",
-        shopName: updated.name || "",
-        phone: updated.phone || "",
-        email: updated.email || "",
-        desc: updated.description || "",
-      };
+      setBannerFile(null);
+
+      // Refetch để chắc chắn giàu nhất
+      try {
+        const re = await fetch(`${API_BASE}/api/shop/${shopId}?t=${Date.now()}`, {
+          cache: "no-store",
+        });
+        if (re.ok) {
+          const fresh: Shop = await re.json();
+          setLogoPreview(toAbsoluteImage(fresh.avatar) || "");
+          setBannerPreview(fresh.banner ? bust(toAbsoluteImage(fresh.banner)) : "");
+          initialRef.current = {
+            logoPreview: toAbsoluteImage(fresh.avatar) || "",
+            bannerPreview: toAbsoluteImage(fresh.banner) || "",
+            shopName: fresh.name || "",
+            phone: fresh.phone || "",
+            email: fresh.email || "",
+            desc: fresh.description || "",
+          };
+        } else {
+          initialRef.current = {
+            logoPreview: toAbsoluteImage(updated.avatar) || "",
+            bannerPreview: toAbsoluteImage(updated.banner) || "",
+            shopName: updated.name || "",
+            phone: updated.phone || "",
+            email: updated.email || "",
+            desc: updated.description || "",
+          };
+        }
+      } catch {
+        initialRef.current = {
+          logoPreview: toAbsoluteImage(updated.avatar) || "",
+          bannerPreview: toAbsoluteImage(updated.banner) || "",
+          shopName: updated.name || "",
+          phone: updated.phone || "",
+          email: updated.email || "",
+          desc: updated.description || "",
+        };
+      }
 
       setSuccess("Cập nhật cửa hàng thành công!");
       setTimeout(() => setSuccess(""), 2500);
@@ -171,7 +272,7 @@ export default function Setting() {
     }
   };
 
-  // ====== Render ======
+  // Render
   return (
     <main className={styles.main}>
       <Sidebar />
@@ -188,11 +289,79 @@ export default function Setting() {
           </div>
         </div>
 
-        {loading && <div className={styles.infoBanner}>Đang tải thông tin shop…</div>}
-        {!!error && <div className={styles.errorBanner}>{error}</div>}
-        {!!success && <div className={styles.successBanner}><span className={styles.dot} /> {success}</div>}
+        {!!success && (
+          <div className={styles.successBanner}><span className={styles.dot} />{success}</div>
+        )}
+        {!!error && (
+          <div className={styles.successBanner} style={{ background: "#fef2f2", color: "#991b1b", borderColor: "#fecaca" }}>
+            {error}
+          </div>
+        )}
 
-        {/* Card: Logo */}
+        {/* Banner – dùng cùng công thức như logo */}
+        <div className={styles.card}>
+          <div className={styles.cardHead}>Banner shop</div>
+          <div className={styles.bannerWrap}>
+            <div
+              className={styles.bannerBox}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                pickBanner(e.dataTransfer.files?.[0]);
+              }}
+            >
+              {bannerPreview ? (
+                <img
+                  key={bannerPreview}
+                  className={styles.bannerImg}
+                  src={bannerPreview}
+                  alt="banner"
+                />
+              ) : (
+                <div className={styles.bannerEmpty}>
+                  Banner ngang ~ tỉ lệ 15:4 (khuyên dùng 1200×320)
+                </div>
+              )}
+            </div>
+
+            <div className={styles.bannerActions}>
+              <label
+                className={styles.dropZone}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  pickBanner(e.dataTransfer.files?.[0]);
+                }}
+              >
+                <input
+                  ref={bannerInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => pickBanner(e.target.files?.[0])}
+                />
+                <ImagePlus size={18} />
+                <span>Chọn banner hoặc kéo thả ảnh vào đây</span>
+              </label>
+
+              {bannerPreview && (
+                <button
+                  className={styles.ghostBtn}
+                  onClick={() => {
+                    setBannerPreview("");
+                    setBannerFile(null);
+                  }}
+                  type="button"
+                >
+                  Gỡ banner
+                </button>
+              )}
+              <div className={styles.hint}>Dung lượng &lt; 5MB, ảnh rõ nét để tránh vỡ hình.</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Logo */}
         <div className={styles.card}>
           <div className={styles.cardHead}>Logo cửa hàng</div>
           <div className={styles.logoRow}>
@@ -205,10 +374,15 @@ export default function Setting() {
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                pickFile(e.dataTransfer.files?.[0]);
+                pickLogo(e.dataTransfer.files?.[0]);
               }}
             >
-              <input type="file" accept="image/*" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => pickLogo(e.target.files?.[0])}
+              />
               <ImagePlus size={18} />
               <span>Chọn logo hoặc kéo thả ảnh vào đây</span>
             </label>
@@ -228,10 +402,9 @@ export default function Setting() {
           </div>
         </div>
 
-        {/* Card: Form */}
+        {/* Form */}
         <div className={styles.card}>
           <div className={styles.grid}>
-            {/* Tên cửa hàng */}
             <div className={styles.group}>
               <label className={styles.label}>
                 <span className={styles.required}>*</span> Tên cửa hàng
@@ -247,7 +420,6 @@ export default function Setting() {
               </div>
             </div>
 
-            {/* Phone + Email */}
             <div className={styles.row2}>
               <div className={styles.group}>
                 <label className={styles.label}>
@@ -284,7 +456,6 @@ export default function Setting() {
               </div>
             </div>
 
-            {/* Mô tả */}
             <div className={styles.group}>
               <label className={styles.label}>
                 <span className={styles.required}>*</span> Mô tả cửa hàng
@@ -302,7 +473,6 @@ export default function Setting() {
               {!descValid && <div className={styles.hint}>Tối đa {DESC_MAX} ký tự và không được để trống.</div>}
             </div>
 
-            {/* Actions */}
             <div className={styles.actionBar}>
               <button
                 className={`${styles.submitBtn} ${(!canSubmit || saving) ? styles.btnDisabled : ""}`}
@@ -319,7 +489,9 @@ export default function Setting() {
                   const init = initialRef.current;
                   if (!init) return;
                   setLogoPreview(init.logoPreview);
+                  setBannerPreview(init.bannerPreview ? bust(init.bannerPreview) : "");
                   setLogoFile(null);
+                  setBannerFile(null);
                   setShopName(init.shopName);
                   setPhone(init.phone);
                   setEmail(init.email);
