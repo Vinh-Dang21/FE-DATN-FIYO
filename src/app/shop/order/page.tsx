@@ -4,11 +4,7 @@ import {
   Calendar,
   Check,
   AlertCircle,
-  Clock,
   Truck,
-  CheckCircle,
-  XCircle,
-  Table,
 } from "lucide-react";
 import styles from "./order.module.css";
 import { useEffect, useState } from "react";
@@ -18,8 +14,8 @@ import Tabs from "@/app/component/filterorder";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
-import { log } from "console";
-// ===== Common =====
+
+/* ======================= Types ======================= */
 interface Voucher {
   _id: string;
   value: number;
@@ -62,7 +58,7 @@ interface Address {
   updatedAt?: string;
 }
 
-// ===== Guest address (2 biến thể BE có thể trả) =====
+/* ===== Guest address (2 biến thể BE có thể trả) ===== */
 type GuestAddressBase = {
   name: string;
   phone: string;
@@ -81,10 +77,9 @@ type GuestAddressV2 = GuestAddressBase & {
   ward: string;
 };
 
-export type AddressGuess = GuestAddressV1 | GuestAddressV2;
+type AddressGuess = GuestAddressV1 | GuestAddressV2;
 
-
-// ===== Order (cha) =====
+/* ===== Order (cha) ===== */
 interface Order {
   _id: string;
   total_price: number;
@@ -92,7 +87,7 @@ interface Order {
   createdAt: string;
   user_id: User | string | null;  // BE có thể trả object hoặc id
   address_id: Address | string | null;
-  address_guess?: AddressGuess;   // ⬅️ UNION đã sửa
+  address_guess?: AddressGuess;   // ⬅️ UNION
   voucher_id?: Voucher;
   payment_method: string;
   transaction_code: string | null;
@@ -104,14 +99,13 @@ interface Order {
   __v?: number;
 }
 
-// ===== OrderShop (con theo shop) =====
+/* ===== OrderShop (con theo shop) ===== */
 interface OrderShop {
   _id: string;
   order_id: Order | null; // có thể null
   shop_id: {
     _id: string;
     name: string;
-    // ... bổ sung nếu cần
   };
   total_price: number;
   status_order: string;  // "pending" | "preparing" | "shipping" | ...
@@ -121,7 +115,7 @@ interface OrderShop {
   __v?: number;
 }
 
-// ===== Kiểu dòng hiển thị bảng =====
+/* ===== Kiểu dòng hiển thị bảng ===== */
 type RowOrder = {
   _orderShopId: string; // để đi tới chi tiết
   _id: string;          // id hiển thị (dùng orderShopId)
@@ -136,7 +130,6 @@ type RowOrder = {
   user_id?: string;     // nếu order trả id (không phải object)
   address_id?: string;
 
-  // block guest để render nhanh không cần fetch
   _guest?: {
     name?: string;
     email?: string;
@@ -145,52 +138,32 @@ type RowOrder = {
   };
 };
 
-// ===== (tuỳ chọn) helpers type guard + format address =====
-export function isGuestAddrV1(ag: AddressGuess): ag is GuestAddressV1 {
+/* =================== Helpers (local, không export) =================== */
+function isGuestAddrV1(ag: AddressGuess): ag is GuestAddressV1 {
   return (ag as GuestAddressV1).address !== undefined;
 }
 
-export function formatGuestAddress(ag?: AddressGuess): string {
+function formatGuestAddress(ag?: AddressGuess): string {
   if (!ag) return "";
   const parts: string[] = [];
   if (ag.detail) parts.push(ag.detail);
 
-  if ("address" in ag && ag.address) {
-    // V1: có address
+  if (isGuestAddrV1(ag) && ag.address) {
     parts.push(ag.address);
   } else {
-    // V2: ghép ward, district, province
-    const ward = "ward" in ag ? ag.ward : undefined;
-    const district = "district" in ag ? ag.district : undefined;
-    const province = "province" in ag ? ag.province : undefined;
+    const ward = (ag as GuestAddressV2).ward;
+    const district = (ag as GuestAddressV2).district;
+    const province = (ag as GuestAddressV2).province;
     const tail = [ward, district, province].filter(Boolean).join(", ");
     if (tail) parts.push(tail);
   }
   return parts.join(", ");
 }
 
-
-
+/* =================== Constants =================== */
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
 
-// Kiểu dữ liệu cho các đơn hàng trong bảng
-interface OrderTableRow {
-  _id: string;
-  createdAt: string;
-  status_order: string;
-  user_id?: User;
-  address_id?: Address;
-  address_guess?: {
-    name: string;
-    phone: string;
-    email?: string;
-    province: string;
-    district: string;
-    ward: string;
-    detail: string;
-  };
-}
-
+/* =================== Page Component =================== */
 export default function Order() {
   const router = useRouter();
   const [shopId, setShopId] = useState<string | null>(null);
@@ -209,6 +182,7 @@ export default function Order() {
     Record<string, { name: string; email: string; phone?: string; address?: string }>
   >({});
 
+  /* ===== Guard login/role ===== */
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
@@ -224,11 +198,12 @@ export default function Order() {
         router.push("/warning-login");
         return;
       }
-    } catch (err) {
+    } catch {
       router.push("/warning-login");
     }
   }, [router]);
 
+  /* ===== Lấy shopId của seller ===== */
   useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (!userStr) return;
@@ -242,24 +217,19 @@ export default function Order() {
         const res = await fetch(`${API_BASE}shop/user/${userId}`, { cache: "no-store" });
         const data = await res.json();
 
-        // Đúng cấu trúc trả về
         const id =
-          data?.shop?._id   // ✅ trường hợp hiện tại
+          data?.shop?._id   // trường hợp hiện tại
           ?? data?.shopId   // fallback nếu BE đổi
           ?? data?._id;     // fallback khác
 
-        if (id) {
-          setShopId(String(id));
-          console.log("Shop ID:", id);
-        } else {
-          console.warn("Không tìm được shopId trong payload:", data);
-        }
+        if (id) setShopId(String(id));
       } catch (err) {
         console.error("Lỗi lấy shopId:", err);
       }
     })();
   }, []);
 
+  /* ===== Đếm trạng thái đơn theo shop ===== */
   useEffect(() => {
     if (!shopId) return;
 
@@ -280,13 +250,10 @@ export default function Order() {
           };
 
           items.forEach((os) => {
-            // đếm theo trạng thái đơn mức shop
             if (os.status_order === "pending") counts.pending++;
             if (os.status_order === "delivered") counts.delivered++;
             if (os.status_order === "refund") counts.refunded++;
             if (os.status_order === "shipping") counts.shipping++;
-
-            // nếu có order cha và transaction_status = failed thì cộng failed
             if (os.order_id?.transaction_status === "failed") counts.failed++;
           });
 
@@ -302,6 +269,7 @@ export default function Order() {
     return () => clearInterval(interval);
   }, [shopId]);
 
+  /* ===== Lọc + render dữ liệu bảng ===== */
   useEffect(() => {
     if (!shopId) return;
 
@@ -309,8 +277,6 @@ export default function Order() {
       try {
         const url = new URL(`${API_BASE}orderShop/shop/${shopId}`);
 
-        // BE chỉ lọc được theo status của OrderShop.
-        // Với 'unpending' (thuộc order cha) thì KHÔNG gắn query cho BE.
         if (filteredStatus && filteredStatus !== "all" && filteredStatus !== "unpending") {
           url.searchParams.set("status", filteredStatus);
         }
@@ -321,12 +287,10 @@ export default function Order() {
         if (data.status && data.result && Array.isArray(data.result.items)) {
           let items: OrderShop[] = data.result.items;
 
-          // Lọc 'unpending' theo trạng thái của ORDER CHA
           if (filteredStatus === "unpending") {
             items = items.filter(os => os.order_id?.status_order === "unpending");
           }
 
-          // Lọc ngày theo OrderShop.createdAt
           if (fromDate) {
             const from = dayjs(fromDate).startOf("day");
             items = items.filter(os => dayjs(os.createdAt).isAfter(from) || dayjs(os.createdAt).isSame(from));
@@ -336,37 +300,33 @@ export default function Order() {
             items = items.filter(os => dayjs(os.createdAt).isBefore(to) || dayjs(os.createdAt).isSame(to));
           }
 
-          // Map sang RowOrder
           const rows: RowOrder[] = items.map((os) => {
             const o = os.order_id;
-            const ag = o?.address_guess;               // AddressGuess | undefined
-            const addrText = formatGuestAddress(ag);   // 🔹 dùng helper, KHÔNG gọi ag.address trực tiếp
+            const ag = o?.address_guess;
+            const addrText = formatGuestAddress(ag);
             const parentUnpending = o?.status_order === "unpending";
 
             return {
               _orderShopId: os._id,
               _id: os._id,
               createdAt: os.createdAt,
-              // Ưu tiên hiển thị 'unpending' nếu order cha còn unpending
               status_order: parentUnpending ? "unpending" : os.status_order,
               transaction_status: o?.transaction_status,
 
-              // sẽ điền bởi fetch user/address hoặc dùng guest
               user_name: "",
               user_email: "",
-              address_text: addrText,   // 🔹 lưu sẵn text địa chỉ để fallback khi render
+              address_text: addrText,
 
               user_id: typeof o?.user_id === "string" ? o.user_id : undefined,
               address_id: typeof o?.address_id === "string" ? o.address_id : undefined,
 
-              // Block guest để render nhanh
               _guest: ag
                 ? {
-                  name: ag.name,
-                  email: ag.email ?? "",
-                  phone: ag.phone ?? "",
-                  address: addrText,
-                }
+                    name: ag.name,
+                    email: ag.email ?? "",
+                    phone: ag.phone ?? "",
+                    address: addrText,
+                  }
                 : undefined,
             };
           });
@@ -384,15 +344,12 @@ export default function Order() {
     fetchFilteredOrders();
   }, [shopId, filteredStatus, fromDate, toDate]);
 
-
-
+  /* ===== Actions ===== */
   const handleUpdateStatus = async (orderId: string, newStatus: string, showAlert = true) => {
     try {
       const res = await fetch(`${API_BASE}orderShop/${orderId}/status`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
 
@@ -400,11 +357,8 @@ export default function Order() {
 
       if (res.ok && data.status) {
         if (showAlert) alert("Cập nhật trạng thái thành công!");
-
         setOrders((prev) =>
-          prev.map((order) =>
-            order._id === orderId ? { ...order, status_order: newStatus } : order
-          )
+          prev.map((order) => (order._id === orderId ? { ...order, status_order: newStatus } : order))
         );
       } else {
         if (showAlert) alert(data.message || "Cập nhật thất bại");
@@ -414,21 +368,6 @@ export default function Order() {
       if (showAlert) alert("Lỗi kết nối máy chủ");
     }
   };
-
-
-  // const handleViewOrder = async (order: RowOrder) => {
-  //   try {
-  //     // Nếu trạng thái là "pending" thì gọi hàm xác nhận đơn luôn
-  //     // if (order.status_order === "pending") {
-  //     //   await handleConfirmOrder(order._id, false); // false để không hiện alert
-  //     // }
-  //     // Sau đó chuyển sang trang chi tiết đơn hàng
-  //     router.push(`/orderdetail/${order._orderShopId}`);
-  //   } catch (error) {
-  //     console.error("Lỗi khi xử lý đơn hàng:", error);
-  //     alert("Có lỗi xảy ra khi xử lý đơn hàng");
-  //   }
-  // };
 
   const getOrderShopId = (order: any) =>
     order._orderShopId ||
@@ -445,17 +384,11 @@ export default function Order() {
         return;
       }
 
-      // 🔹 Nếu đang chờ xác nhận thì xác nhận đơn trước khi xem
       if (row.status_order === "pending") {
-        // false = không hiện alert, state list sẽ được cập nhật sang "preparing"
         await handleConfirmOrder(row._id, false);
       }
 
-      // 🔹 Lấy chi tiết & điều hướng
-      const res = await fetch(
-        `${API_BASE}orderDetail/order-shops/${orderShopId}/details`,
-        { method: "GET" }
-      );
+      const res = await fetch(`${API_BASE}orderDetail/order-shops/${orderShopId}/details`, { method: "GET" });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j?.message || `HTTP ${res.status}`);
@@ -464,7 +397,7 @@ export default function Order() {
 
       try {
         sessionStorage.setItem(`orderDetail:${orderShopId}`, JSON.stringify(data));
-      } catch { }
+      } catch {}
 
       router.push(`/shop/orderdetail/${orderShopId}`);
     } catch (error) {
@@ -472,27 +405,6 @@ export default function Order() {
       alert(`Có lỗi khi tải chi tiết đơn: ${String((error as Error)?.message || error)}`);
     }
   };
-
-
-
-  // const getCustomerInfo = (order: Order) => {
-  //   if (order.user_id) {
-  //     return {
-  //       name: order.user_id.name,
-  //       email: order.user_id.email,
-  //     };
-  //   } else if (order.address_guess) {
-  //     return {
-  //       name: order.address_guess.name,
-  //       email: order.address_guess.email || "Không có email",
-  //     };
-  //   } else {
-  //     return {
-  //       name: "Khách lạ",
-  //       email: "Không có email",
-  //     };
-  //   }
-  // };
 
   const handleConfirmOrder = async (orderId: string, showAlert = true) => {
     try {
@@ -507,21 +419,15 @@ export default function Order() {
 
       if (showAlert) alert(data.message || "Xác nhận đơn hàng thành công!");
 
-      // Cập nhật lại trạng thái đơn trong local state
       setOrders((prev) =>
-        prev.map((order) =>
-          order._id === orderId ? { ...order, status_order: "preparing" } : order
-        )
+        prev.map((order) => (order._id === orderId ? { ...order, status_order: "preparing" } : order))
       );
     } catch (error: any) {
       if (showAlert) alert(error.message || "Lỗi khi xác nhận đơn hàng");
     }
   };
 
-
-  // Hàm lấy thông tin người dùng và địa chỉ từ order
   async function fetchUserAndAddressInfo(userId: string, addressId: string) {
-
     try {
       const [userRes, addressRes] = await Promise.all([
         fetch(`${API_BASE}user/${userId}`),
@@ -530,7 +436,6 @@ export default function Order() {
       const userData = await userRes.json();
       const addressData = await addressRes.json();
 
-      // user ở userData.data, address ở addressData.result
       return {
         user: userData.data || null,
         address: addressData.result || null,
@@ -542,28 +447,21 @@ export default function Order() {
   }
 
   useEffect(() => {
-    // Lọc ra các order cần fetch info (chưa có trong customerInfoMap)
     const needFetch = orders.filter(
-      (order) =>
-        order.user_id &&
-        order.address_id &&
-        !customerInfoMap[order._id]
+      (order) => order.user_id && order.address_id && !customerInfoMap[order._id]
     );
 
     if (needFetch.length === 0) return;
 
     needFetch.forEach((order) => {
       fetchUserAndAddressInfo(order.user_id!, order.address_id!).then((info) => {
-
         setCustomerInfoMap((prev) => ({
           ...prev,
           [order._id]: {
             name: info.user?.name || "Không rõ",
             email: info.user?.email || "Không rõ",
             phone: info.address?.phone || info.user?.phone || "",
-            address: info.address
-              ? `${info.address.detail}, ${info.address.address}`
-              : "",
+            address: info.address ? `${info.address.detail}, ${info.address.address}` : "",
           },
         }));
       });
@@ -571,9 +469,8 @@ export default function Order() {
   }, [orders, customerInfoMap]);
 
   const handleCancelOrder = async (orderId: string) => {
-    // hỏi nhanh lý do hủy (có thể bỏ trống)
     const note = prompt("Nhập lý do huỷ (có thể để trống):", "");
-    if (note === null) return; // user bấm Cancel
+    if (note === null) return;
 
     try {
       const res = await fetch(`${API_BASE}orderShop/${orderId}/cancel`, {
@@ -588,18 +485,14 @@ export default function Order() {
       }
 
       alert("Đã huỷ đơn.");
-      // cập nhật state local để hiển thị ngay
-      setOrders((prev) =>
-        prev.map((o) => (o._id === orderId ? { ...o, status_order: "cancelled" } : o))
-      );
+      setOrders((prev) => prev.map((o) => (o._id === orderId ? { ...o, status_order: "cancelled" } : o)));
     } catch (e: any) {
       console.error("Huỷ đơn thất bại:", e);
       alert(e?.message || "Huỷ đơn thất bại");
     }
   };
 
-
-
+  /* =================== UI =================== */
   return (
     <main className={styles.main}>
       <Sidebar />
@@ -628,7 +521,6 @@ export default function Order() {
             </div>
           </div>
 
-
           <div className={styles.orderItem}>
             <div className={styles.orderInfo}>
               <div className={styles.orderNumber}>{statusCounts.delivered.toLocaleString("vi-VN")}</div>
@@ -653,11 +545,7 @@ export default function Order() {
         <div className={styles.searchProduct}>
           <div className={styles.searchBarWrapper}>
             <div className={styles.searchAddBar}>
-              <input
-                type="text"
-                placeholder="Tìm kiếm ..."
-                className={styles.searchInput}
-              />
+              <input type="text" placeholder="Tìm kiếm ..." className={styles.searchInput} />
             </div>
 
             <div className={styles.dateFilterBar}>
@@ -684,6 +572,7 @@ export default function Order() {
         </div>
 
         <Tabs onFilter={(status) => setFilteredStatus(status)} />
+
         <div className={styles.usertList}>
           <table className={styles.userTable}>
             <thead>
@@ -700,15 +589,19 @@ export default function Order() {
               {orders.map((order) => {
                 const customer =
                   customerInfoMap[order._id] ||
-                  order._guest ||  // 👈 thêm dòng này
+                  order._guest ||
                   { name: "Khách lạ", email: "", phone: "", address: "" };
+
                 return (
                   <tr key={order._id}>
                     <td>
-                      <Link href="#" onClick={(e) => {
-                        e.preventDefault();
-                        handleViewOrder(order);
-                      }}>
+                      <Link
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleViewOrder(order);
+                        }}
+                      >
                         {order._id}
                       </Link>
                     </td>
@@ -729,43 +622,43 @@ export default function Order() {
 
                     <td>
                       <span
-                        className={`${styles.methodDelivered} ${order.status_order === "pending"
-                          ? styles["status-choxacnhan"]
-                          : order.status_order === "preparing"
+                        className={`${styles.methodDelivered} ${
+                          order.status_order === "pending"
+                            ? styles["status-choxacnhan"]
+                            : order.status_order === "preparing"
                             ? styles["status-dangsoan"]
                             : order.status_order === "awaiting_shipment"
-                              ? styles["status-chogui"]
-                              : order.status_order === "shipping"
-                                ? styles["status-danggiao"]
-                                : order.status_order === "delivered"
-                                  ? styles["status-dagiao"]
-                                  : order.status_order === "cancelled"
-                                    ? styles["status-dahuy"]
-                                    : order.status_order === "refund"
-                                      ? styles["status-trahang"]
-                                      : order.status_order === "unpending"
-                                        ? styles["status-chuaxacthuc"]
-                                        : ""
-                          }`}
+                            ? styles["status-chogui"]
+                            : order.status_order === "shipping"
+                            ? styles["status-danggiao"]
+                            : order.status_order === "delivered"
+                            ? styles["status-dagiao"]
+                            : order.status_order === "cancelled"
+                            ? styles["status-dahuy"]
+                            : order.status_order === "refund"
+                            ? styles["status-trahang"]
+                            : order.status_order === "unpending"
+                            ? styles["status-chuaxacthuc"]
+                            : ""
+                        }`}
                       >
                         {order.status_order === "unpending"
                           ? "Chưa xác thực"
                           : order.status_order === "pending"
-                            ? "Chờ xác nhận"
-                            : order.status_order === "preparing"
-                              ? "Đang soạn hàng"
-                              : order.status_order === "awaiting_shipment"
-                                ? "Chờ gửi hàng"
-                                : order.status_order === "shipping"
-                                  ? "Đang giao hàng"
-                                  : order.status_order === "delivered"
-                                    ? "Đã giao hàng"
-                                    : order.status_order === "cancelled"
-                                      ? "Đã hủy"
-                                      : order.status_order === "refund"
-                                        ? "Trả hàng / Hoàn tiền"
-
-                                        : order.status_order}
+                          ? "Chờ xác nhận"
+                          : order.status_order === "preparing"
+                          ? "Đang soạn hàng"
+                          : order.status_order === "awaiting_shipment"
+                          ? "Chờ gửi hàng"
+                          : order.status_order === "shipping"
+                          ? "Đang giao hàng"
+                          : order.status_order === "delivered"
+                          ? "Đã giao hàng"
+                          : order.status_order === "cancelled"
+                          ? "Đã hủy"
+                          : order.status_order === "refund"
+                          ? "Trả hàng / Hoàn tiền"
+                          : order.status_order}
                       </span>
                     </td>
 
@@ -788,12 +681,10 @@ export default function Order() {
 
                     <td>
                       <div className={styles.actionCell}>
-                        {/* Con mắt (xem đơn) bên trái */}
                         <button className={styles.viewBtn} onClick={() => handleViewOrder(order)}>
                           <Eye size={22} />
                         </button>
 
-                        {/* 👉 Toàn bộ Chức năng + Huỷ đơn nằm chung 1 div bên phải */}
                         <div className={styles.actionStack}>
                           {order.status_order === "unpending" && (
                             <button
@@ -840,19 +731,14 @@ export default function Order() {
                             </button>
                           )}
 
-                          {/* Huỷ đơn hiển thị ở 4 trạng thái cho phép */}
                           {["unpending", "pending", "preparing", "awaiting_shipment"].includes(order.status_order) && (
-                            <button
-                              className={styles.cancelBtn}
-                              onClick={() => handleCancelOrder(order._id)}
-                            >
+                            <button className={styles.cancelBtn} onClick={() => handleCancelOrder(order._id)}>
                               Huỷ đơn
                             </button>
                           )}
                         </div>
                       </div>
                     </td>
-
                   </tr>
                 );
               })}
