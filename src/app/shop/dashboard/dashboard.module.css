@@ -397,15 +397,15 @@
   --bd: #FFA53B;
 }
 /* ===== Palette / tokens (brand: đỏ FIYO) ===== */
-:root {
+/* :root {
   --brand: #FF0A0A;
   --ink: #0f172a;
   --muted: #778197;
   --border: #e9eef5;
   --bg-soft: #f7f8fb;
-  --up: #079455;   /* xanh tăng */
-  --down: #d92d20; /* đỏ giảm */
-}
+  --up: #079455;   
+  --down: #d92d20; 
+} */
 
 /* ===== KPI grid ===== */
 .summaryGrid {
