@@ -11,11 +11,15 @@
   padding: 30px;
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Luôn cao 100vh */
-  position: sticky; /* Giữ cố định khi cuộn */
+  height: 100vh;
+  /* Luôn cao 100vh */
+  position: sticky;
+  /* Giữ cố định khi cuộn */
   top: 0;
-  flex-shrink: 0; /* Không co lại khi content cuộn */
-  border-right: 1px solid #e4e4e7; /* Thêm đường viền bên phải */
+  flex-shrink: 0;
+  /* Không co lại khi content cuộn */
+  border-right: 1px solid #e4e4e7;
+  /* Thêm đường viền bên phải */
 }
 
 .logo {
@@ -28,9 +32,11 @@
   padding: 10px 20px;
   font-size: 26px;
   font-weight: bolder;
-  margin: 0 auto; /* căn giữa ngang */
+  margin: 0 auto;
+  /* căn giữa ngang */
   margin-bottom: 20px;
-  width: fit-content; /* hoặc set width cụ thể nếu cần */
+  width: fit-content;
+  /* hoặc set width cụ thể nếu cần */
 }
 
 .sectionTitle {
@@ -65,12 +71,13 @@
 }
 
 .menuItem:hover {
-  background-color: #fff; 
+  background-color: #fff;
   box-shadow:
     0 4px 18px 0 rgba(30, 30, 30, 0.13),
     0 2px 8px 0 rgba(30, 30, 30, 0.09);
-  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .activeItem .menuItem {
   border: #fda2a2 1px solid;
   background-color: #fff;
@@ -79,8 +86,9 @@
   box-shadow:
     0 4px 18px 0 rgba(30, 30, 30, 0.13),
     0 2px 8px 0 rgba(30, 30, 30, 0.09);
-  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .activeItem .icon {
   width: 20px;
   height: 20px;
@@ -94,9 +102,9 @@
 }
 
 .title {
-    flex: 1;
-    font-weight: 500;
-    font-size: 16px;
+  flex: 1;
+  font-weight: 500;
+  font-size: 16px;
 }
 
 .content {
@@ -417,6 +425,7 @@
   gap: 12px;
   align-items: center;
 }
+
 .shopImg {
   width: 70px;
   height: 70px;
@@ -425,11 +434,14 @@
   flex-shrink: 0;
   background: #f3f3f3;
 }
+
 .shopText {
   display: flex;
   flex-direction: column;
-  min-width: 0; /* để text ellipsis hoạt động */
+  min-width: 0;
+  /* để text ellipsis hoạt động */
 }
+
 .shopName {
   text-align: left;
   font-weight: 600;
@@ -439,6 +451,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .shopDesc {
   text-align: left;
   font-size: 12px;
@@ -453,7 +466,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  text-align: left; /* canh trái */
+  text-align: left;
+  /* canh trái */
 }
 
 .ownerRow {
@@ -481,11 +495,16 @@
   font-size: 13px;
   color: #888;
   font-style: italic;
-  white-space: nowrap;        /* không xuống dòng */
-  overflow: hidden;           /* ẩn phần thừa */
-  text-overflow: ellipsis;    /* hiện ... */
-  max-width: 160px;           /* giới hạn độ rộng, bạn chỉnh theo bảng */
-  display: inline-block;      /* cần để ellipsis hoạt động */
+  white-space: nowrap;
+  /* không xuống dòng */
+  overflow: hidden;
+  /* ẩn phần thừa */
+  text-overflow: ellipsis;
+  /* hiện ... */
+  max-width: 160px;
+  /* giới hạn độ rộng, bạn chỉnh theo bảng */
+  display: inline-block;
+  /* cần để ellipsis hoạt động */
   vertical-align: middle;
 }
 
@@ -525,7 +544,9 @@
   border: 1px solid #e6a700;
 }
 
-.actionCell { position: relative; }
+.actionCell {
+  position: relative;
+}
 
 .kebabBtn {
   background: transparent;
@@ -535,7 +556,10 @@
   border-radius: 8px;
   cursor: pointer;
 }
-.kebabBtn:hover { background: #f2f3f5; }
+
+.kebabBtn:hover {
+  background: #f2f3f5;
+}
 
 .dropdownMenu {
   position: absolute;
@@ -545,7 +569,7 @@
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
   padding: 6px;
   z-index: 10;
 }
@@ -564,49 +588,153 @@
   border-radius: 8px;
   font: inherit;
 }
-.menuItem:hover { background: #f9fafb; }
+
+.menuItem:hover {
+  background: #f9fafb;
+}
 
 
 /* Modal */
-.modalBackdrop{
-  position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:11000;
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .35);
+  z-index: 11000;
+  color: #444;
 }
-.modalCard{
-  position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:min(740px, calc(100vw - 32px));
-  max-height:calc(100vh - 80px);
-  overflow:auto;
-  background:#fff; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.25);
-  z-index:11001;
-}
-.modalHeader{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:16px 20px; border-bottom:1px solid #eee;
-}
-.modalTitle{ font-size:18px; font-weight:600; }
-.closeBtn{
-  background:transparent; border:0; font-size:24px; line-height:1; cursor:pointer;
-}
-.modalBody{ padding:16px 20px; display:flex; flex-direction:column; gap:12px; }
-.modalFooter{ padding:12px 20px; border-top:1px solid #eee; display:flex; justify-content:flex-end; }
 
-.shopTop{ display:flex; gap:16px; align-items:flex-start; }
-.modalAvatar{ width:72px; height:72px; border-radius:12px; object-fit:cover; }
-.modalName{ font-size:20px; font-weight:700; margin-bottom:6px; }
-
-.statusBadge{
-  display:inline-block; padding:4px 10px; border-radius:999px;
-  font-size:12px; font-weight:600; margin-bottom:8px;
+.modalCard {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(740px, calc(100vw - 32px));
+  max-height: calc(100vh - 80px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+  z-index: 11001;
 }
-.status-active{ color:#065f46; background:#d1fae5; }
-.status-inactive{ color:#92400e; background:#fef3c7; }
-.status-locked{ color:#7f1d1d; background:#fee2e2; }
-.status-pending{ color:#1e3a8a; background:#dbeafe; }
 
-.metaRow{ font-size:13px; color:#374151; margin-top:4px; }
-.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.field{ margin-bottom:8px; }
-.primaryBtn{
-  background:#111827; color:#fff; border:0; padding:8px 14px; border-radius:10px; cursor:pointer;
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+  color: #444;
 }
-.primaryBtn:hover{ opacity:.9; }
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #444;
+}
+
+.closeBtn {
+  background: transparent;
+  border: 0;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modalBody {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modalFooter {
+  padding: 12px 20px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.shopTop {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.modalAvatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.modalName {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #444;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.status-active {
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.status-inactive {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.status-locked {
+  color: #7f1d1d;
+  background: #fee2e2;
+}
+
+.status-pending {
+  color: #1e3a8a;
+  background: #dbeafe;
+}
+
+.metaRow {
+  font-size: 13px;
+  color: #374151;
+  margin-top: 4px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #444;
+}
+.field b {
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: #444;
+}
+
+.primaryBtn {
+  background: #111827;
+  color: #fff;
+  border: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.primaryBtn:hover {
+  opacity: .9;
+}
