@@ -581,26 +581,31 @@ export default function Product() {
   }, [selectedChild]);
 
   const handleChangeVisibility = async (id: string, currentStatus: boolean) => {
+    const next = !currentStatus;
+
+    // 1) Optimistic update vào allProducts để không mất item
+    setAllProducts(prev => prev.map(p => p._id === id ? { ...p, isHidden: next } : p));
+    applyFilters(); // đồng bộ lại products từ allProducts + filter hiện tại
+
     try {
       const res = await fetch(`${API_BASE}products/${id}/visibility`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ isHidden: !currentStatus }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isHidden: next }),
       });
-
-      if (!res.ok) throw new Error("Không thể cập nhật trạng thái hiển thị");
-
-      const updated = await res.json();
-      alert(updated.message || "Cập nhật thành công");
-
-      fetchProducts(); // Reload lại danh sách
-    } catch (error) {
-      console.error("Lỗi:", error);
+      const data = await res.json();
+      if (!res.ok || data?.status === false) throw new Error(data?.message || "Update fail");
+      // thành công: giữ nguyên state đã update
+      alert(data.message || "Cập nhật thành công");
+    } catch (err) {
+      // 2) Rollback nếu lỗi
+      setAllProducts(prev => prev.map(p => p._id === id ? { ...p, isHidden: currentStatus } : p));
+      applyFilters();
+      console.error(err);
       alert("Đã xảy ra lỗi khi cập nhật hiển thị");
     }
   };
+
 
 
   const handlePickColor = async () => {
