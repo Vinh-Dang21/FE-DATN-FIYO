@@ -161,7 +161,7 @@ function formatGuestAddress(ag?: AddressGuess): string {
 }
 
 /* =================== Constants =================== */
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click/api/";
 
 /* =================== Page Component =================== */
 export default function Order() {

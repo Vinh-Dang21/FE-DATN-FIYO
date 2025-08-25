@@ -6,7 +6,7 @@ import Sidebar from "@/app/component/S-Sidebar";
 import Topbar from "@/app/component/Topbar";
 
 const DESC_MAX = 300;
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click";
 
 type Shop = {
   _id: string;

@@ -23,7 +23,7 @@ type Msg = {
   createdAt?: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click";
 const SELLER_ID_FIELD = "seller_user_id";
 
 /* ===================== Fallback ảnh FE-only ===================== */

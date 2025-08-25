@@ -58,7 +58,7 @@ interface VariantWrapper {
   variants: VariantColor[];
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click/api/";
 
 export default function InventoryPage() {
   const router = useRouter();

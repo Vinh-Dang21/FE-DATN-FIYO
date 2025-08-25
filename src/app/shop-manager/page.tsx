@@ -53,7 +53,7 @@ const normalizeShop = (s: Shop): Shop => ({
 
 
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://fiyo.click/api/";
 // 👉 Đặt đúng port backend (VD: 3001). Tạo file .env.local: NEXT_PUBLIC_API_URL=http://localhost:3001
 
 const extractProductsCount = (raw: any): number => {
