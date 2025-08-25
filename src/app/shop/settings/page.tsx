@@ -18,7 +18,6 @@ type Shop = {
   email: string;
   description: string;
   avatar?: string;
-  banner?: string;
   address?: string;
   status?: "active" | "inactive" | "pending";
   updated_at?: string;
@@ -36,7 +35,7 @@ function getFallbackUserId(): string {
   }
 }
 
-/** Chuẩn hoá URL ảnh (logo & banner) luôn dùng API_BASE */
+/** Chuẩn hoá URL ảnh (logo) luôn dùng API_BASE */
 function toAbsoluteImage(url?: string) {
   if (!url) return "";
   const fname = url.includes("/api/images/")
@@ -66,11 +65,6 @@ export default function Setting() {
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
-  // Banner (giống hệt logo)
-  const [bannerPreview, setBannerPreview] = useState<string>("");
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const bannerInputRef = useRef<HTMLInputElement | null>(null);
-
   // Fields
   const [shopName, setShopName] = useState("");
   const [phone, setPhone] = useState("");
@@ -80,7 +74,6 @@ export default function Setting() {
   // initial để check isDirty
   const initialRef = useRef<{
     logoPreview: string;
-    bannerPreview: string;
     shopName: string;
     phone: string;
     email: string;
@@ -98,15 +91,13 @@ export default function Setting() {
     if (!init) return false;
     return (
       logoFile !== null ||
-      bannerFile !== null ||
       logoPreview !== init.logoPreview ||
-      bannerPreview !== init.bannerPreview ||
       shopName !== init.shopName ||
       phone !== init.phone ||
       email !== init.email ||
       desc !== init.desc
     );
-  }, [logoFile, bannerFile, logoPreview, bannerPreview, shopName, phone, email, desc]);
+  }, [logoFile, logoPreview, shopName, phone, email, desc]);
 
   const canSubmit =
     nameValid && phoneValid && emailValid && descValid && isDirty && !!shopId;
@@ -127,17 +118,6 @@ export default function Setting() {
     const reader = new FileReader();
     reader.onload = () => setLogoPreview(String(reader.result || ""));
     reader.readAsDataURL(file);
-  };
-
-  const pickBanner = (file?: File) => {
-    const msg = validateImage(file);
-    if (msg) return setError(msg);
-    if (!file) return;
-    setBannerFile(file);
-    const reader = new FileReader();
-    reader.onload = () => setBannerPreview(String(reader.result || ""));
-    reader.readAsDataURL(file);
-    if (bannerInputRef.current) bannerInputRef.current.value = ""; // cho phép chọn lại cùng file
   };
 
   // Load shop
@@ -163,15 +143,11 @@ export default function Setting() {
         setEmail(shop.email || "");
         setDesc(shop.description || "");
 
-        // DÙNG CÙNG LOGIC CHO LOGO & BANNER
         setLogoPreview(toAbsoluteImage(shop.avatar) || "");
-        setBannerPreview(shop.banner ? bust(toAbsoluteImage(shop.banner)) : "");
 
         setLogoFile(null);
-        setBannerFile(null);
         initialRef.current = {
           logoPreview: toAbsoluteImage(shop.avatar) || "",
-          bannerPreview: toAbsoluteImage(shop.banner) || "",
           shopName: shop.name || "",
           phone: shop.phone || "",
           email: shop.email || "",
@@ -197,9 +173,7 @@ export default function Setting() {
       fd.append("email", email.trim());
       fd.append("description", desc.trim());
       if (logoFile) fd.append("avatar", logoFile);
-      if (bannerFile) fd.append("banner", bannerFile);
 
-      // log để chắc có part banner/avatar
       for (const [k, v] of fd.entries()) {
         console.log(
           "[FD]",
@@ -210,23 +184,19 @@ export default function Setting() {
 
       const res = await fetch(`${API_BASE}/api/shop/${shopId}`, {
         method: "PUT",
-        body: fd, // KHÔNG tự set Content-Type
+        body: fd,
       });
       if (!res.ok) throw new Error(`Cập nhật thất bại: ${res.status}`);
 
       const updated: Shop = await res.json();
 
-      // Áp lại y như logo
       setShopName(updated.name || "");
       setPhone(updated.phone || "");
       setEmail(updated.email || "");
       setDesc(updated.description || "");
       setLogoPreview(toAbsoluteImage(updated.avatar) || "");
-      setBannerPreview(updated.banner ? bust(toAbsoluteImage(updated.banner)) : "");
       setLogoFile(null);
-      setBannerFile(null);
 
-      // Refetch để chắc chắn giàu nhất
       try {
         const re = await fetch(`${API_BASE}/api/shop/${shopId}?t=${Date.now()}`, {
           cache: "no-store",
@@ -234,10 +204,8 @@ export default function Setting() {
         if (re.ok) {
           const fresh: Shop = await re.json();
           setLogoPreview(toAbsoluteImage(fresh.avatar) || "");
-          setBannerPreview(fresh.banner ? bust(toAbsoluteImage(fresh.banner)) : "");
           initialRef.current = {
             logoPreview: toAbsoluteImage(fresh.avatar) || "",
-            bannerPreview: toAbsoluteImage(fresh.banner) || "",
             shopName: fresh.name || "",
             phone: fresh.phone || "",
             email: fresh.email || "",
@@ -246,7 +214,6 @@ export default function Setting() {
         } else {
           initialRef.current = {
             logoPreview: toAbsoluteImage(updated.avatar) || "",
-            bannerPreview: toAbsoluteImage(updated.banner) || "",
             shopName: updated.name || "",
             phone: updated.phone || "",
             email: updated.email || "",
@@ -256,7 +223,6 @@ export default function Setting() {
       } catch {
         initialRef.current = {
           logoPreview: toAbsoluteImage(updated.avatar) || "",
-          bannerPreview: toAbsoluteImage(updated.banner) || "",
           shopName: updated.name || "",
           phone: updated.phone || "",
           email: updated.email || "",
@@ -298,69 +264,6 @@ export default function Setting() {
             {error}
           </div>
         )}
-
-        {/* Banner – dùng cùng công thức như logo */}
-        <div className={styles.card}>
-          <div className={styles.cardHead}>Banner shop</div>
-          <div className={styles.bannerWrap}>
-            <div
-              className={styles.bannerBox}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                pickBanner(e.dataTransfer.files?.[0]);
-              }}
-            >
-              {bannerPreview ? (
-                <img
-                  key={bannerPreview}
-                  className={styles.bannerImg}
-                  src={bannerPreview}
-                  alt="banner"
-                />
-              ) : (
-                <div className={styles.bannerEmpty}>
-                  Banner ngang ~ tỉ lệ 15:4 (khuyên dùng 1200×320)
-                </div>
-              )}
-            </div>
-
-            <div className={styles.bannerActions}>
-              <label
-                className={styles.dropZone}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  pickBanner(e.dataTransfer.files?.[0]);
-                }}
-              >
-                <input
-                  ref={bannerInputRef}
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={(e) => pickBanner(e.target.files?.[0])}
-                />
-                <ImagePlus size={18} />
-                <span>Chọn banner hoặc kéo thả ảnh vào đây</span>
-              </label>
-
-              {bannerPreview && (
-                <button
-                  className={styles.ghostBtn}
-                  onClick={() => {
-                    setBannerPreview("");
-                    setBannerFile(null);
-                  }}
-                  type="button"
-                >
-                  Gỡ banner
-                </button>
-              )}
-              <div className={styles.hint}>Dung lượng &lt; 5MB, ảnh rõ nét để tránh vỡ hình.</div>
-            </div>
-          </div>
-        </div>
 
         {/* Logo */}
         <div className={styles.card}>
@@ -490,9 +393,7 @@ export default function Setting() {
                   const init = initialRef.current;
                   if (!init) return;
                   setLogoPreview(init.logoPreview);
-                  setBannerPreview(init.bannerPreview ? bust(init.bannerPreview) : "");
                   setLogoFile(null);
-                  setBannerFile(null);
                   setShopName(init.shopName);
                   setPhone(init.phone);
                   setEmail(init.email);
