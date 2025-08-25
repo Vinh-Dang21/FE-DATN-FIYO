@@ -45,7 +45,7 @@ interface Product {
   variants: Variant[]; // 👈 Thêm dòng này
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click/api/";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api/";
 
 
 
@@ -387,7 +387,7 @@ export default function Product() {
       setLoading(true);
 
       const res = await fetch(
-        `${API_BASE}products/shop/${shopId}`,
+        `${API_BASE}products/shopadmin/${shopId}`,
         { cache: "no-store" }
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -581,30 +581,30 @@ export default function Product() {
   }, [selectedChild]);
 
   const handleChangeVisibility = async (id: string, currentStatus: boolean) => {
-    const next = !currentStatus;
+  const next = !currentStatus;
 
-    // 1) Optimistic update vào allProducts để không mất item
-    setAllProducts(prev => prev.map(p => p._id === id ? { ...p, isHidden: next } : p));
-    applyFilters(); // đồng bộ lại products từ allProducts + filter hiện tại
+  // 1) Optimistic update vào allProducts để không mất item
+  setAllProducts(prev => prev.map(p => p._id === id ? { ...p, isHidden: next } : p));
+  applyFilters(); // đồng bộ lại products từ allProducts + filter hiện tại
 
-    try {
-      const res = await fetch(`${API_BASE}products/${id}/visibility`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isHidden: next }),
-      });
-      const data = await res.json();
-      if (!res.ok || data?.status === false) throw new Error(data?.message || "Update fail");
-      // thành công: giữ nguyên state đã update
-      alert(data.message || "Cập nhật thành công");
-    } catch (err) {
-      // 2) Rollback nếu lỗi
-      setAllProducts(prev => prev.map(p => p._id === id ? { ...p, isHidden: currentStatus } : p));
-      applyFilters();
-      console.error(err);
-      alert("Đã xảy ra lỗi khi cập nhật hiển thị");
-    }
-  };
+  try {
+    const res = await fetch(`${API_BASE}products/${id}/visibility`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isHidden: next }),
+    });
+    const data = await res.json();
+    if (!res.ok || data?.status === false) throw new Error(data?.message || "Update fail");
+    // thành công: giữ nguyên state đã update
+    alert(data.message || "Cập nhật thành công");
+  } catch (err) {
+    // 2) Rollback nếu lỗi
+    setAllProducts(prev => prev.map(p => p._id === id ? { ...p, isHidden: currentStatus } : p));
+    applyFilters();
+    console.error(err);
+    alert("Đã xảy ra lỗi khi cập nhật hiển thị");
+  }
+};
 
 
 
@@ -746,7 +746,7 @@ export default function Product() {
     if (!shopId) return;
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}products/shop/${shopId}`, { cache: "no-store" });
+      const res = await fetch(`${API_BASE}products/shopadmin/${shopId}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.json();
       const list = extractProducts(raw).map(p => ({ ...p, variants: p.variants ?? [] }));
