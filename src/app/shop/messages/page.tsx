@@ -159,13 +159,8 @@ function unreadFromLastMessage(t: Thread): number {
   const at = t?.lastMessage?.at ? new Date(t.lastMessage.at).getTime() : 0;
   const seen = loadLastSeen()[t._id] || 0;
 
-  // FE đã đánh dấu đã xem >= thời điểm tin mới nhất => chắc chắn 0
   if (at && seen && seen >= at) return 0;
-
-  // Nếu BE có số nhưng FE chưa seen, có thể dùng (vẫn chỉ hiện khi from === "user")
   if (typeof t.unread_user === "number") return t.unread_user;
-
-  // Mặc định: 0/1 theo so sánh at với seen
   return at > seen ? 1 : 0;
 }
 
@@ -181,7 +176,8 @@ async function apiMarkRead(threadId: string) {
 }
 /* =================== /READ STATE ====================== */
 
-export default function Messages({ currentUserId }: { currentUserId?: string }) {
+/** PAGE COMPONENT – KHÔNG NHẬN PROPS TÙY Ý */
+export default function Messages() {
   const [search, setSearch] = useState("");
   const [text, setText] = useState("");
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -215,7 +211,7 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
   async function fetchThreadsOnce() {
     setError("");
     try {
-      const uid = currentUserId || getFallbackUserId();
+      const uid = getFallbackUserId();
       if (!uid) throw new Error("Không tìm thấy userId.");
 
       const url = `${API_BASE}/api/messeger/threads/me/seller?${SELLER_ID_FIELD}=${encodeURIComponent(uid)}`;
@@ -267,14 +263,12 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
   useEffect(() => {
     setLoadingList(true);
     fetchThreadsOnce().finally(() => setLoadingList(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserId]);
+  }, []);
 
   // Poll 10s để phát hiện tin mới → badge
   useEffect(() => {
     const id = setInterval(fetchThreadsOnce, 10000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ===== fetch: messages of selected thread =====
@@ -334,7 +328,7 @@ export default function Messages({ currentUserId }: { currentUserId?: string }) 
     setMessages((prev) => [...prev, optimistic]);
 
     try {
-      const uid = currentUserId || getFallbackUserId();
+      const uid = getFallbackUserId();
       const token = getToken();
 
       let res = await fetch(`${API_BASE}/api/messeger/threads/${selectedId}/messages`, {

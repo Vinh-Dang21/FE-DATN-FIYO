@@ -1,7 +1,8 @@
 .main {
   display: flex;
   height: 100vh;
-  overflow: hidden; /* Ngăn main cuộn, chỉ content cuộn */
+  overflow: hidden;
+  /* Ngăn main cuộn, chỉ content cuộn */
 }
 
 .aside {
@@ -10,11 +11,15 @@
   padding: 30px;
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Luôn cao 100vh */
-  position: sticky; /* Giữ cố định khi cuộn */
+  height: 100vh;
+  /* Luôn cao 100vh */
+  position: sticky;
+  /* Giữ cố định khi cuộn */
   top: 0;
-  flex-shrink: 0; /* Không co lại khi content cuộn */
-  border-right: 1px solid #e4e4e7; /* Thêm đường viền bên phải */
+  flex-shrink: 0;
+  /* Không co lại khi content cuộn */
+  border-right: 1px solid #e4e4e7;
+  /* Thêm đường viền bên phải */
 }
 
 .logo {
@@ -27,11 +32,12 @@
   padding: 10px 20px;
   font-size: 26px;
   font-weight: bolder;
-  margin: 0 auto; /* căn giữa ngang */
+  margin: 0 auto;
+  /* căn giữa ngang */
   margin-bottom: 20px;
-  width: fit-content; /* hoặc set width cụ thể nếu cần */
+  width: fit-content;
+  /* hoặc set width cụ thể nếu cần */
 }
-
 
 .sectionTitle {
   font-size: 18px;
@@ -48,7 +54,8 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px; /* Thêm dòng này để tạo khoảng cách giữa các mục */
+  gap: 10px;
+  /* Thêm dòng này để tạo khoảng cách giữa các mục */
 }
 
 .menuItem {
@@ -57,7 +64,8 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 6px;
-  color: #444; /* Đổi màu chữ thành đỏ */
+  color: #444;
+  /* Đổi màu chữ thành đỏ */
   text-decoration: none;
   transition: background 0.2s ease;
   font-weight: 600;
@@ -65,12 +73,14 @@
 }
 
 .menuItem:hover {
-  background-color: #fff; 
+  background-color: #fff;
   box-shadow:
     0 4px 18px 0 rgba(30, 30, 30, 0.13),
     0 2px 8px 0 rgba(30, 30, 30, 0.09);
-  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);/* Hover nền nhẹ của đỏ */
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Hover nền nhẹ của đỏ */
 }
+
 .activeItem .menuItem {
   border: #fda2a2 1px solid;
   background-color: #fff;
@@ -80,8 +90,9 @@
   box-shadow:
     0 4px 18px 0 rgba(30, 30, 30, 0.13),
     0 2px 8px 0 rgba(30, 30, 30, 0.09);
-  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .activeItem .icon {
   width: 20px;
   height: 20px;
@@ -95,9 +106,9 @@
 }
 
 .title {
-    flex: 1;
-    font-weight: 500;
-    font-size: 16px;
+  flex: 1;
+  font-weight: 500;
+  font-size: 16px;
 }
 
 .content {
@@ -105,7 +116,8 @@
   padding: 20px 30px;
   background-color: whitesmoke;
   height: 100vh;
-  overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
+  overflow-y: auto;
+  /* Cho phép cuộn khi nội dung dài */
 }
 
 /* topbar */
@@ -142,9 +154,10 @@
   color: #444;
   flex: 1;
 }
+
 .searchInput::placeholder {
-  color: #A1A1AA; 
-  opacity: 1;     
+  color: #A1A1AA;
+  opacity: 1;
 }
 
 .actions {
@@ -207,7 +220,6 @@
   border-radius: 8px;
   font-size: 18px;
   font-weight: bold;
-  
 }
 
 /* bang user moi */
@@ -217,8 +229,11 @@
   grid-template-columns: 1fr;
   margin-top: 28px;
 }
-@media (min-width: 1024px){
-  .splitSection { grid-template-columns: 2fr 1fr; }
+
+@media (min-width: 1024px) {
+  .splitSection {
+    grid-template-columns: 2fr 1fr;
+  }
 }
 
 .placeholderLeft {
@@ -228,13 +243,14 @@
   padding: 20px;
 }
 
-.sectionTitle{
+.sectionTitle {
   text-align: center;
   font-size: 14px;
   color: #444;
   font-weight: 600;
   margin: 2px 0px 5px 0px;
 }
+
 .sectionSubTitle {
   display: flex;
   gap: 10px;
@@ -280,6 +296,7 @@
   color: #444;
   font-weight: 600;
 }
+
 .email {
   font-size: 13px;
   color: #888;
@@ -322,19 +339,12 @@
   border: 1px solid #e4e4e7;
 }
 
-/* .tabItem {
-  font-size: 16px;
-  color: #333;
-  cursor: pointer;
-  padding: 10px;
-  position: relative;
-  transition: color 0.2s ease;
-} */
-
 .tabItem {
-  flex: 1; /* mỗi tab chiếm đều khoảng trống */
+  flex: 1;
+  /* mỗi tab chiếm đều khoảng trống */
   text-align: center;
-  margin-right: 0; /* bỏ margin để tránh thừa khoảng cách */
+  margin-right: 0;
+  /* bỏ margin để tránh thừa khoảng cách */
   font-size: 16px;
   font-weight: 500;
   color: #333;
@@ -343,7 +353,6 @@
   position: relative;
   transition: color 0.2s ease;
 }
-
 
 .tabItem:hover {
   color: #FF0A0A;
@@ -380,14 +389,16 @@
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--bd);
-  
 }
 
 /* Các trạng thái mới */
 .status-chuaxacthuc {
-  --bg: #fdecec;   /* đỏ nhạt */
-  --fg: #b42318;   /* đỏ sẫm */
-  --bd: #f5b5b8;   /* viền nhạt */
+  --bg: #fdecec;
+  /* đỏ nhạt */
+  --fg: #b42318;
+  /* đỏ sẫm */
+  --bd: #f5b5b8;
+  /* viền nhạt */
 }
 
 /* Chờ xác nhận */
@@ -396,16 +407,8 @@
   --fg: #FF6A00;
   --bd: #FFA53B;
 }
+
 /* ===== Palette / tokens (brand: đỏ FIYO) ===== */
-/* :root {
-  --brand: #FF0A0A;
-  --ink: #0f172a;
-  --muted: #778197;
-  --border: #e9eef5;
-  --bg-soft: #f7f8fb;
-  --up: #079455;   
-  --down: #d92d20; 
-} */
 
 /* ===== KPI grid ===== */
 .summaryGrid {
@@ -414,33 +417,49 @@
   grid-template-columns: repeat(1, minmax(0, 1fr));
   margin-top: 20px;
 }
-@media (min-width: 768px) { .summaryGrid{ grid-template-columns: repeat(2, 1fr);} }
-@media (min-width: 1100px){ .summaryGrid{ grid-template-columns: repeat(4, 1fr);} }
+
+@media (min-width: 768px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1100px) {
+  .summaryGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 
 /* ===== Card đẹp hơn ===== */
 /* ==== Tinh chỉnh KPI: nhỏ hơn, đỡ đậm, dịu mắt ==== */
 
 /* Card */
-.summaryCard{
+.summaryCard {
   border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 6px 18px rgba(2,6,23,.05);
+  box-shadow: 0 6px 18px rgba(2, 6, 23, .05);
 }
 
 /* Tiêu đề: nhỏ hơn, weight 600 */
-.cardTitle{
-  font-size: 12px;           /* 13px -> 11px */
-  font-weight: 500;          /* 700 -> 600 */
+.cardTitle {
+  font-size: 12px;
+  /* 13px -> 11px */
+  font-weight: 500;
+  /* 700 -> 600 */
   letter-spacing: .3px;
-  color: #9099ab;            /* dịu hơn */
+  color: #9099ab;
+  /* dịu hơn */
   margin: 0 0 10px;
 }
 
 /* Giá trị: giảm size + weight */
 .cardValue {
-  font-size: 22px;       /* hoặc 20px nếu muốn gọn */
-  font-weight: 600;      /* giảm từ 800 xuống 600 */
-  color: #444;           /* xám đậm vừa phải thay vì #111/đen */
+  font-size: 22px;
+  /* hoặc 20px nếu muốn gọn */
+  font-weight: 600;
+  /* giảm từ 800 xuống 600 */
+  color: #444;
+  /* xám đậm vừa phải thay vì #111/đen */
   letter-spacing: .2px;
 }
 
@@ -448,62 +467,77 @@
 .cardSubnote {
   margin-top: 6px;
   font-size: 12px;
-  color: #888;      /* thay vì #c7ceda quá nhạt */
-  font-weight: 400; /* thêm nhẹ để dễ đọc hơn */
+  color: #888;
+  /* thay vì #c7ceda quá nhạt */
+  font-weight: 400;
+  /* thêm nhẹ để dễ đọc hơn */
 }
 
-
 /* Hàng nội dung: bớt căng */
-.cardContent{
-  display: flex;   
-  justify-content: space-between;            /* 12 -> 8 */
+.cardContent {
+  display: flex;
+  justify-content: space-between;
+  /* 12 -> 8 */
 }
 
 /* Badge phần trăm: nhỏ & mảnh */
 .cardStatusUp,
 .cardStatusDown,
 .cardStatusNeutral {
-  display: inline-flex;        /* thêm */
-  align-items: center;         /* thêm */
-  justify-content: center;     /* thêm */
-  gap: 2px;                    /* tạo khoảng cách nhỏ giữa số và icon */
+  display: inline-flex;
+  /* thêm */
+  align-items: center;
+  /* thêm */
+  justify-content: center;
+  /* thêm */
+  gap: 2px;
+  /* tạo khoảng cách nhỏ giữa số và icon */
   font-size: 11px;
   font-weight: 600;
   padding: 3px 7px;
   border-radius: 999px;
   border-width: 1px;
-  line-height: 1;              /* quan trọng: giữ chiều cao cân */
+  line-height: 1;
+  /* quan trọng: giữ chiều cao cân */
 }
 
 .cardStatusUp {
-  color: #16a34a;                 /* xanh lá nhạt hơn (#059669 → #16a34a) */
+  color: #16a34a;
+  /* xanh lá nhạt hơn (#059669 → #16a34a) */
   background: rgba(22, 163, 74, .08);
   border: 1px solid rgba(22, 163, 74, .25);
 }
 
 .cardStatusDown {
-  color: #dc2626;                 /* đỏ nhạt hơn (#e11d48 → #dc2626) */
+  color: #dc2626;
+  /* đỏ nhạt hơn (#e11d48 → #dc2626) */
   background: rgba(220, 38, 38, .08);
   border: 1px solid rgba(220, 38, 38, .25);
 }
 
 .cardStatusNeutral {
-  color: #666;                    /* xám trung tính */
+  color: #666;
+  /* xám trung tính */
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
 }
 
 /* Accent nền (nếu đang dùng) – giảm độ mạnh */
-.kpiEmerald, .kpiIndigo, .kpiAmber, .kpiRose{
+.kpiEmerald,
+.kpiIndigo,
+.kpiAmber,
+.kpiRose {
   background:
-    radial-gradient(120% 110% at 110% -10%, rgba(0,0,0,.02), transparent 45%),
-    #fff !important; /* giữ rất nhẹ */
+    radial-gradient(120% 110% at 110% -10%, rgba(0, 0, 0, .02), transparent 45%),
+    #fff !important;
+  /* giữ rất nhẹ */
 }
 
 /* Hover nhẹ tay hơn */
-.summaryCard:hover{
-  transform: translateY(-1px);    /* -2px -> -1px */
-  box-shadow: 0 10px 24px rgba(2,6,23,.08);
+.summaryCard:hover {
+  transform: translateY(-1px);
+  /* -2px -> -1px */
+  box-shadow: 0 10px 24px rgba(2, 6, 23, .08);
 }
 
 /* Khung ngoài: dùng 1 lớp duy nhất */
@@ -512,13 +546,14 @@
   border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .04);
 }
 
 /* Bỏ border/box-shadow ở card trong để tránh “viền đôi” */
 .lowStockCard {
   width: 100%;
-  max-height: 700px; /* giảm chiều cao để fit 5 dòng */
+  max-height: 700px;
+  /* giảm chiều cao để fit 5 dòng */
   display: flex;
   flex-direction: column;
 }
@@ -530,12 +565,15 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-   scrollbar-width: none; /* ẩn scrollbar trên Firefox */
-  -ms-overflow-style: none; /* ẩn scrollbar trên IE, Edge cũ */
+  scrollbar-width: none;
+  /* ẩn scrollbar trên Firefox */
+  -ms-overflow-style: none;
+  /* ẩn scrollbar trên IE, Edge cũ */
 }
 
 .lowStockList::-webkit-scrollbar {
-  display: none; /* ẩn scrollbar trên Chrome, Safari */
+  display: none;
+  /* ẩn scrollbar trên Chrome, Safari */
 }
 
 /* item nhỏ gọn hơn */
@@ -543,16 +581,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 0;   /* giảm padding */
+  padding: 6px 0;
+  /* giảm padding */
   border-bottom: 1px dashed #e5e7eb;
 }
-.lowStockItem:last-of-type { border-bottom: none; }
+
+.lowStockItem:last-of-type {
+  border-bottom: none;
+}
 
 .lowStockName {
   font-weight: 600;
-  font-size: 14px;   /* nhỏ hơn */
+  font-size: 14px;
+  /* nhỏ hơn */
   color: #111827;
 }
+
 .lowStockSku {
   font-size: 12px;
   color: #6b7280;
@@ -573,23 +617,30 @@
   white-space: nowrap;
 }
 
-
 .qtyLow {
-  background: #fff7ed;  /* cam nhạt */
-  color: #f97316;       /* cam đậm */
+  background: #fff7ed;
+  /* cam nhạt */
+  color: #f97316;
+  /* cam đậm */
 }
 
 .qtyZero {
-  background: #fee2e2;  /* đỏ nhạt */
-  color: #dc2626;       /* đỏ đậm */
+  background: #fee2e2;
+  /* đỏ nhạt */
+  color: #dc2626;
+  /* đỏ đậm */
 }
 
 .lowStockIcon {
   display: inline-flex;
-  width: 18px; height: 18px;
-  align-items: center; justify-content: center;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   border: 1px solid #f59e0b;
   color: #f59e0b;
-  font-weight: 700; font-size: 12px; line-height: 1;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
 }

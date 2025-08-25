@@ -30,7 +30,7 @@ function getFallbackUserId(): string {
   }
 }
 
-export default function Setting({ currentUserId }: { currentUserId?: string }) {
+export default function Setting() {
   // ====== UI state ======
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -91,8 +91,8 @@ export default function Setting({ currentUserId }: { currentUserId?: string }) {
       setLoading(true);
       setError("");
       try {
-        const uid = currentUserId || getFallbackUserId();
-        if (!uid) throw new Error("Không tìm thấy userId (hãy truyền currentUserId hoặc lưu user vào localStorage).");
+        const uid = getFallbackUserId();
+        if (!uid) throw new Error("Không tìm thấy userId (hãy đăng nhập để có thông tin user trong localStorage).");
 
         const res = await fetch(`${API_BASE}/api/shop/user/${uid}`, { cache: "no-store" });
         if (!res.ok) {
@@ -125,7 +125,7 @@ export default function Setting({ currentUserId }: { currentUserId?: string }) {
         setLoading(false);
       }
     })();
-  }, [currentUserId]);
+  }, []); // ⬅️ bỏ currentUserId khỏi deps vì page không nhận props
 
   // ====== Submit update ======
   const handleSubmit = async () => {
