@@ -9,7 +9,7 @@ export default function WloginPage() {
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    router.replace("https://fiyo.click/page/login");
+    router.replace("/login");
   };
 
   return (
@@ -22,7 +22,7 @@ export default function WloginPage() {
           Vui lòng đăng nhập lại bằng tài khoản hợp lệ.
         </p>
         <button onClick={handleLogout} className={styles.button}>
-          Đăng nhập lại
+          Đăng nhập 
         </button>
       </div>
     </main>

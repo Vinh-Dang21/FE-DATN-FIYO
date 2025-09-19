@@ -63,7 +63,7 @@ export default function UsersPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch("https://fiyo-be.onrender.com/api/user/");
+        const res = await fetch("https://fiyo.click/api/user/");
         const data = await res.json();
         if (data.status) setUsers(data.result);
       } catch (error) {

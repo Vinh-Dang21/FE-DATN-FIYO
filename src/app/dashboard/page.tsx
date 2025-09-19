@@ -40,7 +40,7 @@ type Category = {
 };
 
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://fiyo-be.onrender.com/api/";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://fiyo.click/api/";
 
 export default function Dashboard() {
   const router = useRouter();

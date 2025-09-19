@@ -16,7 +16,7 @@ interface Product {
   shop_id?: string | { _id?: string };
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo-be.onrender.com/api/";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click/api/";
 const PLACEHOLDER_IMG =
   "https://via.placeholder.com/64x64?text=No+Img";
 

@@ -75,8 +75,8 @@ export default function Voucher() {
   const fetchVouchers = async () => {
     try {
       const url = search.trim()
-        ? `https://fiyo-be.onrender.com/api/voucher/search?keyword=${search}`
-        : "https://fiyo-be.onrender.com/api/voucher";
+        ? `https://fiyo.click/api/voucher/search?keyword=${search}`
+        : "https://fiyo.click/api/voucher";
       const res = await fetch(url);
       const data = await res.json();
       setVouchers(data.vouchers);
@@ -93,7 +93,7 @@ export default function Voucher() {
         is_active: true,
       };
 
-      const res = await fetch("https://fiyo-be.onrender.com/api/voucher", {
+      const res = await fetch("https://fiyo.click/api/voucher", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,7 +132,7 @@ export default function Voucher() {
     }
 
     try {
-      const res = await fetch(`https://fiyo-be.onrender.com/api/voucher/${editVoucher._id}`, {
+      const res = await fetch(`https://fiyo.click/api/voucher/${editVoucher._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -166,7 +166,7 @@ export default function Voucher() {
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xoá voucher này không?")) return;
     try {
-      const res = await fetch(`https://fiyo-be.onrender.com/api/voucher/${id}`, {
+      const res = await fetch(`https://fiyo.click/api/voucher/${id}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -184,7 +184,7 @@ export default function Voucher() {
 
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`https://fiyo-be.onrender.com/api/voucher/status/${id}`, {
+      const res = await fetch(`https://fiyo.click/api/voucher/status/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

@@ -126,7 +126,7 @@ type ShippingAddress = {
     address?: string; detail?: string; type?: string;
 } | null;
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo-be.onrender.com/api/";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click/api/";
 
 
 
