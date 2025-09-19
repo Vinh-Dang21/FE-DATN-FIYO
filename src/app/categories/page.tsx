@@ -64,7 +64,7 @@ export default function Categories() {
 
   // Fetch parent categories
   useEffect(() => {
-    fetch("https://fiyo.click/api/category/parents")
+    fetch("https://fiyo-be.onrender.com/api/category/parents")
       .then((res) => res.json())
       .then((data) => {
         const list = Array.isArray(data)
@@ -83,7 +83,7 @@ export default function Categories() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        let url = "https://fiyo.click/api/category";
+        let url = "https://fiyo-be.onrender.com/api/category";
         const res = await fetch(url);
         const allCategories: Category[] = await res.json();
 
@@ -115,7 +115,7 @@ export default function Categories() {
 
   const refreshCategories = async () => {
     try {
-      let url = "https://fiyo.click/api/category";
+      let url = "https://fiyo-be.onrender.com/api/category";
       const res = await fetch(url);
       const allCategories: Category[] = await res.json();
 
@@ -192,8 +192,8 @@ export default function Categories() {
 
     const method = editingId ? "PUT" : "POST";
     const url = editingId
-      ? `https://fiyo.click/api/category/${editingId}`
-      : `https://fiyo.click/api/category/create`;
+      ? `https://fiyo-be.onrender.com/api/category/${editingId}`
+      : `https://fiyo-be.onrender.com/api/category/create`;
 
     const data = new FormData();
     data.append("name", formData.name);
@@ -218,7 +218,7 @@ export default function Categories() {
         alert(editingId ? "Cập nhật thành công!" : "Thêm thành công!");
         resetForm();
         if (!selectedParentId) {
-          const resAll = await fetch("https://fiyo.click/api/category");
+          const resAll = await fetch("https://fiyo-be.onrender.com/api/category");
           const allCategories = await resAll.json();
           const filtered = Array.isArray(allCategories)
             ? allCategories.filter((cate) => cate.parentId !== null && cate.parentId !== undefined)
@@ -238,7 +238,7 @@ export default function Categories() {
 
   const handleEdit = async (id: string) => {
     try {
-      const res = await fetch(`https://fiyo.click/api/category/${id}`);
+      const res = await fetch(`https://fiyo-be.onrender.com/api/category/${id}`);
       const data = await res.json();
       const result = data.result;
 
@@ -270,7 +270,7 @@ export default function Categories() {
     if (!window.confirm("Bạn có chắc muốn xóa danh mục này?")) return;
 
     try {
-      const res = await fetch(`https://fiyo.click/api/category/${id}`, {
+      const res = await fetch(`https://fiyo-be.onrender.com/api/category/${id}`, {
         method: "DELETE",
       });
       const result = await res.json();

@@ -13,7 +13,7 @@ type Follower = {
 };
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click/api/";
+  process.env.NEXT_PUBLIC_API_BASE || "https://fiyo-be.onrender.com/api/";
 
 const imgUrl = (src?: string) =>
   src ? (src.startsWith("http") ? src : `${API_BASE}images/${src}`) : "/placeholder-user.png";

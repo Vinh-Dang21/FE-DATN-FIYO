@@ -60,7 +60,7 @@ export default function UserDetailPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch(`https://fiyo.click/api/user/${id}`);
+        const res = await fetch(`https://fiyo-be.onrender.com/api/user/${id}`);
         const json = await res.json();
 
         if (json.status && json.data) {

@@ -11,7 +11,7 @@ export default function LoginTest() {
     e.preventDefault();
 
     try {
-      const res = await fetch("https://fiyo.click/api/user/login", {
+      const res = await fetch("https://fiyo-be.onrender.com/api/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
